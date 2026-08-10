@@ -6,17 +6,18 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { ShieldCheck, Lock, CreditCard, ChevronRight, CheckCircle2, AlertCircle, MapPin, Phone, User as UserIcon, Building, Hash, ArrowLeft, Truck, Tag } from "lucide-react";
 import confetti from "canvas-confetti";
+import CheckoutAuthGate from "@/components/CheckoutAuthGate";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, currentUser, login, placeOrder, activeCoupon } = useStore();
+  const { cart, currentUser, placeOrder, activeCoupon } = useStore();
 
   // Step state
   const [step, setStep] = useState<"address" | "payment" | "processing">("address");
 
   // Address inputs default to Dumdum, Kolkata for authentic local store experience
-  const [fullName, setFullName] = useState(currentUser?.name || "Raj Paswan");
-  const [phone, setPhone] = useState(currentUser?.email ? "+91 98765 43210" : "");
+  const [fullName, setFullName] = useState(currentUser?.name || "");
+  const [phone, setPhone] = useState(currentUser?.email || "");
   const [addressLine, setAddressLine] = useState("Flat 405, Carbon Towers, Sports City Road");
   const [city, setCity] = useState("Kolkata");
   const [stateName, setStateName] = useState("West Bengal");
@@ -42,11 +43,9 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!currentUser) {
-      login("athlete@rpsports.in", fullName, "customer");
-    }
     setStep("payment");
   };
+
 
   const triggerConfetti = () => {
     try {
@@ -115,7 +114,12 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[#F9F9F9] text-[#111111] pt-28 md:pt-32 pb-20">
+
+      {/* AUTHENTICATION GATE FOR UNLOGGED USERS */}
+      {!currentUser && <CheckoutAuthGate />}
+
       <div className="max-w-[1600px] mx-auto px-4 md:px-8">
+
         
         {/* Step Progress Tracker Header */}
         <div className="mb-10 pb-6 border-b border-gray-200">
