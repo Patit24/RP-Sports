@@ -93,6 +93,18 @@ export async function getOrdersByUser(userEmail: string): Promise<Order[]> {
   }
 }
 
+/** Get Firestore Document ID for a given custom order ID (e.g. ORD-123456) */
+export async function getOrderDocumentId(orderId: string): Promise<string | null> {
+  try {
+    const q = query(collection(db, "orders"), where("id", "==", orderId));
+    const snap = await getDocs(q);
+    return snap.empty ? null : snap.docs[0].id;
+  } catch (err: any) {
+    console.warn("Firestore getOrderDocumentId warning:", err.message);
+    return null;
+  }
+}
+
 /** Fetch all orders (admin use) */
 export async function getAllOrders(): Promise<(Order & { firestoreId: string })[]> {
   try {
@@ -117,6 +129,21 @@ export async function updateOrderStatusInDB(
     });
   } catch (err: any) {
     console.warn("Firestore updateOrderStatusInDB warning:", err.message);
+  }
+}
+
+/** Update arbitrary order fields in Firestore */
+export async function updateOrderInDB(
+  firestoreId: string,
+  data: Partial<Order>
+): Promise<void> {
+  try {
+    await updateDoc(doc(db, "orders", firestoreId), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err: any) {
+    console.warn("Firestore updateOrderInDB warning:", err.message);
   }
 }
 
@@ -348,5 +375,41 @@ export async function logEvent(event: string, data?: Record<string, unknown>): P
     });
   } catch {
     // Non-critical — silently fail
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STORE SETTINGS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface StoreSettings {
+  storeName: string;
+  storeEmail: string;
+  storePhone: string;
+  pickupAddress: string;
+  pincode: string;
+  shiprocketEmail: string;
+  shiprocketPickupLocation: string;
+  gstin: string;
+}
+
+export async function saveStoreSettings(settings: StoreSettings): Promise<void> {
+  try {
+    await setDoc(doc(db, "settings", "store_settings"), {
+      ...settings,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err: any) {
+    console.warn("Firestore saveStoreSettings warning:", err.message);
+  }
+}
+
+export async function getStoreSettings(): Promise<StoreSettings | null> {
+  try {
+    const snap = await getDoc(doc(db, "settings", "store_settings"));
+    return snap.exists() ? (snap.data() as StoreSettings) : null;
+  } catch (err: any) {
+    console.warn("Firestore getStoreSettings warning:", err.message);
+    return null;
   }
 }

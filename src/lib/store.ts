@@ -75,6 +75,20 @@ export interface Order {
   createdAt: string;
   trackingNumber?: string;
   deliveryPartnerInfo?: DeliveryPartnerInfo;
+
+  // Real Shiprocket parameters
+  shiprocket_order_id?: string | number;
+  shiprocket_shipment_id?: string | number;
+  shiprocket_channel_order_id?: string | number;
+  awb_code?: string;
+  courier_name?: string;
+  shipping_status?: string;
+  pickup_status?: string;
+  tracking_url?: string;
+  pickup_scheduled_at?: string;
+  shipped_at?: string;
+  delivered_at?: string;
+  shiprocket_status?: string;
 }
 
 export interface User {
@@ -404,6 +418,26 @@ export const useStore = create<SportsStoreState>()(
         saveOrder(newOrder, userEmail).catch((err) =>
           console.warn("Firestore saveOrder notice:", err)
         );
+
+        // Trigger Real Shiprocket Order Sync securely on payment success or COD
+        if (paymentStatus === "Success" || paymentMethod === "COD") {
+          fetch("/api/shiprocket/create-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newOrder),
+          })
+            .then(async (res) => {
+              const data = await res.json();
+              if (data.success) {
+                console.log("🚀 Shiprocket Order synced on checkout:", data);
+              } else {
+                console.warn("⚠️ Shiprocket Order sync failed/pending:", data.message);
+              }
+            })
+            .catch((err) => {
+              console.error("❌ Shiprocket Order checkout sync error:", err);
+            });
+        }
 
         // Trigger Delivery Partner Dispatch Notification & Firestore Sync
         notifyDeliveryPartner(newOrder).catch((err) =>

@@ -5,10 +5,13 @@
  *  - Authentication: /v1/external/auth/login
  *  - Pincode Serviceability: /v1/external/courier/serviceability
  *  - Create Order (Adhoc): /v1/external/orders/create/adhoc
- *  - Tracking: /v1/external/courier/track/order/{order_id}
+ *  - Assign AWB: /v1/external/courier/assign/awb
+ *  - Tracking: /v1/external/courier/track/awb/{awb_code}
+ *  - Pickup Locations: /v1/external/settings/company/pickup
  */
 
 import type { Order } from "./store";
+import { getStoreSettings } from "./firestoreService";
 
 const SHIPROCKET_BASE_URL = "https://apiv2.shiprocket.in/v1/external";
 
@@ -40,6 +43,15 @@ export interface ShiprocketOrderResponse {
   message?: string;
 }
 
+export interface ShiprocketConnectionTestResult {
+  connected: boolean;
+  lastConnected?: string;
+  apiStatus: string;
+  pickupLocations: any[];
+  configurationStatus: string;
+  error?: string;
+}
+
 /**
  * Get Shiprocket Auth Token
  */
@@ -49,8 +61,15 @@ export async function getShiprocketToken(): Promise<string> {
     return cachedToken;
   }
 
-  const email = process.env.SHIPROCKET_EMAIL || "info@rpsports.in";
-  const password = process.env.SHIPROCKET_PASSWORD || "RPSports@2026";
+  const email = process.env.SHIPROCKET_EMAIL;
+  const password = process.env.SHIPROCKET_PASSWORD;
+
+  if (!email || !password) {
+    if (process.env.SHIPROCKET_MOCK_MODE === "true" || process.env.NODE_ENV === "development") {
+      return "mock_shiprocket_jwt_token";
+    }
+    throw new Error("Shiprocket credentials are not configured in environment variables.");
+  }
 
   try {
     const res = await fetch(`${SHIPROCKET_BASE_URL}/auth/login`, {
@@ -60,7 +79,8 @@ export async function getShiprocketToken(): Promise<string> {
     });
 
     if (!res.ok) {
-      throw new Error(`Shiprocket Auth failed with status ${res.status}`);
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || `Shiprocket Auth failed with status ${res.status}`);
     }
 
     const data = await res.json();
@@ -71,13 +91,198 @@ export async function getShiprocketToken(): Promise<string> {
       tokenExpiryTime = Date.now() + 9 * 24 * 60 * 60 * 1000;
       return tok;
     }
-
-  } catch (err) {
-    console.warn("⚠️ Shiprocket Auth warning (using fallback mock mode):", err);
+    throw new Error("Token was not returned in Shiprocket login response.");
+  } catch (err: any) {
+    if (process.env.SHIPROCKET_MOCK_MODE === "true" || (process.env.NODE_ENV === "development" && !process.env.SHIPROCKET_EMAIL)) {
+      console.warn("⚠️ Using Shiprocket fallback token:", err.message);
+      return "mock_shiprocket_jwt_token";
+    }
+    throw err;
   }
+}
 
-  // Fallback token for local mock mode
-  return "mock_shiprocket_jwt_token";
+/**
+ * Parse product weight string into a numeric kg value
+ */
+function parseWeight(weightStr: string): number | null {
+  if (!weightStr) return null;
+  const clean = weightStr.toLowerCase();
+  
+  const match = clean.match(/([\d.]+)\s*(kg|grams|g|u)?/);
+  if (!match) return null;
+  
+  const value = parseFloat(match[1]);
+  if (isNaN(value)) return null;
+  
+  const unit = match[2];
+  if (unit === "kg") {
+    return value;
+  } else if (unit === "g" || unit === "grams" || clean.includes("grams") || clean.includes("g")) {
+    return value / 1000;
+  }
+  return value > 15 ? value / 1000 : value;
+}
+
+/**
+ * Parse product dimensions string into length, breadth, height
+ */
+function parseDimensions(dimStr: string): { length: number; breadth: number; height: number } | null {
+  if (!dimStr) return null;
+  const clean = dimStr.toLowerCase();
+  if (clean.includes("custom") || clean.includes("fit")) return null;
+
+  const numbers = clean.match(/\d+(\.\d+)?/g);
+  if (!numbers || numbers.length < 2) return null;
+  
+  const length = parseFloat(numbers[0]);
+  const breadth = parseFloat(numbers[1]);
+  const height = numbers.length >= 3 ? parseFloat(numbers[2]) : 5; // default height if missing
+  
+  if (isNaN(length) || isNaN(breadth) || isNaN(height)) return null;
+  return { length, breadth, height };
+}
+
+/**
+ * Calculate consolidated package specifications for shipping
+ */
+export function getOrderPackageDetails(order: Order): { weight: number; length: number; breadth: number; height: number; error?: string } {
+  let totalWeight = 0;
+  let maxLength = 0;
+  let maxBreadth = 0;
+  let totalHeight = 0;
+  
+  for (const item of order.items) {
+    const qty = item.quantity;
+    const prod = item.product;
+    
+    const parsedWt = parseWeight(prod.weight);
+    const parsedDim = parseDimensions(prod.dimensions);
+    
+    if (parsedWt === null || parsedDim === null) {
+      return {
+        weight: 0,
+        length: 0,
+        breadth: 0,
+        height: 0,
+        error: `Shipping Configuration Required (Weight or dimensions missing or invalid for item '${prod.name}')`,
+      };
+    }
+    
+    totalWeight += parsedWt * qty;
+    maxLength = Math.max(maxLength, parsedDim.length);
+    maxBreadth = Math.max(maxBreadth, parsedDim.breadth);
+    totalHeight += parsedDim.height * qty;
+  }
+  
+  return {
+    weight: Math.max(0.5, parseFloat(totalWeight.toFixed(2))),
+    length: Math.max(10, Math.round(maxLength)),
+    breadth: Math.max(10, Math.round(maxBreadth)),
+    height: Math.max(10, Math.round(totalHeight)),
+  };
+}
+
+/**
+ * Assign AWB Tracking code to a Shiprocket shipment
+ */
+export async function assignShiprocketAWB(shipmentId: number, courierId?: number): Promise<{ success: boolean; awbCode?: string; courierName?: string; message?: string }> {
+  try {
+    const token = await getShiprocketToken();
+    if (token === "mock_shiprocket_jwt_token") {
+      return {
+        success: true,
+        awbCode: "SR" + Math.floor(100000000 + Math.random() * 900000000),
+        courierName: "BlueDart Express",
+      };
+    }
+
+    const payload: any = { shipment_id: shipmentId };
+    if (courierId) {
+      payload.courier_id = courierId;
+    }
+
+    const res = await fetch(`${SHIPROCKET_BASE_URL}/courier/assign/awb`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (res.ok && data.response?.data?.awb_code) {
+      const responseData = data.response.data;
+      return {
+        success: true,
+        awbCode: responseData.awb_code,
+        courierName: responseData.courier_name,
+        message: "AWB code successfully generated & assigned.",
+      };
+    }
+
+    return {
+      success: false,
+      message: data.message || "Failed to generate AWB from Shiprocket.",
+    };
+  } catch (err: any) {
+    console.error("❌ Error generating Shiprocket AWB:", err.message);
+    return {
+      success: false,
+      message: err.message || "Failed to generate AWB.",
+    };
+  }
+}
+
+/**
+ * Verify Connection and Retrieve Pickup Locations
+ */
+export async function testShiprocketConnection(): Promise<ShiprocketConnectionTestResult> {
+  try {
+    const token = await getShiprocketToken();
+    if (token === "mock_shiprocket_jwt_token") {
+      return {
+        connected: true,
+        lastConnected: new Date().toISOString(),
+        apiStatus: "Healthy (Demo Mock Mode)",
+        pickupLocations: [
+          { pickup_location: "Dumdum Store", pin_code: "700028", city: "Kolkata", state: "West Bengal" },
+          { pickup_location: "Salt Lake Hub", pin_code: "700091", city: "Kolkata", state: "West Bengal" }
+        ],
+        configurationStatus: "Complete",
+      };
+    }
+
+    const res = await fetch(`${SHIPROCKET_BASE_URL}/settings/company/pickup`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to retrieve settings (HTTP ${res.status})`);
+    }
+
+    const data = await res.json();
+    const locations = data.data?.shipping_address || data.shipping_address || [];
+
+    return {
+      connected: true,
+      lastConnected: new Date().toISOString(),
+      apiStatus: "Healthy",
+      pickupLocations: locations,
+      configurationStatus: locations.length > 0 ? "Complete" : "Pending Pickup Location Config",
+    };
+  } catch (err: any) {
+    return {
+      connected: false,
+      apiStatus: "Connection Refused / Unauthorized",
+      pickupLocations: [],
+      configurationStatus: "Incomplete",
+      error: err.message || "Shiprocket authentication failed",
+    };
+  }
 }
 
 /**
@@ -100,9 +305,9 @@ export async function checkPincodeServiceability(
         state: isKolkata ? "West Bengal" : "India",
         estimatedDays: isKolkata ? 1 : 3,
         couriers: [
-          { name: "BlueDart Express", rate: 0, etd: isKolkata ? "Tomorrow" : "3 Days" },
-          { name: "Delhivery Surface", rate: 0, etd: isKolkata ? "1-2 Days" : "4 Days" },
-          { name: "DTDC Premium", rate: 0, etd: isKolkata ? "Tomorrow" : "3 Days" },
+          { name: "BlueDart Express", rate: 75, etd: isKolkata ? "Tomorrow" : "3 Days" },
+          { name: "Delhivery Surface", rate: 50, etd: isKolkata ? "1-2 Days" : "4 Days" },
+          { name: "DTDC Premium", rate: 65, etd: isKolkata ? "Tomorrow" : "3 Days" },
         ],
       };
     }
@@ -138,14 +343,13 @@ export async function checkPincodeServiceability(
 
     return { serviceable: false, message: "Location not currently serviceable." };
   } catch (err) {
-    // Robust fallback
     const isKolkata = deliveryPincode.startsWith("700");
     return {
       serviceable: true,
       estimatedDays: isKolkata ? 1 : 3,
       couriers: [
-        { name: "BlueDart Express", rate: 0, etd: isKolkata ? "Tomorrow" : "3 Days" },
-        { name: "Delhivery Direct", rate: 0, etd: isKolkata ? "1-2 Days" : "4 Days" },
+        { name: "BlueDart Express", rate: 75, etd: isKolkata ? "Tomorrow" : "3 Days" },
+        { name: "Delhivery Direct", rate: 55, etd: isKolkata ? "1-2 Days" : "4 Days" },
       ],
     };
   }
@@ -155,15 +359,38 @@ export async function checkPincodeServiceability(
  * Create Order in Shiprocket
  */
 export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrderResponse> {
+  // Prevent duplicate syncing
+  if (order.shiprocket_order_id) {
+    return {
+      success: true,
+      orderId: typeof order.shiprocket_order_id === "number" ? order.shiprocket_order_id : parseInt(order.shiprocket_order_id),
+      shipmentId: order.shiprocket_shipment_id ? (typeof order.shiprocket_shipment_id === "number" ? order.shiprocket_shipment_id : parseInt(order.shiprocket_shipment_id)) : undefined,
+      awbCode: order.awb_code,
+      courierName: order.courier_name,
+      message: "Order already synchronized with Shiprocket.",
+    };
+  }
+
+  // Calculate package parameters
+  const pkg = getOrderPackageDetails(order);
+  if (pkg.error) {
+    return {
+      success: false,
+      message: pkg.error, // Shipping Configuration Required
+    };
+  }
+
   try {
     const token = await getShiprocketToken();
+    const settings = await getStoreSettings();
+    const pickupLocation = settings?.shiprocketPickupLocation || process.env.SHIPROCKET_PICKUP_LOCATION || "Dumdum Store";
 
     const orderPayload = {
       order_id: order.id,
       order_date: new Date(order.createdAt).toISOString().replace("T", " ").split(".")[0],
-      pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || "Dumdum Store",
+      pickup_location: pickupLocation,
       channel_id: "",
-      comment: "RP Sports Handcrafted Cricket Bat Order",
+      comment: "RP Sports Handcrafted Premium Sports Gear",
       billing_customer_name: order.shippingAddress.fullName,
       billing_last_name: "",
       billing_address: order.shippingAddress.addressLine,
@@ -174,25 +401,31 @@ export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrd
       billing_email: "customer@rpsports.in",
       billing_phone: order.shippingAddress.phone,
       shipping_is_billing: true,
-      order_items: order.items.map((item) => ({
-        name: item.product.name,
-        sku: item.product.sku || `RP-BAT-${item.product.id}`,
-        units: item.quantity,
-        selling_price: item.product.price,
-        discount: 0,
-        tax: Math.round(item.product.price * 0.18),
-        hsn: 9506,
-      })),
+      order_items: order.items.map((item) => {
+        const prod = item.product;
+        const brandName = prod.brand || "RP Sports";
+        const hsnCode = prod.specs?.HSN || prod.specifications?.HSN || "9506";
+        return {
+          name: prod.name,
+          sku: prod.sku || `RP-PROD-${prod.id}`,
+          units: item.quantity,
+          selling_price: prod.price,
+          discount: 0,
+          tax: Math.round(prod.price * 0.18),
+          hsn: parseInt(hsnCode) || 9506,
+          brand: brandName,
+        };
+      }),
       payment_method: order.paymentMethod === "COD" ? "COD" : "Prepaid",
-      shipping_charges: 0,
+      shipping_charges: order.total > 5000 ? 0 : 250,
       giftwrap_charges: 0,
       transaction_charges: 0,
       total_discount: 0,
-      sub_total: order.total,
-      length: 85,
-      breadth: 12,
-      height: 12,
-      weight: 1.3,
+      sub_total: order.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0),
+      length: pkg.length,
+      breadth: pkg.breadth,
+      height: pkg.height,
+      weight: pkg.weight,
     };
 
     if (token === "mock_shiprocket_jwt_token") {
@@ -206,7 +439,7 @@ export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrd
         statusCode: 1,
         awbCode: mockAwb,
         courierName: "BlueDart Express",
-        message: "Order successfully pushed to Shiprocket",
+        message: "Order successfully pushed to Shiprocket (Mock)",
       };
     }
 
@@ -220,23 +453,43 @@ export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrd
     });
 
     const data = await res.json();
+    
+    if (res.ok && data.order_id) {
+      const orderId = data.order_id;
+      const shipmentId = data.shipment_id;
+      
+      // Auto-generate/assign AWB
+      let awbCode = "";
+      let courierName = "";
+      if (shipmentId) {
+        const awbRes = await assignShiprocketAWB(shipmentId);
+        if (awbRes.success) {
+          awbCode = awbRes.awbCode || "";
+          courierName = awbRes.courierName || "";
+        }
+      }
+
+      return {
+        success: true,
+        orderId,
+        shipmentId,
+        status: data.status || "NEW",
+        statusCode: data.status_code || 1,
+        awbCode: awbCode || undefined,
+        courierName: courierName || undefined,
+        message: "Order created successfully in Shiprocket and AWB assigned.",
+      };
+    }
+
     return {
-      success: res.ok && Boolean(data.order_id),
-      orderId: data.order_id,
-      shipmentId: data.shipment_id,
-      status: data.status,
-      statusCode: data.status_code,
-      awbCode: data.awb_code || `SR${data.shipment_id || "98421"}`,
-      courierName: data.courier_name || "BlueDart",
-      message: data.message || "Shiprocket order registered successfully",
+      success: false,
+      message: data.message || "Failed to create order on Shiprocket.",
     };
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Error creating Shiprocket order:", err);
     return {
-      success: true,
-      awbCode: "SR" + Math.floor(100000000 + Math.random() * 900000000),
-      courierName: "BlueDart Express",
-      message: "Order created with Shiprocket fallback mode",
+      success: false,
+      message: err.message || "Shiprocket gateway error.",
     };
   }
 }
@@ -270,9 +523,34 @@ export async function trackShiprocketOrder(shipmentIdOrAwb: string) {
       },
     });
 
+    if (!res.ok) {
+      throw new Error(`Tracking query failed (HTTP ${res.status})`);
+    }
+
     const data = await res.json();
-    return { success: res.ok, trackingData: data?.tracking_data };
-  } catch {
-    return { success: false, message: "Unable to retrieve tracking." };
+    
+    // Parse response
+    const track = data.tracking_data?.shipment_track?.[0];
+    const scans = data.tracking_data?.shipment_track_activities || [];
+    
+    return {
+      success: true,
+      trackingData: track ? {
+        track_status: data.tracking_data.track_status,
+        shipment_status: data.tracking_data.shipment_status,
+        current_status: track.current_status,
+        courier_name: track.courier_name,
+        awb_code: track.awb_code,
+        pickup_date: track.pickup_date,
+        delivered_date: track.delivered_date,
+        scans: scans.map((s: any) => ({
+          location: s.location,
+          activity: s.activity,
+          date: s.date,
+        })),
+      } : null,
+    };
+  } catch (err: any) {
+    return { success: false, message: err.message || "Unable to retrieve tracking." };
   }
 }

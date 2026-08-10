@@ -3,17 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { ShieldCheck, Truck, Store, Key, Save, CheckCircle } from "lucide-react";
+import { getStoreSettings, saveStoreSettings, StoreSettings } from "@/lib/firestoreService";
+import { ShieldCheck, Truck, Store, Key, Save, CheckCircle, AlertCircle, RefreshCw, XCircle } from "lucide-react";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { currentUser, showToast } = useStore();
 
-  if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-    return null;
-  }
-
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<StoreSettings>({
     storeName: "RP Sports Kolkata",
     storeEmail: "info@rpsports.in",
     storePhone: "+91 98300 12345",
@@ -24,7 +21,56 @@ export default function SettingsPage() {
     gstin: "19AABCR1234F1Z9",
   });
 
+  const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Shiprocket Diagnostics State
+  const [pickupLocations, setPickupLocations] = useState<any[]>([]);
+  const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "failed">("checking");
+  const [connectionError, setConnectionError] = useState("");
+  const [lastConnected, setLastConnected] = useState("");
+  const [checkingConnection, setCheckingConnection] = useState(false);
+
+  // Load settings on mount
+  useEffect(() => {
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+      return;
+    }
+    
+    async function load() {
+      const data = await getStoreSettings();
+      if (data) {
+        setSettings(data);
+      }
+    }
+    load();
+    verifyShiprocket();
+  }, [currentUser]);
+
+  // Verify Connection Method
+  const verifyShiprocket = async () => {
+    setCheckingConnection(true);
+    try {
+      const res = await fetch("/api/shiprocket/test-connection");
+      const data = await res.json();
+      if (data.connected) {
+        setConnectionStatus("connected");
+        setPickupLocations(data.pickupLocations || []);
+        setLastConnected(data.lastConnected || new Date().toLocaleString());
+        setConnectionError("");
+      } else {
+        setConnectionStatus("failed");
+        setConnectionError(data.error || "Shiprocket authentication failed");
+        setPickupLocations([]);
+      }
+    } catch (err: any) {
+      setConnectionStatus("failed");
+      setConnectionError(err.message || "Failed to verify connection.");
+      setPickupLocations([]);
+    } finally {
+      setCheckingConnection(false);
+    }
+  };
 
   if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
     return (
@@ -34,11 +80,19 @@ export default function SettingsPage() {
     );
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    showToast("Store settings and logistics configurations updated!", "success");
-    setTimeout(() => setSaved(false), 3000);
+    setLoading(true);
+    try {
+      await saveStoreSettings(settings);
+      setSaved(true);
+      showToast("Store settings and logistics configurations updated!", "success");
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      showToast("Failed to save store settings.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -88,6 +142,27 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Store Phone</label>
+              <input
+                type="text"
+                value={settings.storePhone}
+                onChange={(e) => setSettings({ ...settings, storePhone: e.target.value })}
+                className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-bold text-primary focus:outline-none focus:border-[#CC0000]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Fulfillment Pincode</label>
+              <input
+                type="text"
+                value={settings.pincode}
+                onChange={(e) => setSettings({ ...settings, pincode: e.target.value })}
+                className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-bold text-primary focus:outline-none focus:border-[#CC0000]"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Pickup Warehouse Address</label>
             <input
@@ -108,9 +183,32 @@ export default function SettingsPage() {
                 2. Shiprocket Logistics Integration
               </h2>
             </div>
-            <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
-              <CheckCircle className="w-3.5 h-3.5" /> API Connected
-            </span>
+            <div className="flex items-center gap-2">
+              {connectionStatus === "checking" && (
+                <span className="bg-amber-50 text-amber-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Verifying...
+                </span>
+              )}
+              {connectionStatus === "connected" && (
+                <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                  <CheckCircle className="w-3.5 h-3.5" /> Connected
+                </span>
+              )}
+              {connectionStatus === "failed" && (
+                <span className="bg-red-50 text-red-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                  <XCircle className="w-3.5 h-3.5" /> Not Connected
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={verifyShiprocket}
+                disabled={checkingConnection}
+                className="p-1 text-slate-400 hover:text-[#CC0000] rounded transition-colors cursor-pointer"
+                title="Verify Connection"
+              >
+                <RefreshCw className={`w-4 h-4 ${checkingConnection ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -125,15 +223,59 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Shiprocket Pickup Location Nickname</label>
-              <input
-                type="text"
-                value={settings.shiprocketPickupLocation}
-                onChange={(e) => setSettings({ ...settings, shiprocketPickupLocation: e.target.value })}
-                className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-bold text-primary focus:outline-none focus:border-[#CC0000]"
-              />
+              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Shiprocket Pickup Location</label>
+              {connectionStatus === "connected" && pickupLocations.length > 0 ? (
+                <select
+                  value={settings.shiprocketPickupLocation}
+                  onChange={(e) => setSettings({ ...settings, shiprocketPickupLocation: e.target.value })}
+                  className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-bold text-primary focus:outline-none focus:border-[#CC0000] bg-white cursor-pointer"
+                >
+                  {pickupLocations.map((loc, idx) => (
+                    <option key={idx} value={loc.pickup_location}>
+                      {loc.pickup_location} ({loc.city}, {loc.pin_code})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={settings.shiprocketPickupLocation}
+                  onChange={(e) => setSettings({ ...settings, shiprocketPickupLocation: e.target.value })}
+                  placeholder="e.g. Dumdum Store"
+                  className="w-full h-11 px-4 border border-slate-300 rounded-xl text-sm font-bold text-primary focus:outline-none focus:border-[#CC0000]"
+                />
+              )}
             </div>
           </div>
+
+          {/* Connection Error Banner */}
+          {connectionStatus === "failed" && connectionError && (
+            <div className="bg-red-50 border border-red-200 p-4 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-xs font-bold text-red-800">Connection Error</strong>
+                <p className="text-[11px] text-red-700 font-semibold">{connectionError}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Connection Success Specs */}
+          {connectionStatus === "connected" && (
+            <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl space-y-1.5 text-[11px] text-emerald-800 font-semibold">
+              <div className="flex justify-between">
+                <span>Last Connected:</span>
+                <span className="font-mono">{lastConnected}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>API Gateway Status:</span>
+                <span className="uppercase tracking-wider">Active</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Pickup Locations Available:</span>
+                <span>{pickupLocations.length} locations</span>
+              </div>
+            </div>
+          )}
           
           <p className="text-xs text-slate-500 font-medium">
             Shiprocket API credentials are encrypted in <code className="bg-slate-100 px-1.5 py-0.5 rounded text-[#CC0000]">.env.local</code> (SHIPROCKET_EMAIL, SHIPROCKET_PASSWORD).
@@ -169,10 +311,11 @@ export default function SettingsPage() {
           )}
           <button
             type="submit"
-            className="px-8 py-3.5 bg-[#CC0000] text-white font-display font-bold uppercase tracking-wider text-sm rounded-xl hover:bg-[#990000] transition-colors flex items-center gap-2 shadow-lg shadow-[#CC0000]/20 cursor-pointer"
+            disabled={loading}
+            className="px-8 py-3.5 bg-[#CC0000] text-white font-display font-bold uppercase tracking-wider text-sm rounded-xl hover:bg-[#990000] transition-colors flex items-center gap-2 shadow-lg shadow-[#CC0000]/20 cursor-pointer disabled:opacity-50"
             style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
           >
-            <Save className="w-4 h-4" /> Save Configuration
+            <Save className="w-4 h-4" /> {loading ? "Saving..." : "Save Configuration"}
           </button>
         </div>
 
