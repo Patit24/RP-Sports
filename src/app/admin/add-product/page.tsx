@@ -7,7 +7,7 @@ import { BRANDS } from "@/lib/mockData";
 import { 
   PlusCircle, Image as ImageIcon, CheckCircle, Package, 
   IndianRupee, Tag, ShieldCheck, ListChecks, Sparkles, Plus, Trash2,
-  UploadCloud, X, Star
+  UploadCloud, X, Star, Camera, Shirt, Footprints, Glasses, Trophy, HelpCircle
 } from "lucide-react";
 
 interface CustomSpecRow {
@@ -18,15 +18,20 @@ interface CustomSpecRow {
 export default function AddProductPage() {
   const router = useRouter();
   const { addProduct } = useStore();
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Subcategory Template Types
+  const [productType, setProductType] = useState<"bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies">("bats");
 
   const [formData, setFormData] = useState({
-    name: "",
+    name: "RP Elite Player Edition Kashmir Willow Cricket Bat",
     brand: "RP Sports",
     category: "cricket",
     subcategory: "bats",
     sportsType: "Cricket",
-    willowType: "Kashmir Willow",
+    willowType: "Grade A+ Kashmir Willow",
     willowGrade: "Grade A+",
     handleSize: "Short Handle (SH)",
     playerLevel: "Tournament & Club Player",
@@ -48,7 +53,7 @@ export default function AddProductPage() {
     sizes: "Short Handle (SH), Harrow, Size 6",
   });
 
-  // Local File Uploaded Images (Base64 Data URLs from Desktop / Phone Gallery)
+  // Uploaded Photos (Data URLs from Desktop or Live Camera Capture)
   const [uploadedImages, setUploadedImages] = useState<string[]>([
     "/cricket_bat_studio.jpg",
     "/cricket_bat_lineup.jpg",
@@ -64,6 +69,187 @@ export default function AddProductPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Auto-fill category-specific specifications when user switches product category/type
+  const handleProductTypeChange = (type: "bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies") => {
+    setProductType(type);
+
+    if (type === "bats") {
+      setFormData(prev => ({
+        ...prev,
+        name: "RP Legend Pro English Willow Cricket Bat",
+        category: "cricket",
+        subcategory: "bats",
+        sportsType: "Cricket",
+        brand: "RP Sports",
+        mrp: "16999",
+        price: "12999",
+        willowType: "Grade 1 English Willow",
+        willowGrade: "Grade 1",
+        handleSize: "Short Handle (SH)",
+        weight: "1160 - 1200 grams",
+        dimensions: "85cm x 11cm x 6cm",
+        colors: "Natural English Finish",
+        sizes: "Short Handle (SH)",
+        shortDescription: "Grade 1 English Willow with 8-12 straight grains and 42mm edges.",
+        description: "Elite international-grade Grade 1 English Willow featuring straight 8-12 clean grains. Ultra-balanced pickup with lightweight feel and supreme ping off the blade.",
+        highlightsInput: "Grade 1 English Willow\n8-12 Straight Clean Grains\n42mm Edges for Maximum Power\nFeatherlight Pickup"
+      }));
+      setCustomSpecs([
+        { key: "Willow Type", value: "Grade 1 English Willow" },
+        { key: "Grains", value: "8 - 12 Straight Grains" },
+        { key: "Edge Profile", value: "42mm Thick Edges" },
+        { key: "Handle", value: "Oval Semi-Rigid Cane Handle" }
+      ]);
+    } else if (type === "jerseys") {
+      setFormData(prev => ({
+        ...prev,
+        name: "RP Pro Sublimated Match Jersey 2026",
+        category: "apparel",
+        subcategory: "jerseys",
+        sportsType: "Multi-Sport",
+        brand: "RP Custom Apparel",
+        mrp: "1299",
+        price: "899",
+        weight: "200 grams",
+        dimensions: "Standard Athletic Fit",
+        colors: "Navy Blue / Neon Gold, Crimson Red / Black",
+        sizes: "S, M, L, XL, XXL",
+        customizable: true,
+        shortDescription: "Dry-Fit honeycomb breathable polyester match jersey with custom name & number.",
+        description: "Dry-Fit honeycomb breathable polyester match jersey with full custom name, number, and team logo sublimation. Anti-sweat UV shield fabric.",
+        highlightsInput: "100% Micro-Polyester Mesh\nCustom Sublimation Printing\nAnti-Sweat Moisture Wicking\nUV Protection Shield"
+      }));
+      setCustomSpecs([
+        { key: "Fabric", value: "Micro-Polyester Dri-Fit Mesh" },
+        { key: "Fit Type", value: "Athletic Slim Fit" },
+        { key: "Neck Style", value: "Polo Collar / V-Neck" },
+        { key: "Sleeve Type", value: "Half Sleeve" },
+        { key: "Sublimation", value: "Full HD Sublimation Print" }
+      ]);
+    } else if (type === "shoes") {
+      setFormData(prev => ({
+        ...prev,
+        name: "RP Turbo Speed Pro Spike Cricket Shoes",
+        category: "footwear",
+        subcategory: "spikes",
+        sportsType: "Cricket",
+        brand: "RP Sports",
+        mrp: "4499",
+        price: "3299",
+        weight: "750 grams",
+        dimensions: "32cm x 20cm x 12cm",
+        colors: "White / Crimson Red, White / Cobalt Blue",
+        sizes: "UK 7, UK 8, UK 9, UK 10, UK 11",
+        shortDescription: "Metal spike footwear with TPU soleplate for maximum grip on turf pitches.",
+        description: "Metal spike footwear with TPU soleplate for maximum grip on grass and turf pitches. Reinforced ankle collar and dual-density EVA cushioning.",
+        highlightsInput: "11 Replaceable Steel Spikes\nDual Density EVA Midsole\nReinforced Ankle Collar Support\nTPU High-Traction Outsole"
+      }));
+      setCustomSpecs([
+        { key: "Outsole", value: "Full TPU Plate with 11 Steel Spikes" },
+        { key: "Upper Material", value: "Synthetic Leather & Mesh" },
+        { key: "Cushioning", value: "High-Bounce EVA Midsole" },
+        { key: "Ankle Support", value: "Padded Ankle Shield" }
+      ]);
+    } else if (type === "trackpants") {
+      setFormData(prev => ({
+        ...prev,
+        name: "RP Performance Stretch Training Track Pants",
+        category: "apparel",
+        subcategory: "trackpants",
+        sportsType: "Training & Fitness",
+        brand: "RP Custom Apparel",
+        mrp: "1899",
+        price: "1299",
+        weight: "320 grams",
+        dimensions: "Standard Ankle Length",
+        colors: "Black / Neon Red, Navy Blue / White",
+        sizes: "M, L, XL, XXL",
+        shortDescription: "4-way stretch polyester training pants with zippered side pockets.",
+        description: "Engineered for intense warmups and team travel. Features 4-way stretch breathable fabric, elastic waistband with internal drawcord, and secure YKK zippered side pockets.",
+        highlightsInput: "4-Way Stretch Flex Fabric\nDual YKK Zipper Pockets\nElastic Waistband with Drawcord\nBreathable Quick-Dry Finish"
+      }));
+      setCustomSpecs([
+        { key: "Fabric Material", value: "92% Polyester, 8% Elastane Stretch" },
+        { key: "Pockets", value: "2 Deep Zipper Pockets" },
+        { key: "Waistband", value: "Elasticized with Internal Drawstring" },
+        { key: "Ankle Cuff", value: "Zippered Ankle Openings" }
+      ]);
+    } else if (type === "sunglasses") {
+      setFormData(prev => ({
+        ...prev,
+        name: "RP Pro Shield UV400 Polarized Sports Sunglasses",
+        category: "apparel",
+        subcategory: "accessories",
+        sportsType: "Cricket / Outdoor Sports",
+        brand: "RP Sports",
+        mrp: "2499",
+        price: "1699",
+        weight: "38 grams",
+        dimensions: "14.5cm x 5.5cm Frame",
+        colors: "REVO Red Mirror / Black Frame, Polarized Smoke / White Frame",
+        sizes: "One Size Fits All",
+        shortDescription: "Polarized UV400 shatterproof sports sunglasses for fielders and batsmen.",
+        description: "Designed for high-contrast visibility on bright sunny match days. Ultralight TR90 flexible polymer frame with scratch-resistant REVO mirror polarized lenses.",
+        highlightsInput: "UV400 100% Protection Lenses\nTR90 Shatterproof Polymer Frame\nAnti-Slip Rubber Nose Pads\nIncludes Hard EVA Carrying Case"
+      }));
+      setCustomSpecs([
+        { key: "Lens Tech", value: "Polarized REVO Mirror Coating" },
+        { key: "UV Protection", value: "UV400 Protection (UVA & UVB)" },
+        { key: "Frame Material", value: "TR90 Flexible Polymer" },
+        { key: "Nose Pad", value: "Adjustable Hydrophilic Rubber" }
+      ]);
+    } else if (type === "caps") {
+      setFormData(prev => ({
+        ...prev,
+        name: "RP Team Pro Moisture-Wicking Match Cap",
+        category: "apparel",
+        subcategory: "caps",
+        sportsType: "Cricket & Field Sports",
+        brand: "RP Sports",
+        mrp: "799",
+        price: "499",
+        weight: "85 grams",
+        dimensions: "Adjustable Standard",
+        colors: "Navy Blue, Maroon Red, Pure White",
+        sizes: "Adjustable Strap",
+        shortDescription: "Curved brim match cap with moisture-wicking sweatband and laser ventilation.",
+        description: "Keep cool on the field during day matches. Made from lightweight quick-dry fabric with embroidered eyelets for maximum ventilation and an adjustable Velcro back strap.",
+        highlightsInput: "Curved Pre-Shaped Visor Brim\nInternal Toweling Sweatband\nLaser-Cut Breathable Eyelets\nAdjustable Back Strap"
+      }));
+      setCustomSpecs([
+        { key: "Brim Type", value: "Curved Pre-Formed Visor" },
+        { key: "Sweatband", value: "Moisture-Wicking Terry Cloth" },
+        { key: "Strap", value: "Velcro Back Strap with Rubber Pull Tab" },
+        { key: "Ventilation", value: "6 Embroidered Air Holes" }
+      ]);
+    } else if (type === "trophies") {
+      setFormData(prev => ({
+        ...prev,
+        name: "RP Gold Championship Victory Trophy",
+        category: "custom-trophies",
+        subcategory: "trophies",
+        sportsType: "Multi-Sport",
+        brand: "RP Trophies",
+        mrp: "1999",
+        price: "1499",
+        weight: "1.80 kg",
+        dimensions: "18 x 18 x 45 cm",
+        colors: "Gold Plated Brass & Dark Walnut Base",
+        sizes: "18 Inches (Standard), 24 Inches (Grand)",
+        customizable: true,
+        shortDescription: "Gold electroplated trophy with solid wooden base & free engraved brass plate.",
+        description: "Heavyweight metallic gold-finish tournament trophy with solid wooden base. Free custom brass plate laser engraving included.",
+        highlightsInput: "18-Inch Height Gold Metal Finish\nSolid Walnut Wood Base\nFree Laser Engraved Brass Plate\nCustom Tournament Engraving"
+      }));
+      setCustomSpecs([
+        { key: "Material", value: "24K Gold Electroplated Metal Alloy" },
+        { key: "Pedestal Base", value: "Solid Dark Walnut Wood" },
+        { key: "Engraving Plate", value: "Laser Etched Brass Plaque" },
+        { key: "Height", value: "18 Inches" }
+      ]);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     if (type === "checkbox") {
@@ -74,7 +260,7 @@ export default function AddProductPage() {
     }
   };
 
-  // Handle Desktop / Phone Gallery File Pick
+  // Process Photos Picked from File Explorer / Desktop
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -96,8 +282,22 @@ export default function AddProductPage() {
       };
       reader.readAsDataURL(file);
     });
+    e.target.value = "";
+  };
 
-    // Reset input so same file can be selected again if needed
+  // Process Live Photo Captured with Device Camera
+  const handleCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setUploadedImages((prev) => [event.target?.result as string, ...prev]);
+      }
+    };
+    reader.readAsDataURL(file);
     e.target.value = "";
   };
 
@@ -137,7 +337,7 @@ export default function AddProductPage() {
     }
 
     if (uploadedImages.length === 0) {
-      alert("Please upload at least 1 image from your desktop or gallery.");
+      alert("Please upload or capture at least 1 product photo.");
       return;
     }
 
@@ -153,11 +353,8 @@ export default function AddProductPage() {
 
     const specificationsObj: Record<string, string> = {
       "Brand": formData.brand,
-      "Willow Type": formData.willowType || "Kashmir Willow",
-      "Willow Grade": formData.willowGrade || "Grade A+",
-      "Weight": formData.weight || "1180 - 1220 grams",
-      "Handle Size": formData.handleSize || "Short Handle (SH)",
-      "Player Level": formData.playerLevel || "Tournament Player",
+      "Weight": formData.weight || "Standard Weight",
+      "Dimensions": formData.dimensions || "Standard Dimensions",
       "Country of Origin": formData.countryOfOrigin || "India",
       "Manufacturer": formData.manufacturerDetails || "RP Sports Works, Dumdum, Kolkata",
     };
@@ -217,17 +414,47 @@ export default function AddProductPage() {
     <div className="max-w-5xl mx-auto pb-16">
       
       {/* Page Title */}
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <span className="text-xs font-display font-bold uppercase tracking-widest text-[#CC0000]">
-            RP Admin Product Catalog Engine
-          </span>
-          <h1 className="text-3xl md:text-4xl font-display font-black uppercase text-[#111111] tracking-tight" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-            Add New Product to Storefront
-          </h1>
-          <p className="text-gray-500 text-sm font-medium">
-            Upload product photos directly from your Desktop / Phone Gallery and configure complete specifications.
-          </p>
+      <div className="mb-8">
+        <span className="text-xs font-display font-bold uppercase tracking-widest text-[#CC0000]">
+          RP Admin Equipment Manager
+        </span>
+        <h1 className="text-3xl md:text-4xl font-display font-black uppercase text-[#111111] tracking-tight" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+          Add & Upload Product to Catalog
+        </h1>
+        <p className="text-gray-500 text-sm font-medium">
+          Choose a product type below to auto-load category specifications, or take live camera photos & upload desktop files directly.
+        </p>
+      </div>
+
+      {/* Category Type Preset Selector Tabs */}
+      <div className="mb-8 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-500 mb-3">
+          ⚡ Select Equipment Type (Auto-loads specs for Jerseys, Shoes, Track Pants, Caps, Sunglasses, Trophies & Bats):
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          {[
+            { id: "bats", label: "Cricket Bats", icon: "🏏" },
+            { id: "jerseys", label: "Match Jerseys", icon: "👕" },
+            { id: "shoes", label: "Spikes & Shoes", icon: "👟" },
+            { id: "trackpants", label: "Track Pants", icon: "👖" },
+            { id: "sunglasses", label: "Sunglasses", icon: "🕶️" },
+            { id: "caps", label: "Caps & Visors", icon: "🧢" },
+            { id: "trophies", label: "Trophies", icon: "🏆" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleProductTypeChange(item.id as any)}
+              className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
+                productType === item.id
+                  ? "bg-[#CC0000] border-[#CC0000] text-white shadow-md shadow-[#CC0000]/20"
+                  : "bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-100"
+              }`}
+            >
+              <span className="text-lg">{item.icon}</span>
+              <span className="truncate">{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -304,7 +531,7 @@ export default function AddProductPage() {
                 name="subcategory"
                 value={formData.subcategory}
                 onChange={handleChange}
-                placeholder="e.g. bats, spikes, jerseys, rackets"
+                placeholder="e.g. bats, spikes, jerseys, trackpants"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -355,59 +582,54 @@ export default function AddProductPage() {
 
         </div>
 
-        {/* Section 2: Technical Specs & Equipment Properties */}
+        {/* Section 2: Product Specifications tailored to Product Type */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
           <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
             <ShieldCheck className="w-5 h-5 text-[#CC0000]" />
             <h2 className="text-lg font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              2. Technical Specs & Equipment Properties
+              2. Product Specifications & Material Properties ({productType.toUpperCase()})
             </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div>
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Willow / Material Type
-              </label>
-              <select
-                name="willowType"
-                value={formData.willowType}
-                onChange={handleChange}
-                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000]"
-              >
-                <option value="Kashmir Willow">Grade A+ Kashmir Willow</option>
-                <option value="English Willow">Grade 1 English Willow</option>
-                <option value="Poly Mesh Dry-Fit">Poly Mesh Dry-Fit</option>
-                <option value="TPU Leather">TPU Synthetic Leather</option>
-                <option value="Carbon Graphite">Full High Modulus Carbon Graphite</option>
-                <option value="Metal Plated Brass">Gold Plated Metal Alloy</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Grade Level
+                Material / Willow Type
               </label>
               <input
                 type="text"
-                name="willowGrade"
-                value={formData.willowGrade}
+                name="willowType"
+                value={formData.willowType}
                 onChange={handleChange}
-                placeholder="e.g. Grade A+, Grade 1 Pro, International"
+                placeholder="e.g. Kashmir Willow, Dry-Fit Poly, TR90"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
 
             <div>
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Handle Size / Type
+                Grade / Quality Standard
+              </label>
+              <input
+                type="text"
+                name="willowGrade"
+                value={formData.willowGrade}
+                onChange={handleChange}
+                placeholder="e.g. Grade A+, Grade 1 Pro, UV400"
+                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                Handle / Fit / Strap Style
               </label>
               <input
                 type="text"
                 name="handleSize"
                 value={formData.handleSize}
                 onChange={handleChange}
-                placeholder="e.g. Short Handle (SH), Long Handle"
+                placeholder="e.g. Short Handle, Athletic Slim, Adjustable"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -416,21 +638,21 @@ export default function AddProductPage() {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
             <div>
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Weight (g / kg)
+                Weight
               </label>
               <input
                 type="text"
                 name="weight"
                 value={formData.weight}
                 onChange={handleChange}
-                placeholder="e.g. 1180 - 1220 grams"
+                placeholder="e.g. 1180 grams, 750 grams"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
 
             <div>
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Dimensions
+                Dimensions / Sizing
               </label>
               <input
                 type="text"
@@ -457,14 +679,14 @@ export default function AddProductPage() {
 
             <div>
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Target Player Level
+                Target Sports / Player Level
               </label>
               <input
                 type="text"
                 name="playerLevel"
                 value={formData.playerLevel}
                 onChange={handleChange}
-                placeholder="e.g. Tournament Player"
+                placeholder="e.g. Cricket / Tournament Player"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -486,12 +708,12 @@ export default function AddProductPage() {
 
         </div>
 
-        {/* Section 3: Pricing, Inventory & Shipping */}
+        {/* Section 3: Pricing, Inventory & Sizes */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
           <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
             <IndianRupee className="w-5 h-5 text-[#CC0000]" />
             <h2 className="text-lg font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              3. Pricing, Inventory & Delivery Estimate
+              3. Pricing, Inventory & Options
             </h2>
           </div>
 
@@ -564,7 +786,7 @@ export default function AddProductPage() {
                 name="sizes"
                 value={formData.sizes}
                 onChange={handleChange}
-                placeholder="e.g. Short Handle (SH), Harrow, Size 6"
+                placeholder="e.g. S, M, L, XL, XXL or UK 7, UK 8, UK 9"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -578,14 +800,14 @@ export default function AddProductPage() {
                 name="colors"
                 value={formData.colors}
                 onChange={handleChange}
-                placeholder="e.g. Natural Wood Finish, Navy Blue / Gold"
+                placeholder="e.g. Navy Blue / Gold, Black / Red"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
           </div>
         </div>
 
-        {/* Section 4: Product Description & Highlights */}
+        {/* Section 4: Descriptions & Bullet Highlights */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
           <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
             <ListChecks className="w-5 h-5 text-[#CC0000]" />
@@ -603,7 +825,7 @@ export default function AddProductPage() {
               name="shortDescription"
               value={formData.shortDescription}
               onChange={handleChange}
-              placeholder="e.g. Grade A+ Kashmir Willow with 40mm thick edges and cane handle."
+              placeholder="Summary phrase..."
               className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-medium text-[#111111] focus:outline-none focus:border-[#CC0000]"
             />
           </div>
@@ -617,7 +839,7 @@ export default function AddProductPage() {
               rows={4}
               value={formData.description}
               onChange={handleChange}
-              placeholder="Write detailed craftsmanship information..."
+              placeholder="Write detailed craftsmanship & performance information..."
               className="w-full p-4 border border-gray-300 rounded-xl text-sm font-medium text-[#111111] focus:outline-none focus:border-[#CC0000]"
             />
           </div>
@@ -631,7 +853,7 @@ export default function AddProductPage() {
               rows={4}
               value={formData.highlightsInput}
               onChange={handleChange}
-              placeholder="Handcrafted Grade A+ Kashmir Willow&#10;Massive 40mm Edges & Curved Blade&#10;Singapore Cane 9-Piece Full Rubber Handle"
+              placeholder="Key feature 1&#10;Key feature 2&#10;Key feature 3"
               className="w-full p-4 border border-gray-300 rounded-xl text-xs font-mono text-[#111111] focus:outline-none focus:border-[#CC0000]"
             />
           </div>
@@ -661,14 +883,14 @@ export default function AddProductPage() {
               <div key={index} className="flex items-center gap-3">
                 <input
                   type="text"
-                  placeholder="Feature Name (e.g. Edge Profile)"
+                  placeholder="Feature Name (e.g. Fabric / Outsole)"
                   value={row.key}
                   onChange={(e) => handleSpecRowChange(index, "key", e.target.value)}
                   className="flex-1 h-10 px-3 border border-gray-300 rounded-lg text-xs font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
                 />
                 <input
                   type="text"
-                  placeholder="Specification Value (e.g. 40mm Thick Edges)"
+                  placeholder="Specification Value (e.g. Dri-Fit Polyester)"
                   value={row.value}
                   onChange={(e) => handleSpecRowChange(index, "value", e.target.value)}
                   className="flex-1 h-10 px-3 border border-gray-300 rounded-lg text-xs font-medium text-[#111111] focus:outline-none focus:border-[#CC0000]"
@@ -685,21 +907,21 @@ export default function AddProductPage() {
           </div>
         </div>
 
-        {/* Section 6: Device & Phone Gallery Direct Image Upload (No Links Needed) */}
+        {/* Section 6: Image Upload & Live Camera Capture */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
             <div className="flex items-center gap-2">
               <ImageIcon className="w-5 h-5 text-[#CC0000]" />
               <h2 className="text-lg font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                6. Product Photos (Upload from Desktop / Phone Gallery)
+                6. Product Photos (Desktop Upload & Live Camera Snap)
               </h2>
             </div>
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              {uploadedImages.length} Image{uploadedImages.length !== 1 ? 's' : ''} Selected
+              {uploadedImages.length} Image{uploadedImages.length !== 1 ? 's' : ''} Uploaded
             </span>
           </div>
 
-          {/* Hidden HTML File Input */}
+          {/* Hidden Device File Picker Input */}
           <input
             type="file"
             ref={fileInputRef}
@@ -709,36 +931,64 @@ export default function AddProductPage() {
             className="hidden"
           />
 
-          {/* Dropzone & Device Upload Trigger Button */}
-          <div 
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-gray-300 hover:border-[#CC0000] bg-gray-50 hover:bg-red-50/40 rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 group"
-          >
-            <div className="w-16 h-16 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:border-[#CC0000] transition-transform">
-              <UploadCloud className="w-8 h-8 text-[#CC0000]" />
+          {/* Hidden Live Camera Capture Input */}
+          <input
+            type="file"
+            ref={cameraInputRef}
+            onChange={handleCameraCapture}
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+          />
+
+          {/* Upload & Camera Buttons Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            {/* Desktop / Gallery File Picker */}
+            <div 
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-gray-300 hover:border-[#CC0000] bg-gray-50 hover:bg-red-50/30 rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 group flex flex-col items-center justify-center"
+            >
+              <div className="w-12 h-12 bg-white rounded-full shadow-sm border border-gray-200 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:border-[#CC0000] transition-transform">
+                <UploadCloud className="w-6 h-6 text-[#CC0000]" />
+              </div>
+              <h3 className="font-display font-bold text-sm uppercase text-[#111111] mb-1" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                Upload Saved Photos from Desktop
+              </h3>
+              <p className="text-[11px] text-gray-500 font-medium mb-3">
+                Select stored images from Mac/PC desktop or photo gallery (JPG, PNG, WEBP).
+              </p>
+              <span className="bg-[#111111] group-hover:bg-[#CC0000] text-white text-[11px] font-bold uppercase px-4 py-2 rounded-xl transition-colors inline-flex items-center gap-1.5">
+                <Plus className="w-3.5 h-3.5" /> Select Files from Computer
+              </span>
             </div>
 
-            <h3 className="font-display font-bold text-base uppercase text-[#111111] mb-1" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              Click to Upload Product Photos from Device / Gallery
-            </h3>
-            <p className="text-xs text-gray-500 font-medium max-w-md mx-auto mb-4">
-              Select high-resolution product photos from your computer or phone library. Multiple files supported (JPG, PNG, WEBP).
-            </p>
-
-            <button
-              type="button"
-              className="bg-[#111111] group-hover:bg-[#CC0000] text-white text-xs font-display font-bold uppercase tracking-wider px-6 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2"
-              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            {/* Live Camera Snap Trigger */}
+            <div 
+              onClick={() => cameraInputRef.current?.click()}
+              className="border-2 border-dashed border-gray-300 hover:border-black bg-gray-50 hover:bg-gray-100 rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 group flex flex-col items-center justify-center"
             >
-              <Plus className="w-4 h-4" /> Browse Desktop / Gallery Files
-            </button>
+              <div className="w-12 h-12 bg-white rounded-full shadow-sm border border-gray-200 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:border-black transition-transform">
+                <Camera className="w-6 h-6 text-black" />
+              </div>
+              <h3 className="font-display font-bold text-sm uppercase text-[#111111] mb-1" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                Take Live Photo Now with Camera
+              </h3>
+              <p className="text-[11px] text-gray-500 font-medium mb-3">
+                Use your webcam or phone camera to snap a new photo of your product right now.
+              </p>
+              <span className="bg-black text-white text-[11px] font-bold uppercase px-4 py-2 rounded-xl transition-colors inline-flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5" /> Snap Photo with Camera
+              </span>
+            </div>
+
           </div>
 
-          {/* Live Thumbnails Preview Grid with Delete & Set Cover */}
+          {/* Uploaded Photos Live Grid */}
           {uploadedImages.length > 0 && (
             <div>
               <span className="block text-xs font-display font-bold uppercase tracking-wider text-gray-500 mb-3">
-                Uploaded Product Photos:
+                Product Photos Preview:
               </span>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
