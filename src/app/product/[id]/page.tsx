@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { Star, ShieldCheck, Heart, Truck, Plus, Minus, ArrowRight, ShoppingCart, Share2 } from "lucide-react";
+import { Star, ShieldCheck, Heart, Truck, Plus, Minus, ArrowRight, ShoppingCart, Share2, Zap } from "lucide-react";
 import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -60,7 +60,17 @@ export default function ProductDetailPage() {
       selectedColor,
       selectedSize
     });
-    router.push("/cart");
+  };
+
+  const handleBuyNow = () => {
+    if (product.stock === 0) return;
+    addToCart({
+      product,
+      quantity,
+      selectedColor: selectedColor || product.colors?.[0],
+      selectedSize: selectedSize || product.sizes?.[0],
+    });
+    router.push("/checkout");
   };
 
   useGSAP(() => {
@@ -276,17 +286,29 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-6 fade-up">
+              {/* Action Buttons: Add to Cart & Buy Now */}
+              <div className="pt-6 fade-up grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button 
                   ref={addToCartRef}
                   type="button"
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
-                  className="w-full py-4 bg-primary text-white rounded-xl font-bold text-lg hover:bg-accent transition-colors flex items-center justify-center gap-3 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-xl font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-md disabled:opacity-50 cursor-pointer transition-colors"
+                  style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
                 >
                   <ShoppingCart className="w-5 h-5" />
                   <span>{product.stock === 0 ? "Out of Stock" : "Add to Cart"}</span>
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={handleBuyNow}
+                  disabled={product.stock === 0}
+                  className="w-full py-4 bg-[#CC0000] hover:bg-[#990000] text-white rounded-xl font-display font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#CC0000]/30 disabled:opacity-50 cursor-pointer transition-colors"
+                  style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                >
+                  <Zap className="w-5 h-5 fill-current" />
+                  <span>{product.stock === 0 ? "Out of Stock" : "Buy Now"}</span>
                 </button>
               </div>
 
