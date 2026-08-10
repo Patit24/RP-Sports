@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { signInWithGoogle, checkGoogleRedirectResult, sendPhoneOTP, verifyPhoneOTP } from "@/lib/authService";
 import { Lock, Smartphone, Mail, AlertCircle, CheckCircle2, KeyRound, ShieldCheck, ArrowRight } from "lucide-react";
-import Link from "next/link";
 
 interface CheckoutAuthGateProps {
   onSuccess?: () => void;
 }
 
 export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
+  const router = useRouter();
   const { login, showToast } = useStore();
 
   const [authTab, setAuthTab] = useState<"otp" | "google" | "email">("otp");
@@ -36,6 +37,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
         login(res.email, res.name || "RP Athlete", "customer");
         showToast(`Logged in as ${res.name}`, "success");
         if (onSuccess) onSuccess();
+        window.location.href = "/checkout";
       }
     });
 
@@ -45,7 +47,6 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
     }
     return () => clearInterval(interval);
   }, [otpSent, timer]);
-
 
   // Handle Send Phone OTP
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -90,6 +91,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       login(res.email, res.name, "customer");
       showToast(`Verified! Welcome ${res.name}`, "success");
       if (onSuccess) onSuccess();
+      window.location.href = "/checkout";
     } else {
       setError(res.error || "Invalid OTP code. Please check your SMS.");
     }
@@ -106,6 +108,9 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       login(res.email, res.name || "RP Athlete", "customer");
       showToast(`Logged in as ${res.name}`, "success");
       if (onSuccess) onSuccess();
+      window.location.href = "/checkout";
+    } else if (res.redirecting) {
+      setInfoMessage("Redirecting to Google Sign-In...");
     } else {
       setError(res.error || "Google sign-in failed. Please try again.");
     }
@@ -131,6 +136,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       login(emailForm.email, capitalized, "customer");
       showToast(`Welcome back, ${capitalized}!`, "success");
       if (onSuccess) onSuccess();
+      window.location.href = "/checkout";
     } else {
       setError("Invalid email or password.");
     }

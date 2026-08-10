@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn, AlertCircle, Smartphone, Mail, KeyRound, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle, sendPhoneOTP, verifyPhoneOTP } from "@/lib/authService";
+import { signInWithGoogle, checkGoogleRedirectResult, sendPhoneOTP, verifyPhoneOTP } from "@/lib/authService";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -32,6 +32,14 @@ export default function SignInPage() {
 
   // Countdown timer effect for OTP resend
   useEffect(() => {
+    checkGoogleRedirectResult().then((res) => {
+      if (res && res.success && res.email) {
+        login(res.email, res.name || "RP Athlete", "customer");
+        showToast(`Signed in successfully as ${res.name}`, "success");
+        window.location.href = "/";
+      }
+    });
+
     let interval: NodeJS.Timeout;
     if (otpSent && timer > 0) {
       interval = setInterval(() => setTimer((t) => t - 1), 1000);
@@ -52,26 +60,22 @@ export default function SignInPage() {
     setError("");
 
     if (!form.email || !form.password) {
-      setError("Please fill in all fields.");
-      return;
-    }
-    if (!/\S+@\S+\.\S+/.test(form.email)) {
-      setError("Please enter a valid email address.");
+      setError("Please enter both email and password.");
       return;
     }
 
     setLoading(true);
     await new Promise((r) => setTimeout(r, 600));
+    setLoading(false);
 
     if (form.password.length >= 6) {
       const name = form.email.split("@")[0].replace(/[._]/g, " ");
       const capitalized = name.replace(/\b\w/g, (l) => l.toUpperCase());
       login(form.email, capitalized, "customer");
       showToast(`Welcome back, ${capitalized}!`, "success");
-      router.push("/");
+      window.location.href = "/";
     } else {
-      setError("Invalid email or password. Please try again.");
-      setLoading(false);
+      setError("Invalid email or password.");
     }
   };
 
@@ -84,7 +88,9 @@ export default function SignInPage() {
     if (res.success && res.email) {
       login(res.email, res.name || "RP Athlete", "customer");
       showToast(`Signed in successfully as ${res.name}`, "success");
-      router.push("/");
+      window.location.href = "/";
+    } else if (res.redirecting) {
+      setInfoMessage("Redirecting to Google Sign-In...");
     } else {
       setError(res.error || "Google Sign-In failed. Please try again.");
       setLoading(false);
@@ -134,7 +140,7 @@ export default function SignInPage() {
     if (res.success && res.email) {
       login(res.email, res.name, "customer");
       showToast(`Verified! Welcome to RP Sports, ${res.name}`, "success");
-      router.push("/");
+      window.location.href = "/";
     } else {
       setError(res.error || "Invalid OTP code. Please enter the 6-digit SMS code sent to your phone.");
     }
