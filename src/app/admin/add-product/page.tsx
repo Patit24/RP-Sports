@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { BRANDS } from "@/lib/mockData";
@@ -69,11 +69,68 @@ export default function AddProductPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Helper to detect Product Type based on Category or Subcategory
+  const detectProductType = (cat: string, subcat: string): "bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies" => {
+    const c = (cat || "").toLowerCase();
+    const s = (subcat || "").toLowerCase();
+
+    if (c === "footwear" || s.includes("shoe") || s.includes("spike") || s.includes("boot") || s.includes("cleat") || s.includes("footwear")) {
+      return "shoes";
+    }
+    if (s.includes("track") || s.includes("pant") || s.includes("trouser") || s.includes("bottom")) {
+      return "trackpants";
+    }
+    if (s.includes("glass") || s.includes("sunglass") || s.includes("goggle") || s.includes("eyewear")) {
+      return "sunglasses";
+    }
+    if (s.includes("cap") || s.includes("visor") || s.includes("hat")) {
+      return "caps";
+    }
+    if (c === "custom-trophies" || s.includes("trophy") || s.includes("award") || s.includes("cup") || s.includes("shield") || s.includes("plaque")) {
+      return "trophies";
+    }
+    if (c === "apparel" || s.includes("jersey") || s.includes("shirt") || s.includes("tee") || s.includes("kit")) {
+      return "jerseys";
+    }
+    return "bats";
+  };
+
   // Auto-fill category-specific specifications when user switches product category/type
   const handleProductTypeChange = (type: "bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies") => {
     setProductType(type);
 
-    if (type === "bats") {
+    if (type === "shoes") {
+      setFormData(prev => ({
+        ...prev,
+        name: "RP Turbo Speed Pro Spike Cricket Shoes",
+        category: "footwear",
+        subcategory: "spikes",
+        sportsType: "Cricket & Turf Sports",
+        brand: "RP Sports",
+        mrp: "4499",
+        price: "3299",
+        willowType: "TPU Plate with 11 Steel Spikes",
+        willowGrade: "Synthetic Leather & Breathable Mesh",
+        handleSize: "Low Cut Padded Ankle Shield",
+        weight: "750 grams",
+        dimensions: "32cm x 20cm x 12cm",
+        colors: "White / Crimson Red, White / Cobalt Blue",
+        sizes: "UK 7, UK 8, UK 9, UK 10, UK 11",
+        shortDescription: "Metal spike footwear with TPU soleplate for maximum grip on turf pitches.",
+        description: "Metal spike footwear with TPU soleplate for maximum grip on grass and turf pitches. Reinforced ankle collar and dual-density EVA cushioning.",
+        highlightsInput: "11 Replaceable Steel Spikes\nDual Density EVA Midsole\nReinforced Ankle Collar Support\nTPU High-Traction Outsole"
+      }));
+      setCustomSpecs([
+        { key: "Outsole", value: "Full TPU Plate with 11 Steel Spikes" },
+        { key: "Upper Material", value: "Synthetic Leather & Mesh" },
+        { key: "Cushioning", value: "High-Bounce EVA Midsole" },
+        { key: "Ankle Support", value: "Padded Ankle Shield" }
+      ]);
+      setUploadedImages([
+        "/shoe_spikes_1786053000000_1786056040962.jpg",
+        "/shoe_turf_1786053000000_1786056064769.jpg"
+      ]);
+    } else if (type === "bats") {
       setFormData(prev => ({
         ...prev,
         name: "RP Legend Pro English Willow Cricket Bat",
@@ -137,37 +194,6 @@ export default function AddProductPage() {
       setUploadedImages([
         "/cricket_jersey_premium.jpg",
         "/cricket_player_blank_jersey.jpg"
-      ]);
-    } else if (type === "shoes") {
-      setFormData(prev => ({
-        ...prev,
-        name: "RP Turbo Speed Pro Spike Cricket Shoes",
-        category: "footwear",
-        subcategory: "spikes",
-        sportsType: "Cricket & Turf Sports",
-        brand: "RP Sports",
-        mrp: "4499",
-        price: "3299",
-        willowType: "TPU Soleplate with 11 Steel Spikes",
-        willowGrade: "Synthetic Leather & Breathable Mesh",
-        handleSize: "Low Cut Padded Ankle Shield",
-        weight: "750 grams",
-        dimensions: "32cm x 20cm x 12cm",
-        colors: "White / Crimson Red, White / Cobalt Blue",
-        sizes: "UK 7, UK 8, UK 9, UK 10, UK 11",
-        shortDescription: "Metal spike footwear with TPU soleplate for maximum grip on turf pitches.",
-        description: "Metal spike footwear with TPU soleplate for maximum grip on grass and turf pitches. Reinforced ankle collar and dual-density EVA cushioning.",
-        highlightsInput: "11 Replaceable Steel Spikes\nDual Density EVA Midsole\nReinforced Ankle Collar Support\nTPU High-Traction Outsole"
-      }));
-      setCustomSpecs([
-        { key: "Outsole", value: "Full TPU Plate with 11 Steel Spikes" },
-        { key: "Upper Material", value: "Synthetic Leather & Mesh" },
-        { key: "Cushioning", value: "High-Bounce EVA Midsole" },
-        { key: "Ankle Support", value: "Padded Ankle Shield" }
-      ]);
-      setUploadedImages([
-        "/shoe_spikes_1786053000000_1786056040962.jpg",
-        "/shoe_turf_1786053000000_1786056064769.jpg"
       ]);
     } else if (type === "trackpants") {
       setFormData(prev => ({
@@ -290,27 +316,20 @@ export default function AddProductPage() {
     }
   };
 
-  const handleCategorySelectChange = (val: string) => {
-    if (val === "footwear") {
-      handleProductTypeChange("shoes");
-    } else if (val === "apparel") {
-      handleProductTypeChange("jerseys");
-    } else if (val === "custom-trophies") {
-      handleProductTypeChange("trophies");
-    } else if (val === "cricket") {
-      handleProductTypeChange("bats");
-    } else {
-      setFormData(prev => ({ ...prev, category: val }));
-    }
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    if (name === "category") {
-      handleCategorySelectChange(value);
-    } else if (type === "checkbox") {
+    if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
+    } else if (name === "category") {
+      const detected = detectProductType(value, formData.subcategory);
+      handleProductTypeChange(detected);
+    } else if (name === "subcategory") {
+      const detected = detectProductType(formData.category, value);
+      setFormData(prev => ({ ...prev, subcategory: value }));
+      if (detected !== productType) {
+        setProductType(detected);
+      }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -321,6 +340,7 @@ export default function AddProductPage() {
     switch (type) {
       case "shoes":
         return {
+          header: "TECHNICAL SPECIFICATIONS (FOOTWEAR & SPIKES)",
           label1: "Outsole & Spike Soleplate Type",
           placeholder1: "e.g. TPU Plate with 11 Steel Spikes / Rubber Turf Studs",
           label2: "Upper Material & Cushioning",
@@ -330,15 +350,17 @@ export default function AddProductPage() {
         };
       case "jerseys":
         return {
+          header: "TECHNICAL SPECIFICATIONS (MATCH JERSEYS)",
           label1: "Fabric Mesh Material",
           placeholder1: "e.g. 100% Micro-Polyester Dri-Fit Mesh",
           label2: "Fit Type & Sublimation",
           placeholder2: "e.g. Athletic Slim Fit / HD Sublimation",
-          label3: "Neck & Sleeve Style",
+          label3: "Neck Collar & Sleeve Style",
           placeholder3: "e.g. Polo Collar / Half Sleeve"
         };
       case "trackpants":
         return {
+          header: "TECHNICAL SPECIFICATIONS (TRACK PANTS)",
           label1: "Stretch Fabric Blend",
           placeholder1: "e.g. 92% Polyester, 8% Elastane Stretch",
           label2: "Pocket Style",
@@ -348,15 +370,17 @@ export default function AddProductPage() {
         };
       case "sunglasses":
         return {
+          header: "TECHNICAL SPECIFICATIONS (SUNGLASSES)",
           label1: "Lens Tech & UV Protection",
           placeholder1: "e.g. Polarized REVO Mirror UV400",
-          label2: "Frame Polymer",
+          label2: "Frame Polymer Material",
           placeholder2: "e.g. TR90 Flexible Polymer",
           label3: "Nose Pad & Frame Style",
           placeholder3: "e.g. Adjustable Hydrophilic Rubber"
         };
       case "caps":
         return {
+          header: "TECHNICAL SPECIFICATIONS (CAPS & VISORS)",
           label1: "Visor Brim Style",
           placeholder1: "e.g. Curved Pre-Formed Visor",
           label2: "Sweatband Technology",
@@ -366,7 +390,8 @@ export default function AddProductPage() {
         };
       case "trophies":
         return {
-          label1: "Plating Finish",
+          header: "TECHNICAL SPECIFICATIONS (TROPHIES & AWARDS)",
+          label1: "Plating Finish Material",
           placeholder1: "e.g. 24K Gold Electroplated Brass",
           label2: "Pedestal Base Material",
           placeholder2: "e.g. Solid Dark Walnut Wood",
@@ -376,11 +401,12 @@ export default function AddProductPage() {
       case "bats":
       default:
         return {
+          header: "TECHNICAL SPECIFICATIONS (CRICKET BATS)",
           label1: "Willow / Wood Type",
           placeholder1: "e.g. Grade A+ Kashmir Willow / Grade 1 English Willow",
-          label2: "Willow Grade",
+          label2: "Willow Grade Standard",
           placeholder2: "e.g. Grade A+, Grade 1 Pro",
-          label3: "Handle Size & Type",
+          label3: "Handle Size & Cane Grip",
           placeholder3: "e.g. Short Handle (SH), 9-Piece Cane Rubber Grip"
         };
     }
@@ -561,7 +587,7 @@ export default function AddProductPage() {
       <div className="mb-8 bg-white p-5 rounded-2xl border-2 border-red-100 shadow-md">
         <label className="block text-xs font-display font-bold uppercase tracking-wider text-[#CC0000] mb-3 flex items-center gap-1.5">
           <Flame className="w-4 h-4 text-[#CC0000]" />
-          Select Equipment Type (Auto-configures specifications & field labels):
+          Select Equipment Category Preset:
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
           {[
@@ -611,7 +637,7 @@ export default function AddProductPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g. RP Turbo Speed Pro Spike Cricket Shoes"
+                placeholder="Product Title"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
                 required
               />
@@ -720,11 +746,11 @@ export default function AddProductPage() {
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-[#CC0000]" />
               <h2 className="text-lg font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                2. Technical Specifications & Material ({productType.toUpperCase()})
+                2. {specLabels.header}
               </h2>
             </div>
             <span className="text-xs font-bold bg-red-50 text-[#CC0000] px-3 py-1 rounded-full uppercase tracking-wider">
-              {productType === "shoes" ? "Footwear Specs Mode" : `${productType} Specs Mode`}
+              {productType.toUpperCase()} MODE ACTIVE
             </span>
           </div>
 
