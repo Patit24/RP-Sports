@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle, sendPhoneOTP, verifyPhoneOTP } from "@/lib/authService";
+import { signInWithGoogle, checkGoogleRedirectResult, sendPhoneOTP, verifyPhoneOTP } from "@/lib/authService";
 import { Lock, Smartphone, Mail, AlertCircle, CheckCircle2, KeyRound, ShieldCheck, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
@@ -30,12 +30,22 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Check if coming back from Google Sign-In redirect
+    checkGoogleRedirectResult().then((res) => {
+      if (res && res.success && res.email) {
+        login(res.email, res.name || "RP Athlete", "customer");
+        showToast(`Logged in as ${res.name}`, "success");
+        if (onSuccess) onSuccess();
+      }
+    });
+
     let interval: NodeJS.Timeout;
     if (otpSent && timer > 0) {
       interval = setInterval(() => setTimer((t) => t - 1), 1000);
     }
     return () => clearInterval(interval);
   }, [otpSent, timer]);
+
 
   // Handle Send Phone OTP
   const handleSendOTP = async (e: React.FormEvent) => {

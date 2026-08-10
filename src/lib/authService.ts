@@ -1,5 +1,7 @@
 import { 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider, 
   RecaptchaVerifier, 
   signInWithPhoneNumber,
@@ -17,7 +19,7 @@ declare global {
 }
 
 /**
- * Perform Google Sign In / Sign Up using Firebase Popup
+ * Perform Google Sign In / Sign Up using Firebase Popup with Redirect Fallback
  */
 export async function signInWithGoogle() {
   try {
@@ -47,6 +49,24 @@ export async function signInWithGoogle() {
     };
   } catch (error: any) {
     console.warn("Google Sign-In Notice:", error.code || error.message);
+    
+    // Fallback to signInWithRedirect if popup is blocked by browser
+    if (error.code === "auth/popup-blocked") {
+      try {
+        await signInWithRedirect(auth, googleProvider);
+        return {
+          success: true,
+          redirecting: true,
+          message: "Popup blocked by browser. Redirecting to Google Sign-In..."
+        };
+      } catch (redirectErr: any) {
+        return {
+          success: false,
+          error: "Browser blocked the Google popup window. Please click 'Allow Popups' in your browser address bar and try again."
+        };
+      }
+    }
+
     let msg = error.message || "Failed to sign in with Google.";
     if (error.code === "auth/operation-not-allowed") {
       msg = "Google Authentication is not enabled in Firebase Console. Please enable Google in Firebase Console -> Auth -> Sign-in method.";
@@ -54,11 +74,44 @@ export async function signInWithGoogle() {
       const hostname = typeof window !== "undefined" ? window.location.hostname : "your custom domain";
       msg = `Domain '${hostname}' is not authorized in Firebase. Add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
     }
+
     return {
       success: false,
       error: msg
     };
   }
+}
+
+/**
+ * Check for Google Sign-In result after redirect
+ */
+export async function checkGoogleRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      const user = result.user;
+      const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
+      const email = user.email || `${user.uid}@google.com`;
+
+      saveUser(email, {
+        email,
+        name,
+        role: "customer",
+        addresses: [],
+        rewardPoints: 100,
+      }).catch(err => console.warn("Firestore save user warning:", err));
+
+      return {
+        success: true,
+        email,
+        name,
+        uid: user.uid
+      };
+    }
+  } catch (err: any) {
+    console.warn("Google Redirect Result Notice:", err.message);
+  }
+  return null;
 }
 
 /**
