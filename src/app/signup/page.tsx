@@ -12,7 +12,7 @@ import { auth } from "@/lib/firebase";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { login, showToast } = useStore();
+  const { currentUser, login, showToast } = useStore();
 
   const [form, setForm] = useState({
     name: "",
@@ -34,6 +34,13 @@ export default function SignUpPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [timer, setTimer] = useState(30);
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (currentUser) {
+      router.push("/");
+    }
+  }, [currentUser, router]);
+
   useEffect(() => {
     // Real-time Firebase Auth listener for Google OAuth / Phone Auth tokens
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -42,7 +49,7 @@ export default function SignUpPage() {
         login(user.email, name, "customer");
         addSubscriber(user.email).catch(console.error);
         showToast(`Welcome to RP Sports, ${name}!`, "success");
-        window.location.href = "/";
+        router.push("/");
       }
     });
 
@@ -51,7 +58,7 @@ export default function SignUpPage() {
         login(res.email, res.name || "RP Athlete", "customer");
         addSubscriber(res.email).catch(console.error);
         showToast(`Welcome to RP Sports, ${res.name}!`, "success");
-        window.location.href = "/";
+        router.push("/");
       } else if (res && res.error) {
         setErrors({ google: res.error });
       }
@@ -66,7 +73,7 @@ export default function SignUpPage() {
       unsubscribe();
       if (interval) clearInterval(interval);
     };
-  }, [otpSent, timer]);
+  }, [otpSent, timer, login, showToast, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -112,7 +119,7 @@ export default function SignUpPage() {
       login(res.email, res.name || "RP Athlete", "customer");
       addSubscriber(res.email).catch(console.error);
       showToast(`Account created! Welcome, ${res.name}`, "success");
-      window.location.href = "/";
+      router.push("/");
     } else if (res.redirecting) {
       showToast("Redirecting to Google Sign-Up...", "info");
     } else {
@@ -166,7 +173,7 @@ export default function SignUpPage() {
     login(form.email, form.name, "customer");
     addSubscriber(form.email).catch(console.error);
     showToast(`Welcome to RP Sports, ${form.name}!`, "success");
-    window.location.href = "/";
+    router.push("/");
   };
 
   return (

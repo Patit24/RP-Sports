@@ -11,7 +11,7 @@ import { auth } from "@/lib/firebase";
 
 export default function SignInPage() {
   const router = useRouter();
-  const { login, showToast } = useStore();
+  const { currentUser, login, showToast } = useStore();
 
   // Auth Modes: 'email' | 'otp'
   const [authMode, setAuthMode] = useState<"email" | "otp">("email");
@@ -32,6 +32,13 @@ export default function SignInPage() {
   const [infoMessage, setInfoMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (currentUser) {
+      router.push("/");
+    }
+  }, [currentUser, router]);
+
   useEffect(() => {
     // Real-time Firebase Auth listener for Google OAuth / Phone Auth tokens
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -39,7 +46,7 @@ export default function SignInPage() {
         const name = user.displayName || user.email.split("@")[0] || "RP Athlete";
         login(user.email, name, "customer");
         showToast(`Signed in successfully as ${name}`, "success");
-        window.location.href = "/";
+        router.push("/");
       }
     });
 
@@ -47,7 +54,7 @@ export default function SignInPage() {
       if (res && res.success && res.email) {
         login(res.email, res.name || "RP Athlete", "customer");
         showToast(`Signed in successfully as ${res.name}`, "success");
-        window.location.href = "/";
+        router.push("/");
       } else if (res && res.error) {
         setError(res.error);
       }
@@ -64,7 +71,7 @@ export default function SignInPage() {
       unsubscribe();
       if (interval) clearInterval(interval);
     };
-  }, [otpSent, timer]);
+  }, [otpSent, timer, login, showToast, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -90,7 +97,7 @@ export default function SignInPage() {
       const capitalized = name.replace(/\b\w/g, (l) => l.toUpperCase());
       login(form.email, capitalized, "customer");
       showToast(`Welcome back, ${capitalized}!`, "success");
-      window.location.href = "/";
+      router.push("/");
     } else {
       setError("Invalid email or password.");
     }
@@ -106,7 +113,7 @@ export default function SignInPage() {
     if (res.success && res.email) {
       login(res.email, res.name || "RP Athlete", "customer");
       showToast(`Signed in successfully as ${res.name}`, "success");
-      window.location.href = "/";
+      router.push("/");
     } else if (res.redirecting) {
       setInfoMessage("Redirecting to Google Sign-In...");
     } else {
@@ -158,7 +165,7 @@ export default function SignInPage() {
     if (res.success && res.email) {
       login(res.email, res.name, "customer");
       showToast(`Verified! Welcome to RP Sports, ${res.name}`, "success");
-      window.location.href = "/";
+      router.push("/");
     } else {
       setError(res.error || "Invalid OTP code. Please enter the 6-digit SMS code sent to your phone.");
     }
@@ -350,7 +357,7 @@ export default function SignInPage() {
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="98765 43210"
                         maxLength={10}
-                        className="w-full h-12 px-4 border border-gray-300 bg-white text-[#111111] font-mono font-bold text-sm placeholder:font-normal placeholder:text-gray-400 focus:outline-none focus:border-[#CC0000] rounded-r-xl transition-colors"
+                        className="w-full h-12 px-4 border border-gray-300 bg-[#FFFFFF] text-[#111111] font-mono font-bold text-sm placeholder:font-normal placeholder:text-gray-400 focus:outline-none focus:border-[#CC0000] rounded-r-xl transition-colors"
                       />
                     </div>
                     <p className="text-[11px] text-gray-400 mt-1.5 text-left font-medium">
