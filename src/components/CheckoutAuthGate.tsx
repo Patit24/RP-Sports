@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { signInWithGoogle, checkGoogleRedirectResult, sendPhoneOTP, verifyPhoneOTP } from "@/lib/authService";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { Lock, Smartphone, Mail, AlertCircle, CheckCircle2, KeyRound, ShieldCheck, ArrowRight } from "lucide-react";
 
 interface CheckoutAuthGateProps {
@@ -31,13 +33,22 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check if coming back from Google Sign-In redirect
+    // 1. Listen for real-time Firebase Auth state change (Google OAuth popup / redirect / SMS token)
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && user.email) {
+        const name = user.displayName || user.email.split("@")[0] || "RP Athlete";
+        login(user.email, name, "customer");
+        showToast(`Logged in as ${name}`, "success");
+        if (onSuccess) onSuccess();
+      }
+    });
+
+    // 2. Check for explicit Google Sign-In redirect result
     checkGoogleRedirectResult().then((res) => {
       if (res && res.success && res.email) {
         login(res.email, res.name || "RP Athlete", "customer");
         showToast(`Logged in as ${res.name}`, "success");
         if (onSuccess) onSuccess();
-        window.location.reload();
       }
     });
 
@@ -45,7 +56,11 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
     if (otpSent && timer > 0) {
       interval = setInterval(() => setTimer((t) => t - 1), 1000);
     }
-    return () => clearInterval(interval);
+
+    return () => {
+      unsubscribe();
+      if (interval) clearInterval(interval);
+    };
   }, [otpSent, timer]);
 
   // Handle Send Phone OTP
@@ -91,7 +106,6 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       login(res.email, res.name, "customer");
       showToast(`Verified! Welcome ${res.name}`, "success");
       if (onSuccess) onSuccess();
-      window.location.reload();
     } else {
       setError(res.error || "Invalid OTP code. Please check your SMS.");
     }
@@ -108,7 +122,6 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       login(res.email, res.name || "RP Athlete", "customer");
       showToast(`Logged in as ${res.name}`, "success");
       if (onSuccess) onSuccess();
-      window.location.reload();
     } else if (res.redirecting) {
       setInfoMessage("Redirecting to Google Sign-In...");
     } else {
@@ -136,7 +149,6 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       login(emailForm.email, capitalized, "customer");
       showToast(`Welcome back, ${capitalized}!`, "success");
       if (onSuccess) onSuccess();
-      window.location.reload();
     } else {
       setError("Invalid email or password.");
     }
