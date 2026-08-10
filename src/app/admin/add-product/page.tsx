@@ -17,10 +17,16 @@ interface CustomSpecRow {
 
 export default function AddProductPage() {
   const router = useRouter();
-  const { addProduct } = useStore();
+  const { addProduct, currentUser } = useStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+      router.push("/admin/login");
+    }
+  }, [currentUser, router]);
 
   // Subcategory Template Types
   const [productType, setProductType] = useState<"bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies">("bats");
