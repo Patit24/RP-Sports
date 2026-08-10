@@ -1,6 +1,15 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { saveOrder, saveUser, saveWishlist, updateStockInDB } from "./firestoreService";
+import { 
+  saveOrder, 
+  saveUser, 
+  saveWishlist, 
+  updateStockInDB, 
+  addProductToDB, 
+  updateProductInDB, 
+  deleteProductFromDB, 
+  updateOrderStatusInDB 
+} from "./firestoreService";
 import { notifyDeliveryPartner } from "./deliveryPartnerService";
 import { mockProducts, Product } from "./mockData";
 
@@ -208,6 +217,12 @@ export const useStore = create<SportsStoreState>()(
       },
 
       addToCart: (newItem) => {
+        const productStock = newItem.product.stock ?? 10;
+        if (productStock <= 0) {
+          get().showToast(`Sorry, ${newItem.product.name} is currently out of stock.`, "error");
+          return;
+        }
+
         const hash = [
           newItem.product.id,
           newItem.selectedColor || "",
@@ -220,11 +235,18 @@ export const useStore = create<SportsStoreState>()(
         const existingIdx = cart.findIndex((item) => item.id === hash);
 
         if (existingIdx > -1) {
+          const currentQty = cart[existingIdx].quantity;
+          const maxAllowed = Math.min(productStock, currentQty + newItem.quantity);
+          if (currentQty >= productStock) {
+            get().showToast(`Maximum available stock (${productStock}) already in cart.`, "info");
+            return;
+          }
           const updatedCart = [...cart];
-          updatedCart[existingIdx].quantity += newItem.quantity;
+          updatedCart[existingIdx].quantity = maxAllowed;
           set({ cart: updatedCart });
         } else {
-          set({ cart: [...cart, { ...newItem, id: hash }] });
+          const initialQty = Math.min(productStock, newItem.quantity);
+          set({ cart: [...cart, { ...newItem, quantity: initialQty, id: hash }] });
         }
         get().showToast(`Added ${newItem.product.name} to cart!`, "success");
       },
@@ -239,9 +261,13 @@ export const useStore = create<SportsStoreState>()(
           get().removeFromCart(cartItemId);
           return;
         }
+        const cartItem = get().cart.find((c) => c.id === cartItemId);
+        const maxStock = cartItem?.product?.stock ?? 99;
+        const clampedQty = Math.min(maxStock, quantity);
+
         set({
           cart: get().cart.map((item) =>
-            item.id === cartItemId ? { ...item, quantity } : item
+            item.id === cartItemId ? { ...item, quantity: clampedQty } : item
           ),
         });
       },
@@ -306,7 +332,9 @@ export const useStore = create<SportsStoreState>()(
         const subtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
         const tax = Math.round(subtotal * 0.18); // 18% GST
         const shipping = subtotal > 5000 ? 0 : 250;
-        const grandTotal = subtotal + tax + shipping;
+        const discountPercent = get().activeCoupon ? get().activeCoupon!.discountPercent : 0;
+        const couponDiscount = Math.round((subtotal * discountPercent) / 100);
+        const grandTotal = subtotal + tax + shipping - couponDiscount;
 
         const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
         const isKolkataLocal = address.pincode.startsWith("700");
@@ -352,16 +380,26 @@ export const useStore = create<SportsStoreState>()(
           const cartItem = cart.find((c) => c.product.id === prod.id);
           if (cartItem) {
             const nextStock = Math.max(0, prod.stock - cartItem.quantity);
+            // Sync updated stock to Firestore DB
+            updateStockInDB(prod.id, nextStock).catch(console.error);
             return { ...prod, stock: nextStock };
           }
           return prod;
         });
 
+        const userEmail = get().currentUser?.email || address.phone || "guest@rpsports.in";
+
         set({
           orders: [newOrder, ...get().orders],
           products: updatedProducts,
           cart: [], // Clear cart on success
+          activeCoupon: null, // Clear coupon after checkout
         });
+
+        // Save Order to Cloud Firestore Database
+        saveOrder(newOrder, userEmail).catch((err) =>
+          console.warn("Firestore saveOrder notice:", err)
+        );
 
         // Trigger Delivery Partner Dispatch Notification & Firestore Sync
         notifyDeliveryPartner(newOrder).catch((err) =>
@@ -377,6 +415,8 @@ export const useStore = create<SportsStoreState>()(
             ord.id === orderId ? { ...ord, status } : ord
           ),
         });
+        // Sync status update to Cloud Firestore
+        updateOrderStatusInDB(orderId, status).catch(console.error);
       },
 
       addProduct: (prodData) => {
@@ -396,6 +436,11 @@ export const useStore = create<SportsStoreState>()(
         };
         set({ products: [newProd, ...get().products] });
         get().showToast(`Product '${prodData.name}' added successfully!`, "success");
+
+        // Sync new product to Cloud Firestore Database
+        addProductToDB(newProd).catch((err) =>
+          console.warn("Firestore addProductToDB notice:", err)
+        );
       },
 
       updateProduct: (updatedProd) => {
@@ -403,6 +448,11 @@ export const useStore = create<SportsStoreState>()(
           products: get().products.map((p) => (p.id === updatedProd.id ? updatedProd : p)),
         });
         get().showToast(`Updated product '${updatedProd.name}'`, "success");
+
+        // Sync updated product to Cloud Firestore Database
+        updateProductInDB(updatedProd).catch((err) =>
+          console.warn("Firestore updateProductInDB notice:", err)
+        );
       },
 
       deleteProduct: (productId) => {
@@ -410,6 +460,11 @@ export const useStore = create<SportsStoreState>()(
           products: get().products.filter((p) => p.id !== productId),
         });
         get().showToast("Product deleted from store catalog", "info");
+
+        // Sync deleted product to Cloud Firestore Database
+        deleteProductFromDB(productId).catch((err) =>
+          console.warn("Firestore deleteProductFromDB notice:", err)
+        );
       },
 
       updateInventoryStock: (productId, qty) => {
