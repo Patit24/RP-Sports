@@ -1,37 +1,51 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Product, mockProducts } from "./mockData";
-import {
-  saveUser,
-  saveOrder,
-  saveWishlist,
-  addProductToDB,
-  updateProductInDB,
-  deleteProductFromDB,
-  updateStockInDB,
-} from "./firestoreService";
+import { saveOrder, saveUser, saveWishlist, updateStockInDB } from "./firestoreService";
+import { notifyDeliveryPartner } from "./deliveryPartnerService";
+import { mockProducts, Product } from "./mockData";
 
+export type { Product } from "./mockData";
+
+export interface CustomFieldOption {
+  name: string;
+  price: number;
+}
+
+export interface CustomJerseyDesign {
+  jerseyNumber: string;
+  playerName: string;
+  fontStyle: string;
+  numberColor: string;
+  textColor: string;
+  sleeveLogo?: string;
+  chestSponsor?: string;
+  teamName?: string;
+  playerNumber?: string;
+}
 
 export interface CartItem {
-  id: string; // unique key combining product.id + size + color + customHash
+  id: string;
   product: Product;
   quantity: number;
   selectedColor?: string;
   selectedSize?: string;
-  customJersey?: {
-    teamName: string;
-    playerName: string;
-    playerNumber: string;
-    primaryColor: string;
-    secondaryColor: string;
-    sponsorLogo?: string;
-    jerseyStyle: string;
-  };
+  customJersey?: CustomJerseyDesign;
   customTrophy?: {
     material: string;
     size: string;
     engravingText: string;
   };
+}
+
+export interface DeliveryPartnerInfo {
+  carrier: string;
+  awbNumber: string;
+  hub: string;
+  status: "Pickup Requested" | "Package Picked Up" | "In Transit" | "Out for Delivery" | "Delivered";
+  dispatchedAt: string;
+  estimatedDeliveryDate: string;
+  agentPhone?: string;
+  dispatchMessage?: string;
 }
 
 export interface Order {
@@ -51,6 +65,7 @@ export interface Order {
   total: number;
   createdAt: string;
   trackingNumber?: string;
+  deliveryPartnerInfo?: DeliveryPartnerInfo;
 }
 
 export interface User {
@@ -124,7 +139,6 @@ interface SportsStoreState {
   deleteProduct: (productId: string) => void;
   updateInventoryStock: (productId: string, qty: number) => void;
 }
-
 
 export const useStore = create<SportsStoreState>()(
   persist(
@@ -283,9 +297,7 @@ export const useStore = create<SportsStoreState>()(
         get().showToast("Cleared comparison list", "info");
       },
 
-
       clearCart: () => set({ cart: [] }),
-
 
       placeOrder: (address, paymentMethod, paymentStatus) => {
         const cart = get().cart;
@@ -296,16 +308,42 @@ export const useStore = create<SportsStoreState>()(
         const shipping = subtotal > 5000 ? 0 : 250;
         const grandTotal = subtotal + tax + shipping;
 
+        const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+        const isKolkataLocal = address.pincode.startsWith("700");
+        const carrierName = isKolkataLocal ? "Delhivery Express" : "Blue Dart Logistics";
+        const awbNumber = `${isKolkataLocal ? 'DLH' : 'BLD'}-KOL-${Math.floor(100000 + Math.random() * 900000)}`;
+
+        const estDate = new Date();
+        estDate.setDate(estDate.getDate() + (isKolkataLocal ? 2 : 4));
+        const estimatedDeliveryDate = estDate.toLocaleDateString("en-IN", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+
+        const deliveryPartnerInfo: DeliveryPartnerInfo = {
+          carrier: carrierName,
+          awbNumber,
+          hub: isKolkataLocal ? "Kolkata Central Hub, Dumdum (700028)" : "Kolkata Airport Logistics Park",
+          status: "Pickup Requested",
+          dispatchedAt: new Date().toISOString(),
+          estimatedDeliveryDate,
+          agentPhone: isKolkataLocal ? "+91 98300 12345" : "+91 98311 54321",
+          dispatchMessage: `Delivery partner '${carrierName}' notified for order pickup. AWB: ${awbNumber}`,
+        };
+
         const newOrder: Order = {
-          id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
+          id: orderId,
           items: [...cart],
           shippingAddress: address,
           paymentMethod,
           paymentStatus,
-          status: "Pending",
+          status: "Confirmed",
           total: grandTotal,
           createdAt: new Date().toISOString(),
-          trackingNumber: "TRK" + Math.floor(100000000 + Math.random() * 900000000),
+          trackingNumber: awbNumber,
+          deliveryPartnerInfo,
         };
 
         // Deduct inventory stock
@@ -325,9 +363,10 @@ export const useStore = create<SportsStoreState>()(
           cart: [], // Clear cart on success
         });
 
-        // Persist order to Firestore (non-blocking)
-        const user = get().currentUser;
-        saveOrder(newOrder, user?.email).catch(console.error);
+        // Trigger Delivery Partner Dispatch Notification & Firestore Sync
+        notifyDeliveryPartner(newOrder).catch((err) =>
+          console.warn("Delivery partner dispatch notice:", err)
+        );
 
         return newOrder;
       },
@@ -340,33 +379,37 @@ export const useStore = create<SportsStoreState>()(
         });
       },
 
-      addProduct: (newProd) => {
-        const currentProducts = get().products;
-        const id = Date.now().toString();
-        const slug = newProd.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-        const sku = `RP-PROD-${Math.floor(100000 + Math.random() * 900000)}`;
-        const product = { ...newProd, id, slug, sku };
-        set({ products: [...currentProducts, product] });
-        // Sync to Firestore
-        addProductToDB(product).catch(console.error);
+      addProduct: (prodData) => {
+        const id = "rp-" + Date.now().toString().slice(-4);
+        const slug = prodData.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        const sku = "RP-" + Math.floor(1000 + Math.random() * 9000);
+        const newProd: Product = {
+          ...prodData,
+          id,
+          slug,
+          sku,
+          image: prodData.image || prodData.images?.[0] || "/cricket_bat_studio.jpg",
+          gallery: prodData.gallery || prodData.images || ["/cricket_bat_studio.jpg"],
+          originalPrice: prodData.originalPrice || prodData.mrp || prodData.price,
+          reviewCount: prodData.reviewCount || prodData.reviewsCount || 1,
+          specs: prodData.specs || prodData.specifications || {},
+        };
+        set({ products: [newProd, ...get().products] });
+        get().showToast(`Product '${prodData.name}' added successfully!`, "success");
       },
 
       updateProduct: (updatedProd) => {
         set({
-          products: get().products.map((prod) =>
-            prod.id === updatedProd.id ? updatedProd : prod
-          ),
+          products: get().products.map((p) => (p.id === updatedProd.id ? updatedProd : p)),
         });
-        // Sync to Firestore
-        updateProductInDB(updatedProd).catch(console.error);
+        get().showToast(`Updated product '${updatedProd.name}'`, "success");
       },
 
       deleteProduct: (productId) => {
         set({
-          products: get().products.filter((prod) => prod.id !== productId),
+          products: get().products.filter((p) => p.id !== productId),
         });
-        // Sync to Firestore
-        deleteProductFromDB(productId).catch(console.error);
+        get().showToast("Product deleted from store catalog", "info");
       },
 
       updateInventoryStock: (productId, qty) => {
@@ -381,9 +424,9 @@ export const useStore = create<SportsStoreState>()(
     }),
     {
       name: "rp-sports-store",
-      version: 4,
+      version: 7,
       migrate: (persistedState: any, version: number) => {
-        if (version < 4) {
+        if (version < 7) {
           return {
             ...persistedState,
             products: mockProducts,
