@@ -37,7 +37,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
         login(res.email, res.name || "RP Athlete", "customer");
         showToast(`Logged in as ${res.name}`, "success");
         if (onSuccess) onSuccess();
-        window.location.href = "/checkout";
+        window.location.reload();
       }
     });
 
@@ -91,7 +91,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       login(res.email, res.name, "customer");
       showToast(`Verified! Welcome ${res.name}`, "success");
       if (onSuccess) onSuccess();
-      window.location.href = "/checkout";
+      window.location.reload();
     } else {
       setError(res.error || "Invalid OTP code. Please check your SMS.");
     }
@@ -108,7 +108,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       login(res.email, res.name || "RP Athlete", "customer");
       showToast(`Logged in as ${res.name}`, "success");
       if (onSuccess) onSuccess();
-      window.location.href = "/checkout";
+      window.location.reload();
     } else if (res.redirecting) {
       setInfoMessage("Redirecting to Google Sign-In...");
     } else {
@@ -136,7 +136,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       login(emailForm.email, capitalized, "customer");
       showToast(`Welcome back, ${capitalized}!`, "success");
       if (onSuccess) onSuccess();
-      window.location.href = "/checkout";
+      window.location.reload();
     } else {
       setError("Invalid email or password.");
     }
