@@ -113,7 +113,7 @@ export default function SignInPage() {
       setCanResend(false);
       setInfoMessage(res.message || "OTP code sent to your phone.");
     } else {
-      setError("Failed to send OTP. Please check your phone number.");
+      setError(res.error || "Failed to send OTP. Please check your phone number.");
     }
   };
 

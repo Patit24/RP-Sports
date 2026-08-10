@@ -105,7 +105,7 @@ export default function SignUpPage() {
       setTimer(30);
       showToast("OTP sent to " + form.phone, "info");
     } else {
-      setErrors({ ...errors, phone: "Failed to send OTP to number." });
+      setErrors({ ...errors, phone: res.error || "Failed to send OTP to number." });
     }
   };
 
