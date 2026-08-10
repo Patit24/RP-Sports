@@ -7,7 +7,7 @@ import { BRANDS } from "@/lib/mockData";
 import { 
   PlusCircle, Image as ImageIcon, CheckCircle, Package, 
   IndianRupee, Tag, ShieldCheck, ListChecks, Sparkles, Plus, Trash2,
-  UploadCloud, X, Star, Camera, Shirt, Footprints, Glasses, Trophy, HelpCircle
+  UploadCloud, X, Star, Camera, Footprints, Shirt, Glasses, Trophy, Flame
 } from "lucide-react";
 
 interface CustomSpecRow {
@@ -89,7 +89,7 @@ export default function AddProductPage() {
         weight: "1160 - 1200 grams",
         dimensions: "85cm x 11cm x 6cm",
         colors: "Natural English Finish",
-        sizes: "Short Handle (SH)",
+        sizes: "Short Handle (SH), Harrow, Size 6",
         shortDescription: "Grade 1 English Willow with 8-12 straight grains and 42mm edges.",
         description: "Elite international-grade Grade 1 English Willow featuring straight 8-12 clean grains. Ultra-balanced pickup with lightweight feel and supreme ping off the blade.",
         highlightsInput: "Grade 1 English Willow\n8-12 Straight Clean Grains\n42mm Edges for Maximum Power\nFeatherlight Pickup"
@@ -99,6 +99,11 @@ export default function AddProductPage() {
         { key: "Grains", value: "8 - 12 Straight Grains" },
         { key: "Edge Profile", value: "42mm Thick Edges" },
         { key: "Handle", value: "Oval Semi-Rigid Cane Handle" }
+      ]);
+      setUploadedImages([
+        "/cricket_bat_lineup.jpg",
+        "/cricket_bat_studio.jpg",
+        "/cricket_action_batsman.jpg"
       ]);
     } else if (type === "jerseys") {
       setFormData(prev => ({
@@ -110,6 +115,9 @@ export default function AddProductPage() {
         brand: "RP Custom Apparel",
         mrp: "1299",
         price: "899",
+        willowType: "Micro-Polyester Dri-Fit Mesh",
+        willowGrade: "Athletic Slim Fit",
+        handleSize: "Polo Collar / Half Sleeve",
         weight: "200 grams",
         dimensions: "Standard Athletic Fit",
         colors: "Navy Blue / Neon Gold, Crimson Red / Black",
@@ -126,16 +134,23 @@ export default function AddProductPage() {
         { key: "Sleeve Type", value: "Half Sleeve" },
         { key: "Sublimation", value: "Full HD Sublimation Print" }
       ]);
+      setUploadedImages([
+        "/cricket_jersey_premium.jpg",
+        "/cricket_player_blank_jersey.jpg"
+      ]);
     } else if (type === "shoes") {
       setFormData(prev => ({
         ...prev,
         name: "RP Turbo Speed Pro Spike Cricket Shoes",
         category: "footwear",
         subcategory: "spikes",
-        sportsType: "Cricket",
+        sportsType: "Cricket & Turf Sports",
         brand: "RP Sports",
         mrp: "4499",
         price: "3299",
+        willowType: "TPU Soleplate with 11 Steel Spikes",
+        willowGrade: "Synthetic Leather & Breathable Mesh",
+        handleSize: "Low Cut Padded Ankle Shield",
         weight: "750 grams",
         dimensions: "32cm x 20cm x 12cm",
         colors: "White / Crimson Red, White / Cobalt Blue",
@@ -150,6 +165,10 @@ export default function AddProductPage() {
         { key: "Cushioning", value: "High-Bounce EVA Midsole" },
         { key: "Ankle Support", value: "Padded Ankle Shield" }
       ]);
+      setUploadedImages([
+        "/shoe_spikes_1786053000000_1786056040962.jpg",
+        "/shoe_turf_1786053000000_1786056064769.jpg"
+      ]);
     } else if (type === "trackpants") {
       setFormData(prev => ({
         ...prev,
@@ -160,6 +179,9 @@ export default function AddProductPage() {
         brand: "RP Custom Apparel",
         mrp: "1899",
         price: "1299",
+        willowType: "92% Polyester, 8% Elastane 4-Way Stretch",
+        willowGrade: "2 Deep YKK Zipper Pockets",
+        handleSize: "Elastic Waistband + Drawstring",
         weight: "320 grams",
         dimensions: "Standard Ankle Length",
         colors: "Black / Neon Red, Navy Blue / White",
@@ -184,6 +206,9 @@ export default function AddProductPage() {
         brand: "RP Sports",
         mrp: "2499",
         price: "1699",
+        willowType: "Polarized REVO Mirror UV400",
+        willowGrade: "TR90 Flexible Polymer Frame",
+        handleSize: "Anti-Slip Hydrophilic Rubber",
         weight: "38 grams",
         dimensions: "14.5cm x 5.5cm Frame",
         colors: "REVO Red Mirror / Black Frame, Polarized Smoke / White Frame",
@@ -198,6 +223,9 @@ export default function AddProductPage() {
         { key: "Frame Material", value: "TR90 Flexible Polymer" },
         { key: "Nose Pad", value: "Adjustable Hydrophilic Rubber" }
       ]);
+      setUploadedImages([
+        "/feature_cricket_sunglasses_1786053000000_1786056350483.jpg"
+      ]);
     } else if (type === "caps") {
       setFormData(prev => ({
         ...prev,
@@ -208,6 +236,9 @@ export default function AddProductPage() {
         brand: "RP Sports",
         mrp: "799",
         price: "499",
+        willowType: "Curved Pre-Formed Visor",
+        willowGrade: "Moisture-Wicking Terry Sweatband",
+        handleSize: "Velcro Strap with Rubber Tab",
         weight: "85 grams",
         dimensions: "Adjustable Standard",
         colors: "Navy Blue, Maroon Red, Pure White",
@@ -222,6 +253,9 @@ export default function AddProductPage() {
         { key: "Strap", value: "Velcro Back Strap with Rubber Pull Tab" },
         { key: "Ventilation", value: "6 Embroidered Air Holes" }
       ]);
+      setUploadedImages([
+        "/feature_banner_caps_1786053000000_1786055769515.jpg"
+      ]);
     } else if (type === "trophies") {
       setFormData(prev => ({
         ...prev,
@@ -232,6 +266,9 @@ export default function AddProductPage() {
         brand: "RP Trophies",
         mrp: "1999",
         price: "1499",
+        willowType: "24K Gold Electroplated Brass",
+        willowGrade: "Solid Dark Walnut Wood Base",
+        handleSize: "Laser Etched Brass Plaque",
         weight: "1.80 kg",
         dimensions: "18 x 18 x 45 cm",
         colors: "Gold Plated Brass & Dark Walnut Base",
@@ -247,18 +284,109 @@ export default function AddProductPage() {
         { key: "Engraving Plate", value: "Laser Etched Brass Plaque" },
         { key: "Height", value: "18 Inches" }
       ]);
+      setUploadedImages([
+        "/generated_trophy_1783192099951.jpg"
+      ]);
+    }
+  };
+
+  const handleCategorySelectChange = (val: string) => {
+    if (val === "footwear") {
+      handleProductTypeChange("shoes");
+    } else if (val === "apparel") {
+      handleProductTypeChange("jerseys");
+    } else if (val === "custom-trophies") {
+      handleProductTypeChange("trophies");
+    } else if (val === "cricket") {
+      handleProductTypeChange("bats");
+    } else {
+      setFormData(prev => ({ ...prev, category: val }));
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    if (type === "checkbox") {
+    if (name === "category") {
+      handleCategorySelectChange(value);
+    } else if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
+
+  // Dynamic labels helper based on current active productType
+  const getSpecLabels = (type: string) => {
+    switch (type) {
+      case "shoes":
+        return {
+          label1: "Outsole & Spike Soleplate Type",
+          placeholder1: "e.g. TPU Plate with 11 Steel Spikes / Rubber Turf Studs",
+          label2: "Upper Material & Cushioning",
+          placeholder2: "e.g. Synthetic Leather & High Bounce EVA",
+          label3: "Ankle Cut & Support Style",
+          placeholder3: "e.g. Low Cut Padded Collar / Mid Ankle Shield"
+        };
+      case "jerseys":
+        return {
+          label1: "Fabric Mesh Material",
+          placeholder1: "e.g. 100% Micro-Polyester Dri-Fit Mesh",
+          label2: "Fit Type & Sublimation",
+          placeholder2: "e.g. Athletic Slim Fit / HD Sublimation",
+          label3: "Neck & Sleeve Style",
+          placeholder3: "e.g. Polo Collar / Half Sleeve"
+        };
+      case "trackpants":
+        return {
+          label1: "Stretch Fabric Blend",
+          placeholder1: "e.g. 92% Polyester, 8% Elastane Stretch",
+          label2: "Pocket Style",
+          placeholder2: "e.g. 2 Deep YKK Zipper Pockets",
+          label3: "Waistband & Ankle Cuff",
+          placeholder3: "e.g. Elastic Waistband + Zippered Ankle"
+        };
+      case "sunglasses":
+        return {
+          label1: "Lens Tech & UV Protection",
+          placeholder1: "e.g. Polarized REVO Mirror UV400",
+          label2: "Frame Polymer",
+          placeholder2: "e.g. TR90 Flexible Polymer",
+          label3: "Nose Pad & Frame Style",
+          placeholder3: "e.g. Adjustable Hydrophilic Rubber"
+        };
+      case "caps":
+        return {
+          label1: "Visor Brim Style",
+          placeholder1: "e.g. Curved Pre-Formed Visor",
+          label2: "Sweatband Technology",
+          placeholder2: "e.g. Moisture-Wicking Terry Cloth",
+          label3: "Adjustment Back Strap",
+          placeholder3: "e.g. Velcro Strap with Rubber Tab"
+        };
+      case "trophies":
+        return {
+          label1: "Plating Finish",
+          placeholder1: "e.g. 24K Gold Electroplated Brass",
+          label2: "Pedestal Base Material",
+          placeholder2: "e.g. Solid Dark Walnut Wood",
+          label3: "Laser Engraving Plaque",
+          placeholder3: "e.g. Custom Laser Etched Brass"
+        };
+      case "bats":
+      default:
+        return {
+          label1: "Willow / Wood Type",
+          placeholder1: "e.g. Grade A+ Kashmir Willow / Grade 1 English Willow",
+          label2: "Willow Grade",
+          placeholder2: "e.g. Grade A+, Grade 1 Pro",
+          label3: "Handle Size & Type",
+          placeholder3: "e.g. Short Handle (SH), 9-Piece Cane Rubber Grip"
+        };
+    }
+  };
+
+  const specLabels = getSpecLabels(productType);
 
   // Process Photos Picked from File Explorer / Desktop
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -353,6 +481,9 @@ export default function AddProductPage() {
 
     const specificationsObj: Record<string, string> = {
       "Brand": formData.brand,
+      [specLabels.label1]: formData.willowType || "Standard Material",
+      [specLabels.label2]: formData.willowGrade || "Standard Grade",
+      [specLabels.label3]: formData.handleSize || "Standard Fit",
       "Weight": formData.weight || "Standard Weight",
       "Dimensions": formData.dimensions || "Standard Dimensions",
       "Country of Origin": formData.countryOfOrigin || "India",
@@ -422,20 +553,21 @@ export default function AddProductPage() {
           Add & Upload Product to Catalog
         </h1>
         <p className="text-gray-500 text-sm font-medium">
-          Choose a product type below to auto-load category specifications, or take live camera photos & upload desktop files directly.
+          Choose an equipment category preset below or select from dropdowns to auto-configure Footwear, Spikes, Match Jerseys, Track Pants, Sunglasses, Caps, Trophies & Bats.
         </p>
       </div>
 
       {/* Category Type Preset Selector Tabs */}
-      <div className="mb-8 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-        <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-500 mb-3">
-          ⚡ Select Equipment Type (Auto-loads specs for Jerseys, Shoes, Track Pants, Caps, Sunglasses, Trophies & Bats):
+      <div className="mb-8 bg-white p-5 rounded-2xl border-2 border-red-100 shadow-md">
+        <label className="block text-xs font-display font-bold uppercase tracking-wider text-[#CC0000] mb-3 flex items-center gap-1.5">
+          <Flame className="w-4 h-4 text-[#CC0000]" />
+          Select Equipment Type (Auto-configures specifications & field labels):
         </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
           {[
+            { id: "shoes", label: "Footwear & Spikes", icon: "👟" },
             { id: "bats", label: "Cricket Bats", icon: "🏏" },
             { id: "jerseys", label: "Match Jerseys", icon: "👕" },
-            { id: "shoes", label: "Spikes & Shoes", icon: "👟" },
             { id: "trackpants", label: "Track Pants", icon: "👖" },
             { id: "sunglasses", label: "Sunglasses", icon: "🕶️" },
             { id: "caps", label: "Caps & Visors", icon: "🧢" },
@@ -445,14 +577,14 @@ export default function AddProductPage() {
               key={item.id}
               type="button"
               onClick={() => handleProductTypeChange(item.id as any)}
-              className={`p-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
+              className={`p-3 rounded-xl border-2 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
                 productType === item.id
-                  ? "bg-[#CC0000] border-[#CC0000] text-white shadow-md shadow-[#CC0000]/20"
+                  ? "bg-[#CC0000] border-[#CC0000] text-white shadow-lg shadow-[#CC0000]/30 scale-105"
                   : "bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-100"
               }`}
             >
-              <span className="text-lg">{item.icon}</span>
-              <span className="truncate">{item.label}</span>
+              <span className="text-xl">{item.icon}</span>
+              <span className="truncate text-center">{item.label}</span>
             </button>
           ))}
         </div>
@@ -479,7 +611,7 @@ export default function AddProductPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g. RP Elite Player Edition Kashmir Willow Cricket Bat"
+                placeholder="e.g. RP Turbo Speed Pro Spike Cricket Shoes"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
                 required
               />
@@ -513,9 +645,9 @@ export default function AddProductPage() {
                 onChange={handleChange}
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000]"
               >
+                <option value="footwear">Footwear & Spikes</option>
                 <option value="cricket">Cricket Equipment</option>
                 <option value="apparel">Apparel & Match Jerseys</option>
-                <option value="footwear">Footwear & Spikes</option>
                 <option value="badminton">Badminton Rackets & Gear</option>
                 <option value="football">Football & Accessories</option>
                 <option value="custom-trophies">Custom Trophies & Awards</option>
@@ -531,7 +663,7 @@ export default function AddProductPage() {
                 name="subcategory"
                 value={formData.subcategory}
                 onChange={handleChange}
-                placeholder="e.g. bats, spikes, jerseys, trackpants"
+                placeholder="e.g. spikes, turf-shoes, jerseys, bats"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -582,54 +714,59 @@ export default function AddProductPage() {
 
         </div>
 
-        {/* Section 2: Product Specifications tailored to Product Type */}
+        {/* Section 2: Dynamic Category Specifications */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
-          <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
-            <ShieldCheck className="w-5 h-5 text-[#CC0000]" />
-            <h2 className="text-lg font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              2. Product Specifications & Material Properties ({productType.toUpperCase()})
-            </h2>
+          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-[#CC0000]" />
+              <h2 className="text-lg font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                2. Technical Specifications & Material ({productType.toUpperCase()})
+              </h2>
+            </div>
+            <span className="text-xs font-bold bg-red-50 text-[#CC0000] px-3 py-1 rounded-full uppercase tracking-wider">
+              {productType === "shoes" ? "Footwear Specs Mode" : `${productType} Specs Mode`}
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div>
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Material / Willow Type
+                {specLabels.label1}
               </label>
               <input
                 type="text"
                 name="willowType"
                 value={formData.willowType}
                 onChange={handleChange}
-                placeholder="e.g. Kashmir Willow, Dry-Fit Poly, TR90"
+                placeholder={specLabels.placeholder1}
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
 
             <div>
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Grade / Quality Standard
+                {specLabels.label2}
               </label>
               <input
                 type="text"
                 name="willowGrade"
                 value={formData.willowGrade}
                 onChange={handleChange}
-                placeholder="e.g. Grade A+, Grade 1 Pro, UV400"
+                placeholder={specLabels.placeholder2}
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
 
             <div>
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Handle / Fit / Strap Style
+                {specLabels.label3}
               </label>
               <input
                 type="text"
                 name="handleSize"
                 value={formData.handleSize}
                 onChange={handleChange}
-                placeholder="e.g. Short Handle, Athletic Slim, Adjustable"
+                placeholder={specLabels.placeholder3}
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -645,7 +782,7 @@ export default function AddProductPage() {
                 name="weight"
                 value={formData.weight}
                 onChange={handleChange}
-                placeholder="e.g. 1180 grams, 750 grams"
+                placeholder="e.g. 750 grams"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -659,7 +796,7 @@ export default function AddProductPage() {
                 name="dimensions"
                 value={formData.dimensions}
                 onChange={handleChange}
-                placeholder="e.g. 85cm x 11cm x 6cm"
+                placeholder="e.g. 32cm x 20cm x 12cm"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -686,7 +823,7 @@ export default function AddProductPage() {
                 name="playerLevel"
                 value={formData.playerLevel}
                 onChange={handleChange}
-                placeholder="e.g. Cricket / Tournament Player"
+                placeholder="e.g. Cricket / Football / Athletics"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -713,7 +850,7 @@ export default function AddProductPage() {
           <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
             <IndianRupee className="w-5 h-5 text-[#CC0000]" />
             <h2 className="text-lg font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              3. Pricing, Inventory & Options
+              3. Pricing, Inventory & Available Sizes
             </h2>
           </div>
 
@@ -786,7 +923,7 @@ export default function AddProductPage() {
                 name="sizes"
                 value={formData.sizes}
                 onChange={handleChange}
-                placeholder="e.g. S, M, L, XL, XXL or UK 7, UK 8, UK 9"
+                placeholder="e.g. UK 7, UK 8, UK 9, UK 10, UK 11 or S, M, L, XL"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -800,7 +937,7 @@ export default function AddProductPage() {
                 name="colors"
                 value={formData.colors}
                 onChange={handleChange}
-                placeholder="e.g. Navy Blue / Gold, Black / Red"
+                placeholder="e.g. White / Crimson Red, Black / Gold"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
@@ -883,14 +1020,14 @@ export default function AddProductPage() {
               <div key={index} className="flex items-center gap-3">
                 <input
                   type="text"
-                  placeholder="Feature Name (e.g. Fabric / Outsole)"
+                  placeholder="Feature Name (e.g. Outsole / Spike Type)"
                   value={row.key}
                   onChange={(e) => handleSpecRowChange(index, "key", e.target.value)}
                   className="flex-1 h-10 px-3 border border-gray-300 rounded-lg text-xs font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
                 />
                 <input
                   type="text"
-                  placeholder="Specification Value (e.g. Dri-Fit Polyester)"
+                  placeholder="Specification Value (e.g. TPU Plate with 11 Steel Spikes)"
                   value={row.value}
                   onChange={(e) => handleSpecRowChange(index, "value", e.target.value)}
                   className="flex-1 h-10 px-3 border border-gray-300 rounded-lg text-xs font-medium text-[#111111] focus:outline-none focus:border-[#CC0000]"
