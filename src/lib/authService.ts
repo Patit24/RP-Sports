@@ -49,6 +49,9 @@ export async function signInWithGoogle() {
     let msg = error.message || "Failed to sign in with Google.";
     if (error.code === "auth/operation-not-allowed") {
       msg = "Google Authentication is not enabled in Firebase Console. Please enable Google in Firebase Console -> Auth -> Sign-in method.";
+    } else if (error.code === "auth/unauthorized-domain") {
+      const hostname = typeof window !== "undefined" ? window.location.hostname : "your custom domain";
+      msg = `Domain '${hostname}' is not authorized in Firebase. Add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
     }
     return {
       success: false,
@@ -159,8 +162,12 @@ export async function sendPhoneOTP(phoneNumber: string, containerId: string = "r
       window.recaptchaVerifier = undefined;
     }
 
+    const hostname = typeof window !== "undefined" ? window.location.hostname : "your domain";
     let userFriendlyMsg = error.message || "Failed to send SMS OTP.";
-    if (
+
+    if (error.code === "auth/unauthorized-domain" || String(error).includes("unauthorized domain")) {
+      userFriendlyMsg = `Domain '${hostname}' is not authorized in Firebase. Please add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
+    } else if (
       error.code === "auth/operation-not-allowed" || 
       String(error).includes("SMS unable to be sent until this region enabled")
     ) {
