@@ -19,7 +19,7 @@ declare global {
 }
 
 /**
- * Perform Google Sign In / Sign Up using Firebase Popup with Redirect Fallback
+ * Perform Google Sign In / Sign Up using Firebase Popup or Redirect
  */
 export async function signInWithGoogle() {
   try {
@@ -50,29 +50,27 @@ export async function signInWithGoogle() {
   } catch (error: any) {
     console.warn("Google Sign-In Notice:", error.code || error.message);
     
-    // Fallback to signInWithRedirect if popup is blocked by browser
-    if (error.code === "auth/popup-blocked") {
+    // Automatically execute redirect authentication if popup is blocked by browser
+    if (error.code === "auth/popup-blocked" || error.code === "auth/popup-closed-by-user") {
       try {
         await signInWithRedirect(auth, googleProvider);
         return {
           success: true,
           redirecting: true,
-          message: "Popup blocked by browser. Redirecting to Google Sign-In..."
+          message: "Redirecting to Google Sign-In..."
         };
       } catch (redirectErr: any) {
-        return {
-          success: false,
-          error: "Browser blocked the Google popup window. Please click 'Allow Popups' in your browser address bar and try again."
-        };
+        console.warn("Google Redirect Error:", redirectErr);
       }
     }
 
+    const hostname = typeof window !== "undefined" ? window.location.hostname : "your domain";
     let msg = error.message || "Failed to sign in with Google.";
+
     if (error.code === "auth/operation-not-allowed") {
       msg = "Google Authentication is not enabled in Firebase Console. Please enable Google in Firebase Console -> Auth -> Sign-in method.";
     } else if (error.code === "auth/unauthorized-domain") {
-      const hostname = typeof window !== "undefined" ? window.location.hostname : "your custom domain";
-      msg = `Domain '${hostname}' is not authorized in Firebase. Add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
+      msg = `Domain '${hostname}' is not authorized in Firebase. Please add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
     }
 
     return {
