@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { BRANDS } from "@/lib/mockData";
 import { 
   PlusCircle, Image as ImageIcon, CheckCircle, Package, 
-  IndianRupee, Tag, ShieldCheck, ListChecks, Sparkles, Plus, Trash2 
+  IndianRupee, Tag, ShieldCheck, ListChecks, Sparkles, Plus, Trash2,
+  UploadCloud, X, Star
 } from "lucide-react";
 
 interface CustomSpecRow {
@@ -17,6 +18,7 @@ interface CustomSpecRow {
 export default function AddProductPage() {
   const router = useRouter();
   const { addProduct } = useStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -44,8 +46,14 @@ export default function AddProductPage() {
     customizable: false,
     colors: "Natural Wood Finish",
     sizes: "Short Handle (SH), Harrow, Size 6",
-    imageUrls: "/cricket_bat_studio.jpg\n/cricket_bat_lineup.jpg\n/cricket_action_batsman.jpg"
   });
+
+  // Local File Uploaded Images (Base64 Data URLs from Desktop / Phone Gallery)
+  const [uploadedImages, setUploadedImages] = useState<string[]>([
+    "/cricket_bat_studio.jpg",
+    "/cricket_bat_lineup.jpg",
+    "/cricket_action_batsman.jpg"
+  ]);
 
   const [customSpecs, setCustomSpecs] = useState<CustomSpecRow[]>([
     { key: "Willow Type", value: "Grade A+ Kashmir Willow" },
@@ -64,6 +72,45 @@ export default function AddProductPage() {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+  };
+
+  // Handle Desktop / Phone Gallery File Pick
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files);
+    const newImages: string[] = [];
+    let processed = 0;
+
+    fileList.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          newImages.push(event.target.result as string);
+        }
+        processed++;
+        if (processed === fileList.length) {
+          setUploadedImages((prev) => [...prev, ...newImages]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input so same file can be selected again if needed
+    e.target.value = "";
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setUploadedImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleSetMainImage = (indexToMakeMain: number) => {
+    setUploadedImages(prev => {
+      const updated = [...prev];
+      const selected = updated.splice(indexToMakeMain, 1)[0];
+      return [selected, ...updated];
+    });
   };
 
   const handleAddSpecRow = () => {
@@ -89,16 +136,12 @@ export default function AddProductPage() {
       return;
     }
 
-    setIsSubmitting(true);
-
-    const images = formData.imageUrls
-      .split("\n")
-      .map(url => url.trim())
-      .filter(Boolean);
-
-    if (images.length === 0) {
-      images.push("/cricket_bat_studio.jpg");
+    if (uploadedImages.length === 0) {
+      alert("Please upload at least 1 image from your desktop or gallery.");
+      return;
     }
+
+    setIsSubmitting(true);
 
     const highlights = formData.highlightsInput
       .split("\n")
@@ -130,9 +173,9 @@ export default function AddProductPage() {
       brand: formData.brand,
       category: formData.category,
       subcategory: formData.subcategory,
-      image: images[0],
-      images,
-      gallery: images,
+      image: uploadedImages[0],
+      images: uploadedImages,
+      gallery: uploadedImages,
       mrp: Number(formData.mrp),
       originalPrice: Number(formData.mrp),
       price: Number(formData.price),
@@ -170,11 +213,6 @@ export default function AddProductPage() {
     }, 800);
   };
 
-  const previewImages = formData.imageUrls
-    .split("\n")
-    .map(url => url.trim())
-    .filter(Boolean);
-
   return (
     <div className="max-w-5xl mx-auto pb-16">
       
@@ -188,7 +226,7 @@ export default function AddProductPage() {
             Add New Product to Storefront
           </h1>
           <p className="text-gray-500 text-sm font-medium">
-            Fill in complete product specs, pricing, bullet points, colors, sizes & images to render cleanly on customer product pages.
+            Upload product photos directly from your Desktop / Phone Gallery and configure complete specifications.
           </p>
         </div>
       </div>
@@ -647,44 +685,100 @@ export default function AddProductPage() {
           </div>
         </div>
 
-        {/* Section 6: Image Gallery URLs & Live Visual Preview */}
+        {/* Section 6: Device & Phone Gallery Direct Image Upload (No Links Needed) */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 shadow-sm space-y-6">
-          <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
-            <ImageIcon className="w-5 h-5 text-[#CC0000]" />
-            <h2 className="text-lg font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              6. Product Image URLs & Live Gallery Preview
-            </h2>
+          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-[#CC0000]" />
+              <h2 className="text-lg font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                6. Product Photos (Upload from Desktop / Phone Gallery)
+              </h2>
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              {uploadedImages.length} Image{uploadedImages.length !== 1 ? 's' : ''} Selected
+            </span>
           </div>
 
-          <div>
-            <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-              Image Paths (Enter one relative or full image URL per line)
-            </label>
-            <textarea
-              name="imageUrls"
-              rows={4}
-              value={formData.imageUrls}
-              onChange={handleChange}
-              placeholder="/cricket_bat_studio.jpg&#10;/cricket_bat_lineup.jpg"
-              className="w-full p-4 border border-gray-300 rounded-xl text-xs font-mono text-[#111111] focus:outline-none focus:border-[#CC0000]"
-            />
+          {/* Hidden HTML File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept="image/*"
+            multiple
+            className="hidden"
+          />
+
+          {/* Dropzone & Device Upload Trigger Button */}
+          <div 
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed border-gray-300 hover:border-[#CC0000] bg-gray-50 hover:bg-red-50/40 rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 group"
+          >
+            <div className="w-16 h-16 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:border-[#CC0000] transition-transform">
+              <UploadCloud className="w-8 h-8 text-[#CC0000]" />
+            </div>
+
+            <h3 className="font-display font-bold text-base uppercase text-[#111111] mb-1" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+              Click to Upload Product Photos from Device / Gallery
+            </h3>
+            <p className="text-xs text-gray-500 font-medium max-w-md mx-auto mb-4">
+              Select high-resolution product photos from your computer or phone library. Multiple files supported (JPG, PNG, WEBP).
+            </p>
+
+            <button
+              type="button"
+              className="bg-[#111111] group-hover:bg-[#CC0000] text-white text-xs font-display font-bold uppercase tracking-wider px-6 py-2.5 rounded-xl transition-colors inline-flex items-center gap-2"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              <Plus className="w-4 h-4" /> Browse Desktop / Gallery Files
+            </button>
           </div>
 
-          {/* Live Image Thumbnails Preview */}
-          {previewImages.length > 0 && (
+          {/* Live Thumbnails Preview Grid with Delete & Set Cover */}
+          {uploadedImages.length > 0 && (
             <div>
-              <span className="block text-xs font-display font-bold uppercase tracking-wider text-gray-400 mb-3">
-                Live Image Gallery Preview ({previewImages.length} Image{previewImages.length > 1 ? 's' : ''}):
+              <span className="block text-xs font-display font-bold uppercase tracking-wider text-gray-500 mb-3">
+                Uploaded Product Photos:
               </span>
-              <div className="flex items-center gap-4 overflow-x-auto pb-2">
-                {previewImages.map((img, idx) => (
-                  <div key={idx} className="relative w-24 h-24 rounded-xl border border-gray-200 overflow-hidden bg-gray-50 flex-shrink-0 group">
-                    <img src={img} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                    {idx === 0 && (
-                      <span className="absolute bottom-1 left-1 bg-[#CC0000] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm uppercase">
-                        Main
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                {uploadedImages.map((img, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`relative aspect-square rounded-2xl border-2 overflow-hidden bg-gray-50 group shadow-sm transition-all ${
+                      idx === 0 ? "border-[#CC0000] ring-2 ring-[#CC0000]/20" : "border-gray-200"
+                    }`}
+                  >
+                    <img 
+                      src={img} 
+                      alt={`Product Photo ${idx + 1}`} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                    />
+
+                    {/* Main Cover Badge */}
+                    {idx === 0 ? (
+                      <span className="absolute top-2 left-2 bg-[#CC0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shadow">
+                        Main Cover
                       </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleSetMainImage(idx)}
+                        className="absolute top-2 left-2 bg-black/70 hover:bg-[#CC0000] text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center gap-1"
+                      >
+                        <Star className="w-2.5 h-2.5" /> Make Main
+                      </button>
                     )}
+
+                    {/* Delete Photo Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(idx)}
+                      className="absolute top-2 right-2 w-7 h-7 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow cursor-pointer"
+                      title="Remove Photo"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
               </div>
