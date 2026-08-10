@@ -22,6 +22,8 @@ declare global {
  * Perform Google Sign In / Sign Up using Firebase Popup or Redirect
  */
 export async function signInWithGoogle() {
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "your domain";
+
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
@@ -50,6 +52,13 @@ export async function signInWithGoogle() {
   } catch (error: any) {
     console.warn("Google Sign-In Notice:", error.code || error.message);
     
+    if (error.code === "auth/unauthorized-domain" || String(error).includes("unauthorized-domain")) {
+      return {
+        success: false,
+        error: `Domain '${hostname}' is not authorized in Firebase. Add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`
+      };
+    }
+
     // Automatically execute redirect authentication if popup is blocked by browser
     if (error.code === "auth/popup-blocked" || error.code === "auth/popup-closed-by-user") {
       try {
@@ -60,17 +69,22 @@ export async function signInWithGoogle() {
           message: "Redirecting to Google Sign-In..."
         };
       } catch (redirectErr: any) {
-        console.warn("Google Redirect Error:", redirectErr);
+        console.warn("Google Redirect Error:", redirectErr.code || redirectErr.message);
+        if (redirectErr.code === "auth/unauthorized-domain" || String(redirectErr).includes("unauthorized-domain")) {
+          return {
+            success: false,
+            error: `Domain '${hostname}' is not authorized in Firebase. Add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`
+          };
+        }
       }
     }
 
-    const hostname = typeof window !== "undefined" ? window.location.hostname : "your domain";
     let msg = error.message || "Failed to sign in with Google.";
 
     if (error.code === "auth/operation-not-allowed") {
       msg = "Google Authentication is not enabled in Firebase Console. Please enable Google in Firebase Console -> Auth -> Sign-in method.";
     } else if (error.code === "auth/unauthorized-domain") {
-      msg = `Domain '${hostname}' is not authorized in Firebase. Please add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
+      msg = `Domain '${hostname}' is not authorized in Firebase. Add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
     }
 
     return {
@@ -107,7 +121,14 @@ export async function checkGoogleRedirectResult() {
       };
     }
   } catch (err: any) {
-    console.warn("Google Redirect Result Notice:", err.message);
+    console.warn("Google Redirect Result Notice:", err.code || err.message);
+    const hostname = typeof window !== "undefined" ? window.location.hostname : "your domain";
+    if (err.code === "auth/unauthorized-domain" || String(err).includes("unauthorized-domain")) {
+      return {
+        success: false,
+        error: `Domain '${hostname}' is not authorized in Firebase. Add '${hostname}' in Firebase Console -> Authentication -> Settings -> Authorized Domains.`
+      };
+    }
   }
   return null;
 }
