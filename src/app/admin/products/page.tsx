@@ -1,92 +1,136 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { Trash2, Edit3, PlusCircle, Search } from "lucide-react";
 
 export default function ManageProductsPage() {
-  const { products, deleteProduct } = useStore();
+  const router = useRouter();
+  const { products, deleteProduct, currentUser } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+      router.push("/signin");
+    }
+  }, [currentUser, router]);
+
+  if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <p className="text-gray-500 font-bold">Verifying admin credentials...</p>
+      </div>
+    );
+  }
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+    p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto pb-12">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-black uppercase text-primary tracking-tight">Manage Products</h1>
-          <p className="text-slate-500 mt-2 font-medium">View and edit your store's catalog.</p>
+          <span className="text-xs font-bold uppercase tracking-widest text-[#CC0000]">
+            Catalog Management
+          </span>
+          <h1 className="text-3xl md:text-4xl font-display font-black uppercase text-primary tracking-tight" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+            Manage Store Products
+          </h1>
+          <p className="text-slate-500 mt-1 text-sm font-medium">View, search, edit, and manage products in the RP Sports database.</p>
         </div>
-        <Link href="/admin/add-product" className="px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-accent transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap">
+        <Link 
+          href="/admin/add-product" 
+          className="px-6 py-3 bg-[#CC0000] text-white font-display font-bold uppercase tracking-wider text-sm rounded-xl hover:bg-[#990000] transition-colors flex items-center gap-2 shadow-lg shadow-[#CC0000]/20 whitespace-nowrap cursor-pointer"
+          style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+        >
           <PlusCircle className="w-4 h-4" /> Add Product
         </Link>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 bg-slate-50">
-          <div className="relative max-w-md">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between gap-4">
+          <div className="relative max-w-md flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Search by name or SKU..." 
+              placeholder="Search products by title, category or SKU..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#CC0000] text-sm font-medium"
             />
           </div>
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:block">
+            {filteredProducts.length} Items Listed
+          </span>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="bg-white border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
-                <th className="p-4">Product Details</th>
+              <tr className="border-b border-slate-200 bg-slate-100/70 text-slate-700 text-xs font-bold uppercase tracking-wider">
+                <th className="p-4">Product Info</th>
                 <th className="p-4">Category</th>
                 <th className="p-4">Price</th>
                 <th className="p-4">Stock</th>
                 <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredProducts.map((prod) => (
-                <tr key={prod.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden shrink-0">
-                        <img src={prod.images[0]} alt={prod.name} className="w-full h-full object-cover mix-blend-multiply" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-primary truncate max-w-[200px] sm:max-w-[300px]">{prod.name}</p>
-                        <p className="text-xs text-slate-500 font-medium">{prod.sku}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 text-slate-600 font-bold uppercase text-xs tracking-wider">{prod.category}</td>
-                  <td className="p-4 font-bold text-accent">₹{prod.price.toLocaleString()}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${prod.stock < 10 ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                      {prod.stock} Units
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2 shrink-0">
-                    <button className="p-2 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors">
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => deleteProduct(prod.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredProducts.length === 0 && (
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-12 text-center text-slate-500 font-medium">
-                    No products found matching your search.
+                  <td colSpan={5} className="text-center p-8 text-slate-500 font-bold">
+                    No products found matching "{searchTerm}".
                   </td>
                 </tr>
+              ) : (
+                filteredProducts.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="p-4 flex items-center gap-3">
+                      <img 
+                        src={p.image || p.images?.[0] || "/cricket_bat_studio.jpg"} 
+                        alt={p.name} 
+                        className="w-12 h-12 object-cover rounded-lg border border-slate-200 shrink-0" 
+                      />
+                      <div>
+                        <p className="font-bold text-primary">{p.name}</p>
+                        <p className="text-xs text-slate-400 font-mono">SKU: {p.sku || p.id}</p>
+                      </div>
+                    </td>
+                    <td className="p-4 capitalize">
+                      <span className="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1 rounded-md">
+                        {p.category}
+                      </span>
+                    </td>
+                    <td className="p-4 font-bold text-primary">
+                      ₹{p.price.toLocaleString("en-IN")}
+                    </td>
+                    <td className="p-4">
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${
+                        p.stock > 10 ? "bg-emerald-50 text-emerald-700" : p.stock > 0 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
+                      }`}>
+                        {p.stock > 0 ? `${p.stock} in stock` : "Out of Stock"}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right">
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete product "${p.name}" from store catalog?`)) {
+                            deleteProduct(p.id);
+                          }
+                        }}
+                        className="p-2 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                        title="Delete product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
