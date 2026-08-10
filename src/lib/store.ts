@@ -78,6 +78,7 @@ export interface Order {
 }
 
 export interface User {
+  uid?: string;
   name: string;
   email: string;
   role: "admin" | "customer" | "super_admin";
@@ -116,7 +117,7 @@ interface SportsStoreState {
   activeCoupon: Coupon | null;
   
   // Actions
-  login: (email: string, name: string, role?: "admin" | "customer" | "super_admin", permissions?: string[]) => void;
+  login: (email: string, name: string, role?: "admin" | "customer" | "super_admin", permissions?: string[], uid?: string) => void;
   logout: () => void;
   
   addToCart: (item: Omit<CartItem, "id">) => void;
@@ -187,8 +188,9 @@ export const useStore = create<SportsStoreState>()(
         get().showToast("Coupon removed", "info");
       },
 
-      login: (email, name, role = "customer", permissions = []) => {
+      login: (email, name, role = "customer", permissions = [], uid) => {
         const userData: User = {
+          uid,
           name,
           email,
           role,
@@ -208,7 +210,8 @@ export const useStore = create<SportsStoreState>()(
         set({ currentUser: userData });
         get().showToast(`Welcome back, ${name}!`, "success");
         // Sync user profile to Firestore (non-blocking)
-        saveUser(email, userData).catch(console.error);
+        const userDocId = uid || email.toLowerCase().replace(/[.#$[\]]/g, "_");
+        saveUser(userDocId, userData).catch(console.error);
       },
 
       logout: () => {
@@ -289,8 +292,9 @@ export const useStore = create<SportsStoreState>()(
           );
         }
 
-        if (user?.email) {
-          saveWishlist(user.email, next).catch(console.error);
+        const wishlistId = user?.uid || (user?.email ? user.email.toLowerCase().replace(/[.#$[\]]/g, "_") : null);
+        if (wishlistId) {
+          saveWishlist(wishlistId, next).catch(console.error);
         }
       },
 

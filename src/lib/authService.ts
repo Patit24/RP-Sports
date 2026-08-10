@@ -41,7 +41,8 @@ export async function signInWithGoogle(): Promise<AuthResult> {
     const photoURL = user.photoURL || undefined;
 
     // Non-blocking Firestore save
-    saveUser(email, {
+    saveUser(user.uid, {
+      uid: user.uid,
       email,
       name,
       role: "customer",
@@ -65,7 +66,8 @@ export async function signInWithGoogle(): Promise<AuthResult> {
     const fallbackEmail = "athlete.google@rpsports.in";
     const fallbackName = "RP Athlete (Google)";
 
-    saveUser(fallbackEmail, {
+    saveUser("google_fallback_user", {
+      uid: "google_fallback_user",
       email: fallbackEmail,
       name: fallbackName,
       role: "customer",
@@ -176,7 +178,8 @@ export async function verifyPhoneOTP(otpCode: string, phone: string): Promise<Au
       const result = await window.confirmationResult.confirm(otpCode);
       const user = result.user;
 
-      saveUser(email, {
+      saveUser(user.uid, {
+        uid: user.uid,
         email,
         name,
         role: "customer",
@@ -198,7 +201,9 @@ export async function verifyPhoneOTP(otpCode: string, phone: string): Promise<Au
 
   // 2. Instant fallback verification for code 123456 or standard OTP test codes
   if (otpCode === "123456" || otpCode.length === 6) {
-    saveUser(email, {
+    const fallbackUid = `phone_${cleanPhone}`;
+    saveUser(fallbackUid, {
+      uid: fallbackUid,
       email,
       name,
       role: "customer",
@@ -210,7 +215,7 @@ export async function verifyPhoneOTP(otpCode: string, phone: string): Promise<Au
       success: true,
       email,
       name,
-      uid: `phone_${cleanPhone}`,
+      uid: fallbackUid,
       error: undefined,
     };
   }

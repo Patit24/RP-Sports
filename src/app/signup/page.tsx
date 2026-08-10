@@ -46,7 +46,7 @@ export default function SignUpPage() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user && user.email) {
         const name = user.displayName || user.email.split("@")[0] || "RP Athlete";
-        login(user.email, name, "customer");
+        login(user.email, name, "customer", [], user.uid);
         addSubscriber(user.email).catch(console.error);
         showToast(`Welcome to RP Sports, ${name}!`, "success");
         router.push("/");
@@ -55,7 +55,7 @@ export default function SignUpPage() {
 
     checkGoogleRedirectResult().then((res) => {
       if (res && res.success && res.email) {
-        login(res.email, res.name || "RP Athlete", "customer");
+        login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
         addSubscriber(res.email).catch(console.error);
         showToast(`Welcome to RP Sports, ${res.name}!`, "success");
         router.push("/");
@@ -116,7 +116,7 @@ export default function SignUpPage() {
     const res = await signInWithGoogle();
     
     if (res.success && res.email) {
-      login(res.email, res.name || "RP Athlete", "customer");
+      login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
       addSubscriber(res.email).catch(console.error);
       showToast(`Account created! Welcome, ${res.name}`, "success");
       router.push("/");
@@ -158,6 +158,7 @@ export default function SignUpPage() {
 
     setLoading(true);
     
+    let finalUid: string | undefined = undefined;
     // If user chose OTP verification mode and entered OTP code
     if (useOtpVerification && otpSent) {
       const otpRes = await verifyPhoneOTP(otpCode, form.phone);
@@ -166,11 +167,12 @@ export default function SignUpPage() {
         setLoading(false);
         return;
       }
+      finalUid = otpRes.uid;
     } else {
       await new Promise((r) => setTimeout(r, 600));
     }
 
-    login(form.email, form.name, "customer");
+    login(form.email, form.name, "customer", [], finalUid);
     addSubscriber(form.email).catch(console.error);
     showToast(`Welcome to RP Sports, ${form.name}!`, "success");
     router.push("/");

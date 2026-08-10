@@ -44,7 +44,7 @@ export default function SignInPage() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user && user.email) {
         const name = user.displayName || user.email.split("@")[0] || "RP Athlete";
-        login(user.email, name, "customer");
+        login(user.email, name, "customer", [], user.uid);
         showToast(`Signed in successfully as ${name}`, "success");
         window.location.href = "/";
       }
@@ -101,7 +101,7 @@ export default function SignInPage() {
     const res = await signInWithGoogle();
     
     if (res.success && res.email) {
-      login(res.email, res.name || "RP Athlete", "customer");
+      login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
       showToast(`Signed in successfully as ${res.name || 'RP Athlete'}`, "success");
       window.location.href = "/";
     } else {
@@ -151,7 +151,7 @@ export default function SignInPage() {
 
     if (res.success && res.email) {
       const displayName = res.name || "RP Athlete";
-      login(res.email, displayName, "customer");
+      login(res.email, displayName, "customer", [], res.uid);
       showToast(`Verified! Welcome to RP Sports, ${displayName}`, "success");
       window.location.href = "/";
     } else {
@@ -458,6 +458,55 @@ export default function SignInPage() {
             </svg>
             <span>Sign In with Google</span>
           </button>
+
+          {/* Dev Portal Quick Logins */}
+          <div className="pt-6 border-t border-gray-200 space-y-4">
+            <h3 className="text-[10px] font-display font-bold uppercase tracking-wider text-gray-400 text-left" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+              Quick Dev Portal Access
+            </h3>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  login("athlete@rpsports.com", "Pro Athlete", "customer");
+                  showToast("Logged in as Pro Athlete (Customer)", "success");
+                  window.location.href = "/dashboard";
+                }}
+                className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-bold uppercase rounded-lg transition-colors cursor-pointer text-left"
+              >
+                👤 Customer
+              </button>
+              <button
+                onClick={() => {
+                  login("admin@rpsports.com", "Master Chief", "super_admin", ["all_permissions"]);
+                  showToast("Logged in as Master Chief (Super Admin)", "success");
+                  window.location.href = "/admin";
+                }}
+                className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-bold uppercase rounded-lg transition-colors cursor-pointer text-left"
+              >
+                🔑 Super Admin
+              </button>
+              <button
+                onClick={() => {
+                  login("catalog@rpsports.com", "Catalog Manager", "admin", ["product_add", "product_edit", "product_delete"]);
+                  showToast("Logged in as Catalog Manager", "success");
+                  window.location.href = "/admin";
+                }}
+                className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-bold uppercase rounded-lg transition-colors cursor-pointer text-left"
+              >
+                📦 Product Mgr
+              </button>
+              <button
+                onClick={() => {
+                  login("warehouse@rpsports.com", "Logistics Chief", "admin", ["inventory_management"]);
+                  showToast("Logged in as Logistics Chief", "success");
+                  window.location.href = "/admin";
+                }}
+                className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-bold uppercase rounded-lg transition-colors cursor-pointer text-left"
+              >
+                ⚙️ Logistics Chief
+              </button>
+            </div>
+          </div>
 
           {/* Footer Terms Note */}
           <p className="text-[11px] text-gray-400 text-center font-medium pt-4">

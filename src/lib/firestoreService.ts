@@ -37,19 +37,19 @@ import type { Product } from "./mockData";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Save / update a user profile in Firestore */
-export async function saveUser(email: string, data: Partial<User>): Promise<void> {
+export async function saveUser(userId: string, data: Partial<User>): Promise<void> {
   try {
-    const ref = doc(db, "users", email.toLowerCase().replace(/[.#$[\]]/g, "_"));
+    const ref = doc(db, "users", userId);
     await setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
   } catch (err: any) {
     console.warn("Firestore saveUser permission or network warning:", err.message);
   }
 }
 
-/** Fetch a user profile by email */
-export async function getUser(email: string): Promise<User | null> {
+/** Fetch a user profile by ID */
+export async function getUser(userId: string): Promise<User | null> {
   try {
-    const ref = doc(db, "users", email.toLowerCase().replace(/[.#$[\]]/g, "_"));
+    const ref = doc(db, "users", userId);
     const snap = await getDoc(ref);
     return snap.exists() ? (snap.data() as User) : null;
   } catch (err: any) {
@@ -244,14 +244,11 @@ export function listenToProducts(
 // WISHLIST
 // ─────────────────────────────────────────────────────────────────────────────
 
-const wishlistDocId = (email: string) =>
-  email.toLowerCase().replace(/[.#$[\]]/g, "_");
-
 /** Save wishlist for a user */
-export async function saveWishlist(email: string, productIds: string[]): Promise<void> {
+export async function saveWishlist(userId: string, productIds: string[]): Promise<void> {
   try {
     await setDoc(
-      doc(db, "wishlists", wishlistDocId(email)),
+      doc(db, "wishlists", userId),
       { productIds, updatedAt: serverTimestamp() },
       { merge: true }
     );
@@ -261,9 +258,9 @@ export async function saveWishlist(email: string, productIds: string[]): Promise
 }
 
 /** Get wishlist for a user */
-export async function getWishlist(email: string): Promise<string[]> {
+export async function getWishlist(userId: string): Promise<string[]> {
   try {
-    const snap = await getDoc(doc(db, "wishlists", wishlistDocId(email)));
+    const snap = await getDoc(doc(db, "wishlists", userId));
     return snap.exists() ? (snap.data().productIds as string[]) : [];
   } catch (err: any) {
     console.warn("Firestore getWishlist warning:", err.message);
