@@ -47,7 +47,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
     checkGoogleRedirectResult().then((res) => {
       if (res && res.success && res.email) {
         login(res.email, res.name || "RP Athlete", "customer");
-        showToast(`Logged in as ${res.name}`, "success");
+        showToast(`Logged in as ${res.name || 'RP Athlete'}`, "success");
         if (onSuccess) onSuccess();
       }
     });
@@ -61,7 +61,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
       unsubscribe();
       if (interval) clearInterval(interval);
     };
-  }, [otpSent, timer]);
+  }, [otpSent, timer, login, showToast, onSuccess]);
 
   // Handle Send Phone OTP
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -103,8 +103,9 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
     setLoading(false);
 
     if (res.success && res.email) {
-      login(res.email, res.name, "customer");
-      showToast(`Verified! Welcome ${res.name}`, "success");
+      const displayName = res.name || "RP Athlete";
+      login(res.email, displayName, "customer");
+      showToast(`Verified! Welcome ${displayName}`, "success");
       if (onSuccess) onSuccess();
     } else {
       setError(res.error || "Invalid OTP code. Please check your SMS.");
@@ -120,7 +121,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
 
     if (res.success && res.email) {
       login(res.email, res.name || "RP Athlete", "customer");
-      showToast(`Logged in as ${res.name}`, "success");
+      showToast(`Logged in as ${res.name || 'RP Athlete'}`, "success");
       if (onSuccess) onSuccess();
     } else if (res.redirecting) {
       setInfoMessage("Redirecting to Google Sign-In...");

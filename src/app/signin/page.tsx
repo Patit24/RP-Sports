@@ -35,9 +35,9 @@ export default function SignInPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (currentUser) {
-      router.push("/");
+      window.location.href = "/";
     }
-  }, [currentUser, router]);
+  }, [currentUser]);
 
   useEffect(() => {
     // Real-time Firebase Auth listener for Google OAuth / Phone Auth tokens
@@ -46,15 +46,15 @@ export default function SignInPage() {
         const name = user.displayName || user.email.split("@")[0] || "RP Athlete";
         login(user.email, name, "customer");
         showToast(`Signed in successfully as ${name}`, "success");
-        router.push("/");
+        window.location.href = "/";
       }
     });
 
     checkGoogleRedirectResult().then((res) => {
       if (res && res.success && res.email) {
         login(res.email, res.name || "RP Athlete", "customer");
-        showToast(`Signed in successfully as ${res.name}`, "success");
-        router.push("/");
+        showToast(`Signed in successfully as ${res.name || 'RP Athlete'}`, "success");
+        window.location.href = "/";
       } else if (res && res.error) {
         setError(res.error);
       }
@@ -71,7 +71,7 @@ export default function SignInPage() {
       unsubscribe();
       if (interval) clearInterval(interval);
     };
-  }, [otpSent, timer, login, showToast, router]);
+  }, [otpSent, timer, login, showToast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -97,7 +97,7 @@ export default function SignInPage() {
       const capitalized = name.replace(/\b\w/g, (l) => l.toUpperCase());
       login(form.email, capitalized, "customer");
       showToast(`Welcome back, ${capitalized}!`, "success");
-      router.push("/");
+      window.location.href = "/";
     } else {
       setError("Invalid email or password.");
     }
@@ -108,17 +108,18 @@ export default function SignInPage() {
     setError("");
     setInfoMessage("");
     setLoading(true);
+
     const res = await signInWithGoogle();
+    setLoading(false);
     
     if (res.success && res.email) {
       login(res.email, res.name || "RP Athlete", "customer");
-      showToast(`Signed in successfully as ${res.name}`, "success");
-      router.push("/");
+      showToast(`Signed in successfully as ${res.name || 'RP Athlete'}`, "success");
+      window.location.href = "/";
     } else if (res.redirecting) {
       setInfoMessage("Redirecting to Google Sign-In...");
     } else {
       setError(res.error || "Google Sign-In failed. Please try again.");
-      setLoading(false);
     }
   };
 
@@ -163,9 +164,10 @@ export default function SignInPage() {
     setLoading(false);
 
     if (res.success && res.email) {
-      login(res.email, res.name, "customer");
-      showToast(`Verified! Welcome to RP Sports, ${res.name}`, "success");
-      router.push("/");
+      const displayName = res.name || "RP Athlete";
+      login(res.email, displayName, "customer");
+      showToast(`Verified! Welcome to RP Sports, ${displayName}`, "success");
+      window.location.href = "/";
     } else {
       setError(res.error || "Invalid OTP code. Please enter the 6-digit SMS code sent to your phone.");
     }
