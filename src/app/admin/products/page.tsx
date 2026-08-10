@@ -11,18 +11,8 @@ export default function ManageProductsPage() {
   const { products, deleteProduct, currentUser } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-      router.push("/signin");
-    }
-  }, [currentUser, router]);
-
   if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-gray-500 font-bold">Verifying admin credentials...</p>
-      </div>
-    );
+    return null;
   }
 
   const filteredProducts = products.filter(p => 

@@ -17,18 +17,8 @@ export default function AdminShippingPage() {
   const [testingPincode, setTestingPincode] = useState(false);
   const [pushingOrderId, setPushingOrderId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-      router.push("/admin/login");
-    }
-  }, [currentUser, router]);
-
   if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-gray-500 font-bold">Verifying admin credentials...</p>
-      </div>
-    );
+    return null;
   }
 
   const handleTestPincode = async (e: React.FormEvent) => {

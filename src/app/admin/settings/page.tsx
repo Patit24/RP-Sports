@@ -9,11 +9,9 @@ export default function SettingsPage() {
   const router = useRouter();
   const { currentUser, showToast } = useStore();
 
-  useEffect(() => {
-    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-      router.push("/signin");
-    }
-  }, [currentUser, router]);
+  if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+    return null;
+  }
 
   const [settings, setSettings] = useState({
     storeName: "RP Sports Kolkata",

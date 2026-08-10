@@ -22,11 +22,9 @@ export default function AddProductPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-      router.push("/admin/login");
-    }
-  }, [currentUser, router]);
+  if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+    return null;
+  }
 
   // Subcategory Template Types
   const [productType, setProductType] = useState<"bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies">("bats");

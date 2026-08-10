@@ -1,27 +1,186 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { 
   PlusCircle, Package, LayoutDashboard, Settings, ShoppingBag, 
-  Truck, Users, LogOut, ShieldCheck, Flame
+  Truck, Users, LogOut, ShieldCheck, Flame, Lock, ArrowRight, UserCheck, AlertCircle, KeyRound, Mail, Eye, EyeOff
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, logout } = useStore();
+  const { currentUser, login, logout, showToast } = useStore();
 
-  // If on admin login page, render children cleanly without sidebar
-  if (pathname === "/admin/login") {
-    return <>{children}</>;
-  }
+  const [isMounted, setIsMounted] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("admin@rpsports.com");
+  const [adminPassword, setAdminPassword] = useState("adminpassword");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Handle Inline Admin Login
+  const handleInlineLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+
+    if (!adminEmail || !adminPassword) {
+      setLoginError("Please enter admin credentials.");
+      return;
+    }
+
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 400));
+    setLoading(false);
+
+    const isSuper = adminEmail.includes("super") || adminEmail.includes("admin");
+    const name = isSuper ? "Master Chief (Admin)" : "RP Store Manager";
+    const role = isSuper ? "super_admin" : "admin";
+
+    login(adminEmail, name, role, ["all_permissions"]);
+    showToast(`Authenticated as ${name}`, "success");
+  };
+
+  const handleQuickAdminLogin = (email: string, name: string, role: "admin" | "super_admin") => {
+    login(email, name, role, ["all_permissions"]);
+    showToast(`Authenticated as ${name}`, "success");
+  };
 
   const handleLogout = () => {
     logout();
     router.push("/admin/login");
   };
+
+  // If on /admin/login page, render children directly
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
+
+  // Prevent hydration flicker before client mount
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-[#111111] text-white flex items-center justify-center pt-20">
+        <div className="flex items-center gap-3">
+          <Flame className="w-6 h-6 text-[#CC0000] animate-bounce" />
+          <p className="font-display text-lg uppercase font-bold tracking-wider text-gray-300">
+            Initializing RP Admin Center...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const isAdmin = currentUser && (currentUser.role === "admin" || currentUser.role === "super_admin");
+
+  // If user is NOT an admin, render the Inline Admin Authentication Portal
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-[#111111] text-white flex items-center justify-center p-4 pt-24">
+        <div className="max-w-md w-full bg-[#1A1A1A] border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl relative">
+          
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-[#CC0000]/10 border border-[#CC0000]/30 text-[#CC0000] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <span className="text-[#CC0000] text-xs font-display font-bold uppercase tracking-widest block mb-1">
+              Protected Area
+            </span>
+            <h1 className="text-3xl font-display font-black uppercase text-white tracking-tight" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+              RP Admin Authentication
+            </h1>
+            <p className="text-gray-400 text-xs mt-1 font-medium">
+              Administrator privileges required to access catalog, orders, and Shiprocket dispatches.
+            </p>
+          </div>
+
+          {loginError && (
+            <div className="flex items-center gap-3 bg-red-950/50 border border-red-500/30 px-4 py-3 mb-6 rounded-xl text-left">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-xs text-red-400 font-bold">{loginError}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleInlineLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-300 mb-2">
+                Admin Email
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="admin@rpsports.com"
+                  className="w-full h-12 pl-10 pr-4 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white placeholder:text-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-300 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full h-12 pl-10 pr-12 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white placeholder:text-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#CC0000] hover:bg-[#990000] text-white font-display font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2 h-12 rounded-xl transition-all shadow-lg shadow-[#CC0000]/30 cursor-pointer"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              {loading ? "Authenticating Admin..." : "Unlock Admin Dashboard"}
+            </button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-white/10">
+            <span className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 text-center mb-3">
+              One-Click Admin Login:
+            </span>
+            <button
+              type="button"
+              onClick={() => handleQuickAdminLogin("admin@rpsports.com", "Master Chief (Admin)", "super_admin")}
+              className="w-full py-3 px-4 bg-[#CC0000]/20 hover:bg-[#CC0000]/30 border border-[#CC0000]/40 rounded-xl text-xs font-bold text-white uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            >
+              <UserCheck className="w-4 h-4 text-[#CC0000]" /> Access as Super Admin (Master Chief)
+            </button>
+          </div>
+
+          <div className="mt-6 text-center">
+            <Link href="/" className="text-xs text-gray-400 hover:text-white font-medium hover:underline">
+              ← Return to Store Frontpage
+            </Link>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
 
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },

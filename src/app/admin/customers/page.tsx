@@ -10,18 +10,8 @@ export default function AdminCustomersPage() {
   const { orders, currentUser } = useStore();
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-      router.push("/admin/login");
-    }
-  }, [currentUser, router]);
-
   if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <p className="text-gray-500 font-bold">Verifying admin credentials...</p>
-      </div>
-    );
+    return null;
   }
 
   // Aggregate unique customer profiles from orders and active state
