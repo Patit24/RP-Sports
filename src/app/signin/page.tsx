@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn, AlertCircle, Smartphone, Mail, KeyRound, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle, checkGoogleRedirectResult, sendPhoneOTP, verifyPhoneOTP } from "@/lib/authService";
+import { signInWithGoogle, sendPhoneOTP, verifyPhoneOTP } from "@/lib/authService";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -47,16 +47,6 @@ export default function SignInPage() {
         login(user.email, name, "customer");
         showToast(`Signed in successfully as ${name}`, "success");
         window.location.href = "/";
-      }
-    });
-
-    checkGoogleRedirectResult().then((res) => {
-      if (res && res.success && res.email) {
-        login(res.email, res.name || "RP Athlete", "customer");
-        showToast(`Signed in successfully as ${res.name || 'RP Athlete'}`, "success");
-        window.location.href = "/";
-      } else if (res && res.error) {
-        setError(res.error);
       }
     });
 
@@ -107,17 +97,13 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setError("");
     setInfoMessage("");
-    setLoading(true);
 
     const res = await signInWithGoogle();
-    setLoading(false);
     
     if (res.success && res.email) {
       login(res.email, res.name || "RP Athlete", "customer");
       showToast(`Signed in successfully as ${res.name || 'RP Athlete'}`, "success");
       window.location.href = "/";
-    } else if (res.redirecting) {
-      setInfoMessage("Redirecting to Google Sign-In...");
     } else {
       setError(res.error || "Google Sign-In failed. Please try again.");
     }
@@ -450,7 +436,6 @@ export default function SignInPage() {
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            disabled={loading}
             className="w-full flex items-center justify-center gap-3 h-12 border border-gray-300 bg-white text-xs font-display font-bold uppercase tracking-wider text-gray-700 hover:text-[#CC0000] hover:border-[#CC0000] transition-all rounded-xl cursor-pointer shadow-sm"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
