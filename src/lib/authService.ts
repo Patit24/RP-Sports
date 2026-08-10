@@ -83,7 +83,7 @@ export function setupRecaptcha(containerId: string = "recaptcha-container") {
       container.innerHTML = "";
     }
 
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, container, {
       size: "invisible",
       callback: () => {},
       "expired-callback": () => {
