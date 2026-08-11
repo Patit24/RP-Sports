@@ -441,3 +441,37 @@ export async function getStoreSettings(): Promise<StoreSettings | null> {
     return null;
   }
 }
+
+/** Listen to all orders for a specific user (real-time) */
+export function listenToUserOrders(
+  userEmail: string,
+  callback: (orders: Order[]) => void
+): Unsubscribe {
+  try {
+    const q = query(
+      collection(db, "orders"),
+      where("userEmail", "==", userEmail),
+      orderBy("createdAt", "desc")
+    );
+    return onSnapshot(
+      q,
+      (snap) => {
+        const orders = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            ...data,
+            createdAt: normalizeDate(data.createdAt),
+            firestoreId: d.id,
+          } as unknown as Order;
+        });
+        callback(orders);
+      },
+      (error) => {
+        console.warn("Firestore listenToUserOrders warning:", error.message);
+      }
+    );
+  } catch (err: any) {
+    console.warn("Firestore listenToUserOrders failed setup:", err.message);
+    return () => {};
+  }
+}

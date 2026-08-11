@@ -91,6 +91,7 @@ export interface Order {
   shipped_at?: string;
   delivered_at?: string;
   shiprocket_status?: string;
+  userEmail?: string;
 }
 
 export interface User {

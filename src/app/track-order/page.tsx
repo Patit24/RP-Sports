@@ -1,21 +1,41 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
+import { listenToOrders, listenToUserOrders } from "@/lib/firestoreService";
 import { Truck, Search, CheckCircle2, Clock, MapPin, Package, ArrowLeft, AlertCircle, Phone, Building2 } from "lucide-react";
 
 function TrackOrderContent() {
   const searchParams = useSearchParams();
   const initialOrderId = searchParams.get("orderId") || "";
 
-  const { orders } = useStore();
+  const { orders, setOrders, currentUser } = useStore();
   const [searchId, setSearchId] = useState(initialOrderId);
   const [searched, setSearched] = useState(Boolean(initialOrderId));
 
+  // Real-time listener on track-order page
+  useEffect(() => {
+    let unsubscribe: () => void;
+    if (currentUser?.email) {
+      if (currentUser.role === "admin" || currentUser.role === "super_admin") {
+        unsubscribe = listenToOrders((dbOrders) => setOrders(dbOrders));
+      } else {
+        unsubscribe = listenToUserOrders(currentUser.email, (dbOrders) => setOrders(dbOrders));
+      }
+    } else {
+      unsubscribe = listenToOrders((dbOrders) => setOrders(dbOrders));
+    }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [currentUser, setOrders]);
+
   const currentOrder = orders.find(
-    (o) => o.id.toLowerCase() === searchId.trim().toLowerCase() || o.trackingNumber === searchId.trim()
+    (o) => o.id.toLowerCase() === searchId.trim().toLowerCase() || 
+           o.trackingNumber === searchId.trim() ||
+           (o.awb_code && o.awb_code.trim() !== "" && o.awb_code.toLowerCase() === searchId.trim().toLowerCase())
   ) || (searched && orders.length > 0 ? orders[0] : null);
 
   const STEPS = [
@@ -29,6 +49,7 @@ function TrackOrderContent() {
   const getStepIndex = (status: string) => {
     switch (status) {
       case "Pending": return 0;
+      case "Placed":
       case "Confirmed": return 1;
       case "Packed": return 2;
       case "Shipped":
@@ -102,7 +123,7 @@ function TrackOrderContent() {
             <div className="text-right">
               <span className="text-xs text-gray-400 block uppercase tracking-widest font-mono">Assigned Logistics Partner</span>
               <span className="font-mono font-bold text-gray-900 text-sm bg-gray-100 border border-gray-200 px-3 py-1 rounded-lg inline-block mt-0.5">
-                🚚 {currentOrder.deliveryPartnerInfo?.carrier || "Delhivery Express"} ({currentOrder.deliveryPartnerInfo?.awbNumber || currentOrder.trackingNumber})
+                🚚 {currentOrder.courier_name || currentOrder.deliveryPartnerInfo?.carrier || "Delhivery Express"} ({currentOrder.awb_code || currentOrder.deliveryPartnerInfo?.awbNumber || currentOrder.trackingNumber || "PENDING"})
               </span>
             </div>
           </div>
