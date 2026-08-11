@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore, Order } from "@/lib/store";
+import { listenToOrders } from "@/lib/firestoreService";
 import { 
   Truck, ShieldCheck, CheckCircle2, AlertCircle, Search, 
   MapPin, RefreshCw, Send, ExternalLink, Calendar, Key, Check, XCircle
@@ -10,7 +11,7 @@ import {
 
 export default function AdminShippingPage() {
   const router = useRouter();
-  const { orders, currentUser, showToast } = useStore();
+  const { orders, setOrders, currentUser, showToast } = useStore();
 
   const [pincodeTest, setPincodeTest] = useState("700028");
   const [testResult, setTestResult] = useState<any>(null);
@@ -35,6 +36,17 @@ export default function AdminShippingPage() {
     }
     verifyShiprocket();
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+      return;
+    }
+    // Listen to orders from Cloud Firestore in real-time
+    const unsubscribe = listenToOrders((dbOrders) => {
+      setOrders(dbOrders);
+    });
+    return () => unsubscribe();
+  }, [currentUser, setOrders]);
 
   // Verify Connection Method
   const verifyShiprocket = async () => {
@@ -128,6 +140,22 @@ export default function AdminShippingPage() {
 
       if (data.success) {
         showToast(`Shipment created for Order ${order.id}! AWB: ${data.awbCode || 'Assigned'}`, "success");
+        // Update local store immediately
+        const updatedOrders = orders.map((ord) => 
+          ord.id === order.id 
+            ? { 
+                ...ord, 
+                shiprocket_order_id: data.orderId,
+                shiprocket_shipment_id: data.shipmentId,
+                awb_code: data.awbCode,
+                courier_name: data.courierName,
+                shipping_status: data.status || "NEW",
+                pickup_status: data.awbCode ? "Scheduled" : "Not Scheduled",
+                shiprocket_status: data.status || "NEW"
+              } 
+            : ord
+        );
+        setOrders(updatedOrders);
         setTimeout(() => window.location.reload(), 1500);
       } else {
         showToast(data.message || "Failed to sync order with Shiprocket.", "error");

@@ -158,6 +158,7 @@ interface SportsStoreState {
     paymentStatus: Order["paymentStatus"]
   ) => Order | null;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
+  setOrders: (orders: Order[]) => void;
   
   // Admin Product CRUD
   addProduct: (product: Omit<Product, "id" | "slug" | "sku">) => void;
@@ -460,6 +461,10 @@ export const useStore = create<SportsStoreState>()(
         });
         // Sync status update to Cloud Firestore
         updateOrderStatusInDB(orderId, status).catch(console.error);
+      },
+
+      setOrders: (orders) => {
+        set({ orders });
       },
 
       addProduct: (prodData) => {

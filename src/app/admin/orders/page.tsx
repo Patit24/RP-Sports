@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore, Order } from "@/lib/store";
+import { listenToOrders } from "@/lib/firestoreService";
 import { 
   ShoppingBag, Search, Filter, Truck, CheckCircle2, Clock, 
   XCircle, AlertCircle, Phone, MapPin, ExternalLink, RefreshCw, X, ShieldCheck, Eye, Copy, Check
@@ -10,13 +11,24 @@ import {
 
 export default function AdminOrdersPage() {
   const router = useRouter();
-  const { orders, updateOrderStatus, currentUser, showToast } = useStore();
+  const { orders, setOrders, updateOrderStatus, currentUser, showToast } = useStore();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isPushingShiprocket, setIsPushingShiprocket] = useState(false);
   const [copiedAwb, setCopiedAwb] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+      return;
+    }
+    // Listen to orders from Cloud Firestore in real-time
+    const unsubscribe = listenToOrders((dbOrders) => {
+      setOrders(dbOrders);
+    });
+    return () => unsubscribe();
+  }, [currentUser, setOrders]);
 
   if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
     return null;
@@ -55,6 +67,22 @@ export default function AdminOrdersPage() {
 
       if (data.success) {
         showToast(`Order ${order.id} pushed to Shiprocket! AWB: ${data.awbCode || 'Assigned'}`, "success");
+        // Update local store immediately
+        const updatedOrders = orders.map((ord) => 
+          ord.id === order.id 
+            ? { 
+                ...ord, 
+                shiprocket_order_id: data.orderId,
+                shiprocket_shipment_id: data.shipmentId,
+                awb_code: data.awbCode,
+                courier_name: data.courierName,
+                shipping_status: data.status || "NEW",
+                pickup_status: data.awbCode ? "Scheduled" : "Not Scheduled",
+                shiprocket_status: data.status || "NEW"
+              } 
+            : ord
+        );
+        setOrders(updatedOrders);
       } else {
         showToast(`Shiprocket Push Notice: ${data.message || "Order registered with fallback"}`, "info");
       }

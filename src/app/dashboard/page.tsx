@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { getOrdersByUser } from "@/lib/firestoreService";
 import { 
   User, Package, Heart, MapPin, Gift, 
   ArrowUpRight, Clock, ShieldCheck, Download, LogOut 
@@ -11,8 +12,20 @@ import Link from "next/link";
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
-  const { currentUser, orders, wishlist, products, logout } = useStore();
+  const { currentUser, orders, setOrders, wishlist, products, logout } = useStore();
   const [activeTab, setActiveTab] = useState<"orders" | "wishlist" | "addresses" | "profile">("orders");
+
+  useEffect(() => {
+    if (!currentUser || !currentUser.email) return;
+
+    getOrdersByUser(currentUser.email)
+      .then((dbOrders) => {
+        if (dbOrders) {
+          setOrders(dbOrders);
+        }
+      })
+      .catch((err) => console.error("Error loading user orders:", err));
+  }, [currentUser, setOrders]);
 
   const handleLogout = () => {
     logout();

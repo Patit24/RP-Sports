@@ -4,11 +4,23 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
+import { listenToOrders } from "@/lib/firestoreService";
 import { Package, PlusCircle, Users, ShoppingBag, ArrowRight } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const { products, orders, currentUser } = useStore();
+  const { products, orders, setOrders, currentUser } = useStore();
+
+  useEffect(() => {
+    if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+      return;
+    }
+    // Listen to orders from Cloud Firestore in real-time
+    const unsubscribe = listenToOrders((dbOrders) => {
+      setOrders(dbOrders);
+    });
+    return () => unsubscribe();
+  }, [currentUser, setOrders]);
 
   if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
     return null;
