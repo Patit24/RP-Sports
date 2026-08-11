@@ -455,13 +455,15 @@ export const useStore = create<SportsStoreState>()(
       },
 
       updateOrderStatus: (orderId, status) => {
+        const order = get().orders.find((ord) => ord.id === orderId || (ord as any).firestoreId === orderId);
         set({
           orders: get().orders.map((ord) =>
-            ord.id === orderId ? { ...ord, status } : ord
+            ord.id === orderId || (ord as any).firestoreId === orderId ? { ...ord, status } : ord
           ),
         });
-        // Sync status update to Cloud Firestore
-        updateOrderStatusInDB(orderId, status).catch(console.error);
+        // Sync status update to Cloud Firestore using the direct docId if found
+        const docId = order ? ((order as any).firestoreId || order.id) : orderId;
+        updateOrderStatusInDB(docId, status).catch(console.error);
       },
 
       setOrders: (orders) => {
