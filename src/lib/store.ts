@@ -12,6 +12,8 @@ import {
 } from "./firestoreService";
 import { notifyDeliveryPartner } from "./deliveryPartnerService";
 import { mockProducts, Product } from "./mockData";
+import { signOut } from "firebase/auth";
+import { auth } from "./firebase";
 
 export type { Product } from "./mockData";
 
@@ -229,6 +231,9 @@ export const useStore = create<SportsStoreState>()(
       },
 
       logout: () => {
+        if (typeof window !== "undefined") {
+          signOut(auth).catch(console.error);
+        }
         set({ currentUser: null, cart: [] });
         get().showToast("Signed out successfully", "info");
       },

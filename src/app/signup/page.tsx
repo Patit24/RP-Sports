@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, UserPlus, AlertCircle, Check, Smartphone, CheckCircle2, KeyRound } from "lucide-react";
+import { Eye, EyeOff, UserPlus, AlertCircle, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { addSubscriber } from "@/lib/firestoreService";
-import { signInWithGoogle, checkGoogleRedirectResult, sendPhoneOTP, verifyPhoneOTP } from "@/lib/authService";
-import { onAuthStateChanged } from "firebase/auth";
+import { signInWithGoogle } from "@/lib/authService";
+import { onAuthStateChanged, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { saveUser, addSubscriber } from "@/lib/firestoreService";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -17,7 +17,6 @@ export default function SignUpPage() {
   const [form, setForm] = useState({
     name: "",
     email: "",
-    phone: "",
     password: "",
     confirmPassword: "",
     agreeTerms: false,
@@ -28,12 +27,6 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  // OTP Verification Mode
-  const [useOtpVerification, setUseOtpVerification] = useState(false);
-  const [otpCode, setOtpCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [timer, setTimer] = useState(30);
-
   // Redirect if already logged in
   useEffect(() => {
     if (currentUser) {
@@ -42,38 +35,41 @@ export default function SignUpPage() {
   }, [currentUser, router]);
 
   useEffect(() => {
-    // Real-time Firebase Auth listener for Google OAuth / Phone Auth tokens
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    // Real-time Firebase Auth listener for Google OAuth / email signup tokens
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user && user.email) {
-        const name = user.displayName || user.email.split("@")[0] || "RP Athlete";
-        login(user.email, name, "customer", [], user.uid);
-        addSubscriber(user.email).catch(console.error);
-        showToast(`Welcome to RP Sports, ${name}!`, "success");
-        router.push("/");
+        const name = user.displayName || form.name || user.email.split("@")[0] || "RP Athlete";
+        
+        setLoading(true);
+        try {
+          // Sync profile to Firestore
+          await saveUser(user.uid, {
+            uid: user.uid,
+            email: user.email!,
+            name,
+            role: "customer",
+            addresses: [],
+            rewardPoints: 100,
+          });
+
+          // Sync local state session
+          login(user.email, name, "customer", [], user.uid);
+          addSubscriber(user.email).catch(console.error);
+
+          showToast(`Welcome to RP Sports, ${name}!`, "success");
+          router.push("/");
+        } catch (err: any) {
+          console.error("Error setting up user profile:", err);
+          login(user.email, name, "customer", [], user.uid);
+          router.push("/");
+        } finally {
+          setLoading(false);
+        }
       }
     });
 
-    checkGoogleRedirectResult().then((res) => {
-      if (res && res.success && res.email) {
-        login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
-        addSubscriber(res.email).catch(console.error);
-        showToast(`Welcome to RP Sports, ${res.name}!`, "success");
-        router.push("/");
-      } else if (res && res.error) {
-        setErrors({ google: res.error });
-      }
-    });
-
-    let interval: NodeJS.Timeout;
-    if (otpSent && timer > 0) {
-      interval = setInterval(() => setTimer((t) => t - 1), 1000);
-    }
-    
-    return () => {
-      unsubscribe();
-      if (interval) clearInterval(interval);
-    };
-  }, [otpSent, timer, login, showToast, router]);
+    return () => unsubscribe();
+  }, [login, showToast, router, form.name]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -101,7 +97,6 @@ export default function SignUpPage() {
     if (!form.name.trim()) newErrors.name = "Full name is required.";
     if (!form.email) newErrors.email = "Email is required.";
     else if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = "Enter a valid email.";
-    if (form.phone && !/^\d{10}$/.test(form.phone.replace(/\s/g, ""))) newErrors.phone = "Enter a valid 10-digit phone.";
     if (!form.password) newErrors.password = "Password is required.";
     else if (form.password.length < 6) newErrors.password = "Password must be at least 6 characters.";
     if (form.password !== form.confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
@@ -116,34 +111,10 @@ export default function SignUpPage() {
     const res = await signInWithGoogle();
     
     if (res.success && res.email) {
-      login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
-      addSubscriber(res.email).catch(console.error);
-      showToast(`Account created! Welcome, ${res.name}`, "success");
-      router.push("/");
-    } else if (res.redirecting) {
-      showToast("Redirecting to Google Sign-Up...", "info");
+      // Auth state listener handles Firestore sync and redirect
     } else {
       setLoading(false);
       setErrors({ google: res.error || "Google Sign-Up failed." });
-    }
-  };
-
-  // Send OTP for Phone Sign Up
-  const handleSendPhoneOTP = async () => {
-    if (!form.phone || form.phone.replace(/\D/g, "").length !== 10) {
-      setErrors({ ...errors, phone: "Please enter a valid 10-digit phone number first." });
-      return;
-    }
-    setLoading(true);
-    const res = await sendPhoneOTP(form.phone);
-    setLoading(false);
-
-    if (res.success) {
-      setOtpSent(true);
-      setTimer(30);
-      showToast("OTP sent to " + form.phone, "info");
-    } else {
-      setErrors({ ...errors, phone: res.error || "Failed to send OTP to number." });
     }
   };
 
@@ -157,33 +128,41 @@ export default function SignUpPage() {
     }
 
     setLoading(true);
-    
-    let finalUid: string | undefined = undefined;
-    // If user chose OTP verification mode and entered OTP code
-    if (useOtpVerification && otpSent) {
-      const otpRes = await verifyPhoneOTP(otpCode, form.phone);
-      if (!otpRes.success) {
-        setErrors({ ...errors, otp: otpRes.error || "Invalid OTP code." });
-        setLoading(false);
-        return;
+    try {
+      // Create user in Firebase Auth
+      const creds = await createUserWithEmailAndPassword(auth, form.email, form.password);
+      
+      // Set display name in Firebase Auth
+      await updateProfile(creds.user, {
+        displayName: form.name
+      });
+      
+      // Firestore profile sync is triggered by onAuthStateChanged listener
+    } catch (err: any) {
+      console.error("Sign-up error:", err);
+      let errMsg = "Failed to create account. Please try again.";
+      const fieldErrors: Record<string, string> = {};
+      
+      if (err.code === "auth/email-already-in-use") {
+        fieldErrors.email = "This email address is already in use.";
+      } else if (err.code === "auth/invalid-email") {
+        fieldErrors.email = "Invalid email format.";
+      } else if (err.code === "auth/weak-password") {
+        fieldErrors.password = "Password is too weak. Choose a stronger password.";
+      } else {
+        errMsg = err.message || errMsg;
+        setErrors({ form: errMsg });
       }
-      finalUid = otpRes.uid;
-    } else {
-      await new Promise((r) => setTimeout(r, 600));
+      
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors(fieldErrors);
+      }
+      setLoading(false);
     }
-
-    login(form.email, form.name, "customer", [], finalUid);
-    addSubscriber(form.email).catch(console.error);
-    showToast(`Welcome to RP Sports, ${form.name}!`, "success");
-    router.push("/");
   };
 
   return (
     <div className="min-h-screen flex bg-[#F9F9F9]">
-      
-      {/* Recaptcha Container */}
-      <div id="recaptcha-container"></div>
-
       {/* Left Panel: Visual */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#111111]">
         <img
@@ -234,7 +213,6 @@ export default function SignUpPage() {
       {/* Right Panel: Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 pt-28 md:pt-32">
         <div className="w-full max-w-md space-y-6">
-          
           {/* Header */}
           <div>
             <div className="inline-flex items-center gap-2 bg-[#CC0000]/10 border border-[#CC0000]/30 px-3 py-1 rounded-full mb-3">
@@ -254,11 +232,11 @@ export default function SignUpPage() {
             </p>
           </div>
 
-          {/* Google Error */}
-          {errors.google && (
+          {/* Errors */}
+          {(errors.google || errors.form) && (
             <div className="flex items-center gap-3 bg-red-50 border border-red-200 p-4 rounded-xl text-left">
               <AlertCircle className="w-4 h-4 text-[#CC0000] flex-shrink-0" />
-              <p className="text-xs text-[#CC0000] font-bold">{errors.google}</p>
+              <p className="text-xs text-[#CC0000] font-bold">{errors.google || errors.form}</p>
             </div>
           )}
 
@@ -287,7 +265,7 @@ export default function SignUpPage() {
                 fill="#EA4335"
               />
             </svg>
-            <span>Sign Up with Google</span>
+            <span>Continue with Google</span>
           </button>
 
           {/* Divider */}
@@ -304,7 +282,6 @@ export default function SignUpPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            
             {/* Full Name */}
             <div>
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1 text-left">
@@ -319,6 +296,7 @@ export default function SignUpPage() {
                 className={`w-full h-11 px-4 border bg-white text-[#111111] font-medium text-sm rounded-xl focus:outline-none transition-colors ${
                   errors.name ? "border-[#CC0000]" : "border-gray-300 focus:border-[#CC0000]"
                 }`}
+                required
               />
               {errors.name && <p className="text-xs text-[#CC0000] font-bold mt-1 text-left">{errors.name}</p>}
             </div>
@@ -337,72 +315,10 @@ export default function SignUpPage() {
                 className={`w-full h-11 px-4 border bg-white text-[#111111] font-medium text-sm rounded-xl focus:outline-none transition-colors ${
                   errors.email ? "border-[#CC0000]" : "border-gray-300 focus:border-[#CC0000]"
                 }`}
+                required
               />
               {errors.email && <p className="text-xs text-[#CC0000] font-bold mt-1 text-left">{errors.email}</p>}
             </div>
-
-            {/* Phone & OTP Toggle */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 text-left">
-                  Mobile Number (+91)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setUseOtpVerification(!useOtpVerification)}
-                  className="text-[11px] font-bold text-[#CC0000] hover:underline"
-                >
-                  {useOtpVerification ? "Disable SMS Verification" : "Enable SMS Verification"}
-                </button>
-              </div>
-
-              <div className="flex">
-                <span className="h-11 px-3.5 flex items-center bg-gray-100 border border-r-0 border-gray-300 text-xs font-bold text-gray-700 rounded-l-xl">
-                  +91
-                </span>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  placeholder="98765 43210"
-                  maxLength={10}
-                  className="w-full h-11 px-4 border border-gray-300 bg-white text-[#111111] font-mono font-bold text-sm focus:outline-none focus:border-[#CC0000] rounded-r-xl"
-                />
-                {useOtpVerification && (
-                  <button
-                    type="button"
-                    onClick={handleSendPhoneOTP}
-                    disabled={loading}
-                    className="ml-2 px-3 bg-[#111111] text-white text-xs font-bold rounded-xl hover:bg-[#CC0000] transition-colors flex-shrink-0"
-                  >
-                    Send OTP
-                  </button>
-                )}
-              </div>
-              {errors.phone && <p className="text-xs text-[#CC0000] font-bold mt-1 text-left">{errors.phone}</p>}
-            </div>
-
-            {/* OTP Code Input if enabled */}
-            {useOtpVerification && otpSent && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl space-y-2">
-                <label className="block text-xs font-bold text-gray-800 text-left">
-                  Enter 6-Digit SMS Code
-                </label>
-                <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    placeholder="123456"
-                    maxLength={6}
-                    className="w-full h-10 pl-9 pr-3 border border-[#CC0000] bg-white font-mono font-black text-sm rounded-lg"
-                  />
-                </div>
-                {errors.otp && <p className="text-xs text-[#CC0000] font-bold text-left">{errors.otp}</p>}
-              </div>
-            )}
 
             {/* Password */}
             <div>
@@ -419,6 +335,7 @@ export default function SignUpPage() {
                   className={`w-full h-11 pl-4 pr-11 border bg-white text-[#111111] font-medium text-sm rounded-xl focus:outline-none transition-colors ${
                     errors.password ? "border-[#CC0000]" : "border-gray-300 focus:border-[#CC0000]"
                   }`}
+                  required
                 />
                 <button
                   type="button"
@@ -464,6 +381,7 @@ export default function SignUpPage() {
                   className={`w-full h-11 pl-4 pr-11 border bg-white text-[#111111] font-medium text-sm rounded-xl focus:outline-none transition-colors ${
                     errors.confirmPassword ? "border-[#CC0000]" : "border-gray-300 focus:border-[#CC0000]"
                   }`}
+                  required
                 />
                 <button
                   type="button"
@@ -515,10 +433,8 @@ export default function SignUpPage() {
               {loading ? "Creating Account..." : "Create Athlete Account"}
             </button>
           </form>
-
         </div>
       </div>
-
     </div>
   );
 }

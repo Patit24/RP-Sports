@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Mail, CheckCircle2, AlertCircle, KeyRound } from "lucide-react";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -20,9 +22,16 @@ export default function ForgotPasswordPage() {
     }
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    setSent(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (err: any) {
+      console.warn("Forgot password request completed:", err.code || err.message);
+      // Silently swallow errors (like user-not-found) to comply with security requirements:
+      // "Do not expose whether sensitive account information exists unnecessarily."
+    } finally {
+      setLoading(false);
+      setSent(true);
+    }
   };
 
   return (
