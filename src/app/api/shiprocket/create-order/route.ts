@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
 import { createShiprocketOrder } from "@/lib/shiprocketService";
 import { getOrderDocumentId, updateOrderInDB } from "@/lib/firestoreService";
+import { verifyAdmin } from "@/lib/serverAuth";
 import type { Order } from "@/lib/store";
 
 export async function POST(request: Request) {
   try {
+    // Verify admin permission
+    const adminUser = await verifyAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Administrator credentials required." },
+        { status: 401 }
+      );
+    }
+
     const order: Order = await request.json();
     if (!order || !order.id || !order.shippingAddress) {
       return NextResponse.json(

@@ -10,7 +10,7 @@ import CheckoutAuthGate from "@/components/CheckoutAuthGate";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, currentUser, placeOrder, activeCoupon } = useStore();
+  const { cart, currentUser, activeCoupon, clearCart, removeCoupon } = useStore();
 
   // Step state
   const [step, setStep] = useState<"address" | "payment" | "processing">("address");
@@ -62,35 +62,66 @@ export default function CheckoutPage() {
 
   const handleProcessPayment = async () => {
     setStep("processing");
+    setFormError("");
 
-    const newOrder = placeOrder(
-      {
-        fullName,
-        phone,
-        addressLine,
-        city,
-        state: stateName,
-        pincode
-      },
-      paymentMethod,
-      "Success"
-    );
-
-    // Push order to Shiprocket Logistics API
     try {
-      await fetch("/api/shiprocket/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newOrder),
-      });
-    } catch (err) {
-      console.warn("Shiprocket sync warning:", err);
-    }
+      // Get Firebase Auth ID Token for secure user verification on the server
+      let token = "";
+      try {
+        const { auth } = await import("@/lib/firebase");
+        if (auth.currentUser) {
+          token = await auth.currentUser.getIdToken();
+        }
+      } catch (tokenErr) {
+        console.warn("Could not retrieve Auth ID token:", tokenErr);
+      }
 
-    setTimeout(() => {
-      triggerConfetti();
-      router.push(`/order-success?orderId=${newOrder?.id || "ORD-1001"}`);
-    }, 1200);
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch("/api/orders/create", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          items: cart,
+          shippingAddress: {
+            fullName,
+            phone,
+            addressLine,
+            city,
+            state: stateName,
+            pincode,
+          },
+          paymentMethod,
+          paymentStatus: paymentMethod === "COD" ? "Pending" : "Success",
+          couponCode: activeCoupon?.code || null,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Clear cart locally on checkout success
+        clearCart();
+        removeCoupon();
+
+
+        setTimeout(() => {
+          triggerConfetti();
+          router.push(`/order-success?orderId=${data.orderId}`);
+        }, 1200);
+      } else {
+        setStep("payment");
+        setFormError(data.message || "Failed to process payment and place order securely.");
+      }
+    } catch (err: any) {
+      setStep("payment");
+      setFormError(err.message || "An unexpected error occurred during checkout.");
+    }
   };
 
 

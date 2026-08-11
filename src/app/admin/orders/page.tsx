@@ -57,9 +57,23 @@ export default function AdminOrdersPage() {
   const handlePushShiprocket = async (order: Order) => {
     setIsPushingShiprocket(true);
     try {
+      // Get Firebase Auth ID Token for admin authorization
+      let token = "";
+      try {
+        const { auth } = await import("@/lib/firebase");
+        if (auth.currentUser) {
+          token = await auth.currentUser.getIdToken();
+        }
+      } catch (err) {
+        console.warn("Could not retrieve auth token for admin push:", err);
+      }
+
       const res = await fetch("/api/shiprocket/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : ""
+        },
         body: JSON.stringify(order),
       });
       const data = await res.json();

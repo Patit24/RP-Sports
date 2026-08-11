@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
 import { getAllOrders, updateOrderInDB } from "@/lib/firestoreService";
 import { trackShiprocketOrder } from "@/lib/shiprocketService";
+import { verifyAdmin } from "@/lib/serverAuth";
 import type { Order } from "@/lib/store";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    // Verify admin permission
+    const adminUser = await verifyAdmin(request);
+    if (!adminUser) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized. Administrator credentials required." },
+        { status: 401 }
+      );
+    }
+
     const orders = await getAllOrders();
     let syncedCount = 0;
 

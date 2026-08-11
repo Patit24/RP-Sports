@@ -48,11 +48,28 @@ export default function AdminShippingPage() {
     return () => unsubscribe();
   }, [currentUser, setOrders]);
 
+  const getAuthToken = async () => {
+    try {
+      const { auth } = await import("@/lib/firebase");
+      if (auth.currentUser) {
+        return await auth.currentUser.getIdToken();
+      }
+    } catch (e) {
+      console.warn("Failed to get auth token:", e);
+    }
+    return "";
+  };
+
   // Verify Connection Method
   const verifyShiprocket = async () => {
     setCheckingConnection(true);
     try {
-      const res = await fetch("/api/shiprocket/test-connection");
+      const token = await getAuthToken();
+      const res = await fetch("/api/shiprocket/test-connection", {
+        headers: {
+          "Authorization": token ? `Bearer ${token}` : ""
+        }
+      });
       const data = await res.json();
       if (data.connected) {
         setConnectionStatus("connected");
@@ -78,7 +95,13 @@ export default function AdminShippingPage() {
   const handleSyncNow = async () => {
     setSyncingOrders(true);
     try {
-      const res = await fetch("/api/shiprocket/sync", { method: "POST" });
+      const token = await getAuthToken();
+      const res = await fetch("/api/shiprocket/sync", { 
+        method: "POST",
+        headers: {
+          "Authorization": token ? `Bearer ${token}` : ""
+        }
+      });
       const data = await res.json();
       if (data.success) {
         setSyncedCount(data.syncedCount);
@@ -130,9 +153,13 @@ export default function AdminShippingPage() {
   const handlePushToShiprocket = async (order: Order) => {
     setPushingOrderId(order.id);
     try {
+      const token = await getAuthToken();
       const res = await fetch("/api/shiprocket/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": token ? `Bearer ${token}` : ""
+        },
         body: JSON.stringify(order),
       });
       const data = await res.json();
