@@ -481,9 +481,20 @@ export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrd
       };
     }
 
+    let errorMessage = data.message || "Failed to create order on Shiprocket.";
+    if (data.errors) {
+      const errorDetails = Object.entries(data.errors)
+        .map(([field, messages]) => {
+          const formattedMsgs = Array.isArray(messages) ? messages.join(", ") : String(messages);
+          return `${field}: ${formattedMsgs}`;
+        })
+        .join("; ");
+      errorMessage = `${errorMessage} (${errorDetails})`;
+    }
+
     return {
       success: false,
-      message: data.message || "Failed to create order on Shiprocket.",
+      message: errorMessage,
     };
   } catch (err: any) {
     console.error("❌ Error creating Shiprocket order:", err);
