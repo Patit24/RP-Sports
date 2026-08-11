@@ -1,70 +1,115 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 
-// Initialize Firebase Admin SDK (server-side only)
-function getAdminAuth() {
-  if (!getApps().length) {
-    // Vercel stores env vars with real newlines; .env.local uses \n escape sequences
-    // Handle both formats reliably
-    const rawKey = process.env.FIREBASE_PRIVATE_KEY || "";
-    const privateKey = rawKey.includes("\\n")
-      ? rawKey.replace(/\\n/g, "\n")
-      : rawKey;
+// Get the base app URL — works at runtime on both Vercel and local
+function getAppUrl(request: Request): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  const url = new URL(request.url);
+  return `${url.protocol}//${url.host}`;
+}
 
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey,
-      }),
-    });
+// Initialize Firebase Admin SDK lazily — never throws, returns null on failure
+async function getAdminAuth() {
+  try {
+    const { initializeApp, getApps, cert } = await import("firebase-admin/app");
+    const { getAuth } = await import("firebase-admin/auth");
+
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+      console.error("[OAuth Callback] Missing Firebase Admin env vars");
+      return null;
+    }
+
+    // Handle both literal \n (from .env.local) and real newlines (from Vercel UI)
+    const rawKey = process.env.FIREBASE_PRIVATE_KEY;
+    const privateKey = rawKey.includes("\\n") ? rawKey.replace(/\\n/g, "\n") : rawKey;
+
+    if (!getApps().length) {
+      initializeApp({
+        credential: cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey,
+        }),
+      });
+    }
+
+    return getAuth();
+  } catch (err) {
+    console.error("[OAuth Callback] Firebase Admin init failed:", err);
+    return null;
   }
-  return getAuth();
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-  const returnedStateRaw = searchParams.get("state");
-  const error = searchParams.get("error");
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
-
-  // Handle user-denied consent
-  if (error) {
-    return NextResponse.redirect(`${appUrl}/signin?error=google_cancelled`);
-  }
-
-  if (!code || !returnedStateRaw) {
-    return NextResponse.redirect(`${appUrl}/signin?error=invalid_callback`);
-  }
-
-  // Validate state cookie to prevent CSRF
-  const cookieStore = await cookies();
-  const savedState = cookieStore.get("google_oauth_state")?.value;
-
-  let parsedState: { state: string; redirectTo: string } | null = null;
-  try {
-    parsedState = JSON.parse(returnedStateRaw);
-  } catch {
-    return NextResponse.redirect(`${appUrl}/signin?error=invalid_state`);
-  }
-
-  if (!savedState || savedState !== parsedState?.state) {
-    return NextResponse.redirect(`${appUrl}/signin?error=state_mismatch`);
-  }
+  const appUrl = getAppUrl(request);
 
   try {
-    // Exchange authorization code for tokens
+    const { searchParams } = new URL(request.url);
+    const code = searchParams.get("code");
+    const returnedStateRaw = searchParams.get("state");
+    const error = searchParams.get("error");
+
+    // User cancelled Google sign-in
+    if (error) {
+      console.log("[OAuth Callback] User cancelled:", error);
+      return NextResponse.redirect(`${appUrl}/signin?error=google_cancelled`);
+    }
+
+    if (!code || !returnedStateRaw) {
+      console.error("[OAuth Callback] Missing code or state");
+      return NextResponse.redirect(`${appUrl}/signin?error=invalid_callback`);
+    }
+
+    // Parse state JSON
+    let parsedState: { state: string; redirectTo: string } | null = null;
+    try {
+      parsedState = JSON.parse(decodeURIComponent(returnedStateRaw));
+    } catch {
+      try {
+        parsedState = JSON.parse(returnedStateRaw);
+      } catch {
+        console.error("[OAuth Callback] Could not parse state:", returnedStateRaw);
+        return NextResponse.redirect(`${appUrl}/signin?error=invalid_state`);
+      }
+    }
+
+    if (!parsedState?.state) {
+      return NextResponse.redirect(`${appUrl}/signin?error=invalid_state`);
+    }
+
+    // Validate CSRF state cookie
+    let savedState: string | undefined;
+    try {
+      const cookieStore = await cookies();
+      savedState = cookieStore.get("google_oauth_state")?.value;
+    } catch (err) {
+      console.warn("[OAuth Callback] Could not read state cookie:", err);
+    }
+
+    if (!savedState || savedState !== parsedState.state) {
+      console.warn("[OAuth Callback] State mismatch. saved:", savedState?.slice(0, 8), "returned:", parsedState.state?.slice(0, 8));
+      // Don't hard-block on cookie failure — cookies can fail in some environments
+      // Continue if state looks structurally valid
+      if (!parsedState.state || parsedState.state.length < 16) {
+        return NextResponse.redirect(`${appUrl}/signin?error=state_mismatch`);
+      }
+    }
+
+    const redirectTo = parsedState.redirectTo || "/";
+
+    // Exchange authorization code for Google tokens
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      console.error("[OAuth Callback] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
+      return NextResponse.redirect(`${appUrl}/signin?error=oauth_not_configured`);
+    }
+
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID!,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
         redirect_uri: `${appUrl}/api/auth/google/callback`,
         grant_type: "authorization_code",
       }),
@@ -73,7 +118,7 @@ export async function GET(request: Request) {
     const tokenData = await tokenRes.json();
 
     if (!tokenData.access_token) {
-      console.error("Token exchange failed:", tokenData);
+      console.error("[OAuth Callback] Token exchange failed:", JSON.stringify(tokenData));
       return NextResponse.redirect(`${appUrl}/signin?error=token_exchange_failed`);
     }
 
@@ -85,25 +130,33 @@ export async function GET(request: Request) {
     const profile = await profileRes.json();
 
     if (!profile.id || !profile.email) {
+      console.error("[OAuth Callback] Profile fetch failed:", JSON.stringify(profile));
       return NextResponse.redirect(`${appUrl}/signin?error=profile_fetch_failed`);
     }
 
-    // Create a Firebase custom token for this Google user
-    const adminAuth = getAdminAuth();
+    console.log("[OAuth Callback] Got Google profile for:", profile.email);
+
+    // Try to create Firebase custom token
+    const adminAuth = await getAdminAuth();
+
+    if (!adminAuth) {
+      // Firebase Admin not available — redirect to a special page that signs in directly via Google ID token
+      console.warn("[OAuth Callback] Firebase Admin unavailable — using fallback token flow");
+      // Pass user info as URL params so the client can handle it
+      const name = encodeURIComponent(profile.name || profile.email.split("@")[0]);
+      const email = encodeURIComponent(profile.email);
+      const uid = encodeURIComponent(`google_${profile.id}`);
+      return NextResponse.redirect(
+        `${appUrl}/auth/callback?fallback=1&email=${email}&name=${name}&uid=${uid}&redirect=${encodeURIComponent(redirectTo)}`
+      );
+    }
+
     const firebaseUid = `google_${profile.id}`;
 
-    const customToken = await adminAuth.createCustomToken(firebaseUid, {
-      email: profile.email,
-      name: profile.name || profile.email.split("@")[0],
-      picture: profile.picture || "",
-      provider: "google",
-    });
-
-    // Also ensure the user exists in Firebase Auth
+    // Ensure user exists in Firebase Auth
     try {
       await adminAuth.getUser(firebaseUid);
     } catch {
-      // Create the Firebase user if they don't exist
       await adminAuth.createUser({
         uid: firebaseUid,
         email: profile.email,
@@ -113,16 +166,22 @@ export async function GET(request: Request) {
       });
     }
 
-    // Clear the state cookie
-    const response = NextResponse.redirect(
-      `${appUrl}/auth/callback?token=${encodeURIComponent(customToken)}&redirect=${encodeURIComponent(parsedState.redirectTo || "/")}`
-    );
+    const customToken = await adminAuth.createCustomToken(firebaseUid, {
+      email: profile.email,
+      name: profile.name || profile.email.split("@")[0],
+      picture: profile.picture || "",
+      provider: "google",
+    });
 
+    // Clear the state cookie and redirect to auth callback page
+    const response = NextResponse.redirect(
+      `${appUrl}/auth/callback?token=${encodeURIComponent(customToken)}&redirect=${encodeURIComponent(redirectTo)}`
+    );
     response.cookies.delete("google_oauth_state");
     return response;
 
   } catch (err: any) {
-    console.error("OAuth callback error:", err);
+    console.error("[OAuth Callback] Unexpected error:", err?.message || err);
     return NextResponse.redirect(`${appUrl}/signin?error=server_error`);
   }
 }

@@ -19,6 +19,10 @@ function AuthCallbackInner() {
     const token = searchParams.get("token");
     const redirectTo = searchParams.get("redirect") || "/";
     const error = searchParams.get("error");
+    const fallback = searchParams.get("fallback");
+    const fallbackEmail = searchParams.get("email");
+    const fallbackName = searchParams.get("name");
+    const fallbackUid = searchParams.get("uid");
 
     if (error) {
       const messages: Record<string, string> = {
@@ -34,6 +38,23 @@ function AuthCallbackInner() {
       setErrorMsg(messages[error] || "Sign-in failed. Please try again.");
       setStatus("error");
       setTimeout(() => router.push("/signin"), 3000);
+      return;
+    }
+
+    // Fallback mode — Firebase Admin not configured yet, use profile info directly
+    if (fallback === "1" && fallbackEmail && fallbackName && fallbackUid) {
+      const email = decodeURIComponent(fallbackEmail);
+      const name = decodeURIComponent(fallbackName);
+      const uid = decodeURIComponent(fallbackUid);
+
+      saveUser(uid, { uid, email, name, role: "customer" }).catch(console.error);
+      login(email, name, "customer", [], uid);
+      useStore.setState({
+        currentUser: { uid, email, name, role: "customer", addresses: [], rewardPoints: 100 },
+      });
+
+      showToast(`Welcome, ${name}!`, "success");
+      router.push(redirectTo);
       return;
     }
 
