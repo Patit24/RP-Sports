@@ -77,6 +77,15 @@ export async function saveOrder(order: Order, userEmail?: string): Promise<strin
   }
 }
 
+/** Safe helper to convert potential Firestore Timestamp to standard ISO Date string */
+function normalizeDate(val: any): string {
+  if (!val) return new Date().toISOString();
+  if (typeof val.toDate === "function") return val.toDate().toISOString();
+  if (val.seconds !== undefined) return new Date(val.seconds * 1000).toISOString();
+  if (val instanceof Date) return val.toISOString();
+  return String(val);
+}
+
 /** Fetch all orders for a user (by email) */
 export async function getOrdersByUser(userEmail: string): Promise<Order[]> {
   try {
@@ -86,7 +95,14 @@ export async function getOrdersByUser(userEmail: string): Promise<Order[]> {
       orderBy("createdAt", "desc")
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ ...d.data(), firestoreId: d.id }) as unknown as Order);
+    return snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        ...data,
+        createdAt: normalizeDate(data.createdAt),
+        firestoreId: d.id,
+      } as unknown as Order;
+    });
   } catch (err: any) {
     console.warn("Firestore getOrdersByUser permission warning:", err.message);
     return [];
@@ -110,7 +126,14 @@ export async function getAllOrders(): Promise<(Order & { firestoreId: string })[
   try {
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ ...d.data(), firestoreId: d.id } as unknown as Order & { firestoreId: string }));
+    return snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        ...data,
+        createdAt: normalizeDate(data.createdAt),
+        firestoreId: d.id,
+      } as unknown as Order & { firestoreId: string };
+    });
   } catch (err: any) {
     console.warn("Firestore getAllOrders permission warning:", err.message);
     return [];
@@ -156,9 +179,14 @@ export function listenToOrders(
     return onSnapshot(
       q,
       (snap) => {
-        const orders = snap.docs.map(
-          (d) => ({ ...d.data(), firestoreId: d.id } as Order & { firestoreId: string })
-        );
+        const orders = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            ...data,
+            createdAt: normalizeDate(data.createdAt),
+            firestoreId: d.id,
+          } as unknown as Order & { firestoreId: string };
+        });
         callback(orders);
       },
       (error) => {
