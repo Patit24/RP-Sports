@@ -29,6 +29,7 @@ export default function SignInPage() {
         state_mismatch: "Security check failed. Please try again.",
         token_exchange_failed: "Failed to complete Google sign-in. Please try again.",
         server_error: "A server error occurred. Please try again.",
+        oauth_not_configured: "Google Sign-In is being set up. Please use Email & Password login for now.",
       };
       setError(messages[oauthError] || "Google Sign-In failed. Please try again.");
     }

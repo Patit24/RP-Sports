@@ -5,11 +5,18 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const redirectTo = searchParams.get("redirect") || "/";
 
+  // Guard: ensure required env vars are present
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.NEXT_PUBLIC_APP_URL) {
+    console.error("Missing required env vars: GOOGLE_CLIENT_ID or NEXT_PUBLIC_APP_URL");
+    const base = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+    return NextResponse.redirect(`${base}/signin?error=oauth_not_configured`);
+  }
+
   // Generate a random state value to prevent CSRF
   const state = crypto.randomBytes(16).toString("hex");
 
   // Build the Google OAuth URL
-  const clientId = process.env.GOOGLE_CLIENT_ID!;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`;
 
   const params = new URLSearchParams({
