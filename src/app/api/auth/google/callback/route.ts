@@ -6,12 +6,18 @@ import { getAuth } from "firebase-admin/auth";
 // Initialize Firebase Admin SDK (server-side only)
 function getAdminAuth() {
   if (!getApps().length) {
+    // Vercel stores env vars with real newlines; .env.local uses \n escape sequences
+    // Handle both formats reliably
+    const rawKey = process.env.FIREBASE_PRIVATE_KEY || "";
+    const privateKey = rawKey.includes("\\n")
+      ? rawKey.replace(/\\n/g, "\n")
+      : rawKey;
+
     initializeApp({
       credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        // Replace \n escape in env var
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+        privateKey,
       }),
     });
   }
