@@ -402,7 +402,21 @@ export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrd
   try {
     const token = await getShiprocketToken();
     const settings = await getStoreSettings();
-    const pickupLocation = settings?.shiprocketPickupLocation || process.env.SHIPROCKET_PICKUP_LOCATION || "Dumdum Store";
+    let pickupLocation = settings?.shiprocketPickupLocation || process.env.SHIPROCKET_PICKUP_LOCATION || "Dumdum Store";
+
+    // Auto-fallback: Verify if configured location exists in Shiprocket, otherwise fallback to the first active one
+    try {
+      const conn = await testShiprocketConnection();
+      if (conn.connected && conn.pickupLocations.length > 0) {
+        const validNames = conn.pickupLocations.map((l: any) => l.pickup_location);
+        if (!validNames.includes(pickupLocation)) {
+          console.warn(`⚠️ Configured pickup location '${pickupLocation}' is invalid. Falling back to active location: '${validNames[0]}'`);
+          pickupLocation = validNames[0];
+        }
+      }
+    } catch (err: any) {
+      console.warn("⚠️ Failed to verify pickup locations list:", err.message);
+    }
 
     const orderPayload = {
       order_id: order.id,
