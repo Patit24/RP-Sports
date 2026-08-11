@@ -203,8 +203,9 @@ export const useStore = create<SportsStoreState>()(
       },
 
       login: (email, name, role = "customer", permissions = [], uid) => {
+        const userDocId = uid || email.toLowerCase().replace(/[.#$[\]]/g, "_");
         const userData: User = {
-          uid,
+          uid: userDocId,
           name,
           email,
           role,
@@ -224,7 +225,6 @@ export const useStore = create<SportsStoreState>()(
         set({ currentUser: userData });
         get().showToast(`Welcome back, ${name}!`, "success");
         // Sync user profile to Firestore (non-blocking)
-        const userDocId = uid || email.toLowerCase().replace(/[.#$[\]]/g, "_");
         saveUser(userDocId, userData).catch(console.error);
       },
 

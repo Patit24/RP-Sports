@@ -224,6 +224,11 @@ export default function AdminShippingPage() {
               <div>
                 <strong className="block text-xs font-bold text-red-800">Connection Error</strong>
                 <p className="text-[11px] text-red-700 font-semibold">{connectionError}</p>
+                {connectionError.includes("environment variables") && (
+                  <p className="text-[10px] text-red-500 font-bold mt-1">
+                    Tip: Configure the SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD environment variables in your hosting panel (e.g. Vercel Project Settings) to activate production integration.
+                  </p>
+                )}
               </div>
             </div>
           ) : (
