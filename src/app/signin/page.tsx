@@ -18,6 +18,7 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -142,10 +143,14 @@ export default function SignInPage() {
 
   // Handle Google OAuth Sign In
   const handleGoogleSignIn = () => {
+    // Call popup immediately as the first expression
+    const promise = signInWithGooglePopup();
+
     setError("");
     setLoading(true);
+    setPopupBlocked(false);
 
-    signInWithGooglePopup()
+    promise
       .then(async (result) => {
         const user = result.user;
         const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
@@ -183,18 +188,15 @@ export default function SignInPage() {
       })
       .catch((err: any) => {
         setLoading(false);
-        // Fallback to Redirect mode if browser settings strictly block popups
+        console.error("Google popup sign-in failed:", err);
+        
         if (
           err.code === "auth/popup-blocked" || 
           err.code === "auth/cancelled-popup-request"
         ) {
-          setError("Popup blocked. Redirecting to Google secure login...");
-          signInWithRedirect(auth, googleProvider).catch((redirErr) => {
-            console.error("Google redirect fallback error:", redirErr);
-            setError(redirErr.message || "Google redirect failed.");
-          });
+          setPopupBlocked(true);
+          setError("Google Login popup was blocked. Please click the button below to open it manually.");
         } else {
-          console.error("Google popup sign-in failed:", err);
           setError(err.message || "Google Sign-In failed. Please try again.");
         }
       });
@@ -340,6 +342,29 @@ export default function SignInPage() {
               </span>
             </div>
           </div>
+
+          {/* Popup Blocked Alert & Action */}
+          {popupBlocked && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-left space-y-3 mb-4">
+              <div className="flex gap-3">
+                <AlertCircle className="w-4.5 h-4.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-800 font-medium leading-relaxed">
+                  <p className="font-bold mb-1">Popup Blocker / AdBlock Detected</p>
+                  <p>Your browser blocked the Google Sign-In window. Click the button below to manually open it.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPopupBlocked(false);
+                  handleGoogleSignIn();
+                }}
+                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-display font-bold uppercase tracking-wider text-xs transition cursor-pointer text-center"
+              >
+                Open Sign-In Window
+              </button>
+            </div>
+          )}
 
           {/* Google OAuth Button */}
           <button

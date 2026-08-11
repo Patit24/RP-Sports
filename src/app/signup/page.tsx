@@ -26,6 +26,7 @@ export default function SignUpPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -142,10 +143,14 @@ export default function SignUpPage() {
 
   // Google OAuth Sign Up
   const handleGoogleSignUp = () => {
+    // Call popup immediately as the first expression
+    const promise = signInWithGooglePopup();
+
     setLoading(true);
     setErrors({});
+    setPopupBlocked(false);
 
-    signInWithGooglePopup()
+    promise
       .then(async (result) => {
         const user = result.user;
         const name = user.displayName || form.name || user.email?.split("@")[0] || "RP Athlete";
@@ -170,18 +175,15 @@ export default function SignUpPage() {
       })
       .catch((err: any) => {
         setLoading(false);
-        // Fallback to Redirect mode if browser settings strictly block popups
+        console.error("Google popup sign-up failed:", err);
+        
         if (
           err.code === "auth/popup-blocked" || 
           err.code === "auth/cancelled-popup-request"
         ) {
-          setErrors({ google: "Popup blocked. Redirecting to Google secure signup..." });
-          signInWithRedirect(auth, googleProvider).catch((redirErr) => {
-            console.error("Google redirect fallback error:", redirErr);
-            setErrors({ google: redirErr.message || "Google redirect failed." });
-          });
+          setPopupBlocked(true);
+          setErrors({ google: "Google Sign-Up popup was blocked. Please click the button below to open it manually." });
         } else {
-          console.error("Google popup sign-up failed:", err);
           setErrors({ google: err.message || "Google Sign-Up failed." });
         }
       });
@@ -306,6 +308,29 @@ export default function SignUpPage() {
             <div className="flex items-center gap-3 bg-red-50 border border-red-200 p-4 rounded-xl text-left">
               <AlertCircle className="w-4 h-4 text-[#CC0000] flex-shrink-0" />
               <p className="text-xs text-[#CC0000] font-bold">{errors.google || errors.form}</p>
+            </div>
+          )}
+
+          {/* Popup Blocked Alert & Action */}
+          {popupBlocked && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-left space-y-3 mb-4">
+              <div className="flex gap-3">
+                <AlertCircle className="w-4.5 h-4.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-amber-800 font-medium leading-relaxed">
+                  <p className="font-bold mb-1">Popup Blocker / AdBlock Detected</p>
+                  <p>Your browser blocked the Google Sign-Up window. Click the button below to manually open it.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPopupBlocked(false);
+                  handleGoogleSignUp();
+                }}
+                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-display font-bold uppercase tracking-wider text-xs transition cursor-pointer text-center"
+              >
+                Open Sign-Up Window
+              </button>
             </div>
           )}
 
