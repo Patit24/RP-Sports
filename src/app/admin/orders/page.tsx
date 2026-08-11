@@ -88,7 +88,8 @@ export default function AdminOrdersPage() {
       }
     } catch (err: any) {
       setIsPushingShiprocket(false);
-      showToast("Shiprocket API request processed with courier fallback.", "info");
+      console.error("Shiprocket push error:", err);
+      showToast(err.message || "An unexpected error occurred during sync.", "error");
     }
   };
 

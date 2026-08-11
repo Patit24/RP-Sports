@@ -162,7 +162,8 @@ export default function AdminShippingPage() {
       }
     } catch (err: any) {
       setPushingOrderId(null);
-      showToast("Shiprocket API request completed.", "info");
+      console.error("Shiprocket sync error:", err);
+      showToast(err.message || "An unexpected error occurred during sync.", "error");
     }
   };
 
