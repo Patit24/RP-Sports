@@ -112,6 +112,8 @@ export default function SignUpPage() {
     
     if (res.success && res.email) {
       // Auth state listener handles Firestore sync and redirect
+    } else if (res.redirecting) {
+      // Keep loading active during browser redirection
     } else {
       setLoading(false);
       setErrors({ google: res.error || "Google Sign-Up failed." });

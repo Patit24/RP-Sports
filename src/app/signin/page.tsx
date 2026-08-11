@@ -108,11 +108,13 @@ export default function SignInPage() {
     setError("");
     setLoading(true);
     const res = await signInWithGoogle();
-    setLoading(false);
 
     if (res.success && res.email) {
       // Auth state listener will handle the sync and redirect
+    } else if (res.redirecting) {
+      // Keep loading spinner active during browser redirection
     } else {
+      setLoading(false);
       setError(res.error || "Google Sign-In failed. Please try again.");
     }
   };

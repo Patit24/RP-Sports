@@ -1,5 +1,6 @@
 import { 
   signInWithPopup, 
+  signInWithRedirect,
   GoogleAuthProvider
 } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
@@ -11,11 +12,13 @@ export interface AuthResult {
   name?: string;
   photoURL?: string;
   uid?: string;
+  redirecting?: boolean;
   error?: string;
 }
 
 /**
  * Perform Google Sign In / Sign Up using Firebase Popup forcing account selection
+ * with automatic redirect fallback if popup is blocked by the browser.
  */
 export async function signInWithGoogle(): Promise<AuthResult> {
   try {
@@ -47,7 +50,29 @@ export async function signInWithGoogle(): Promise<AuthResult> {
       uid: user.uid,
     };
   } catch (error: any) {
-    console.error("Google Sign-In Error:", error);
+    console.warn("Google Sign-In popup failed, checking for redirect fallback:", error.code || error.message);
+    
+    // Auto-fallback to redirect if popup is blocked, closed, or cancelled
+    if (
+      error.code === "auth/popup-blocked" || 
+      error.code === "auth/popup-closed-by-user" || 
+      error.code === "auth/cancelled-popup-request"
+    ) {
+      try {
+        await signInWithRedirect(auth, googleProvider);
+        return {
+          success: false,
+          redirecting: true,
+        };
+      } catch (redirectError: any) {
+        console.error("Google Sign-In redirect fallback failed:", redirectError);
+        return {
+          success: false,
+          error: redirectError.message || "Google redirect sign-in failed.",
+        };
+      }
+    }
+
     return {
       success: false,
       error: error.message || "Google sign-in was cancelled or failed.",
