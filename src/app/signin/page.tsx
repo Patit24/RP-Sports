@@ -355,10 +355,7 @@ export default function SignInPage() {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setPopupBlocked(false);
-                  handleGoogleSignIn();
-                }}
+                onClick={handleGoogleSignIn}
                 className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-display font-bold uppercase tracking-wider text-xs transition cursor-pointer text-center"
               >
                 Open Sign-In Window
