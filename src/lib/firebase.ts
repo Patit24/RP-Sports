@@ -5,7 +5,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyANQ3H4WNGxsbcNDSLCRUoCH0wl_zgU4CY",
-  authDomain: typeof window !== "undefined" ? window.location.host : "rpsports-data.firebaseapp.com",
+  authDomain: "rpsports-data.firebaseapp.com",
   projectId: "rpsports-data",
   storageBucket: "rpsports-data.firebasestorage.app",
   messagingSenderId: "212466668507",

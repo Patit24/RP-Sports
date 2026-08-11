@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle, signInWithGooglePopup, checkGoogleRedirectResult } from "@/lib/authService";
-import { onAuthStateChanged, signInWithEmailAndPassword, signInWithRedirect } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { Lock, Mail, AlertCircle, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
-import { getUser, saveUser } from "@/lib/firestoreService";
+import { getUser } from "@/lib/firestoreService";
 
 interface CheckoutAuthGateProps {
   onSuccess?: () => void;
@@ -24,47 +23,9 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
   const [error, setError] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [popupBlocked, setPopupBlocked] = useState(false);
 
   useEffect(() => {
-    // Check for Google OIDC redirect result on mount
-    checkGoogleRedirectResult().then(async (res) => {
-      if (res && res.success && res.email) {
-        setLoading(true);
-        try {
-          const profile = await getUser(res.uid!);
-          const name = profile?.name || res.name || res.email.split("@")[0] || "RP Athlete";
-          const rewardPoints = profile?.rewardPoints ?? 100;
-          const addresses = profile?.addresses ?? [];
-
-          login(res.email, name, "customer", [], res.uid);
-
-          useStore.setState({
-            currentUser: {
-              uid: res.uid,
-              email: res.email!,
-              name,
-              role: "customer",
-              addresses,
-              rewardPoints,
-            }
-          });
-
-          showToast(`Logged in as ${name}`, "success");
-          if (onSuccess) onSuccess();
-        } catch (err) {
-          console.error("Error loading user profile during checkout gate redirect return:", err);
-          login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
-          if (onSuccess) onSuccess();
-        } finally {
-          setLoading(false);
-        }
-      } else if (res && res.error) {
-        setError(res.error);
-      }
-    }).catch((err) => console.error("Error checking redirect result:", err));
-
-    // Listen for real-time Firebase Auth state change
+    // Listen for real-time Firebase Auth state change (handles email login)
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user && user.email) {
         setLoading(true);
@@ -103,65 +64,9 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
     return () => unsubscribe();
   }, [login, showToast, onSuccess]);
 
-  // Handle Google Sign-In
+  // Handle Google Sign-In — direct server-side OAuth (no popup, no Firebase redirect)
   const handleGoogleSignIn = () => {
-    // Call popup immediately as the first expression
-    const promise = signInWithGooglePopup();
-
-    setError("");
-    setLoading(true);
-    setPopupBlocked(false);
-
-    promise
-      .then(async (result) => {
-        const user = result.user;
-        const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
-        const email = user.email || `${user.uid}@google.com`;
-
-        // Save/update user profile in Firestore
-        await saveUser(user.uid, {
-          uid: user.uid,
-          email,
-          name,
-          role: "customer",
-        });
-
-        // Set local state session details
-        login(email, name, "customer", [], user.uid);
-
-        // Fetch user profile metrics
-        const profile = await getUser(user.uid);
-        const rewardPoints = profile?.rewardPoints ?? 100;
-        const addresses = profile?.addresses ?? [];
-
-        useStore.setState({
-          currentUser: {
-            uid: user.uid,
-            email,
-            name,
-            role: "customer",
-            addresses,
-            rewardPoints,
-          }
-        });
-
-        showToast(`Logged in as ${name}`, "success");
-        if (onSuccess) onSuccess();
-      })
-      .catch((err: any) => {
-        setLoading(false);
-        console.error("Google popup sign-in failed during checkout:", err);
-        
-        if (
-          err.code === "auth/popup-blocked" || 
-          err.code === "auth/cancelled-popup-request"
-        ) {
-          setPopupBlocked(true);
-          setError("Google Login popup was blocked. Please click the button below to open it manually.");
-        } else {
-          setError(err.message || "Google Sign-In failed. Please try again.");
-        }
-      });
+    window.location.href = `/api/auth/google/start?redirect=${encodeURIComponent("/checkout")}`;
   };
 
   // Handle Email Sign-In
@@ -263,25 +168,7 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
         {/* TAB 1: GOOGLE SIGN IN */}
         {authTab === "google" && (
           <div className="space-y-4 py-4">
-            {/* Popup Blocked Alert & Action */}
-            {popupBlocked && (
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-left space-y-3">
-                <div className="flex gap-3">
-                  <AlertCircle className="w-4.5 h-4.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-xs text-amber-800 font-medium leading-relaxed">
-                    <p className="font-bold mb-1">Popup Blocker / AdBlock Detected</p>
-                    <p>Your browser blocked the Google Login window. Click the button below to manually open it.</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-display font-bold uppercase tracking-wider text-xs transition cursor-pointer text-center"
-                >
-                  Open Sign-In Window
-                </button>
-              </div>
-            )}
+
 
             <button
               type="button"

@@ -2,23 +2,37 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, LogIn, AlertCircle, Mail, KeyRound, ShieldCheck } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Eye, EyeOff, LogIn, AlertCircle, ShieldCheck } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle, signInWithGooglePopup, checkGoogleRedirectResult } from "@/lib/authService";
-import { onAuthStateChanged, signInWithEmailAndPassword, signInWithRedirect } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
-import { getUser, saveUser } from "@/lib/firestoreService";
+import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { getUser } from "@/lib/firestoreService";
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { currentUser, login, showToast } = useStore();
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [popupBlocked, setPopupBlocked] = useState(false);
+
+  // Show error from OAuth callback (e.g. ?error=google_cancelled)
+  useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (oauthError) {
+      const messages: Record<string, string> = {
+        google_cancelled: "Google sign-in was cancelled.",
+        invalid_callback: "Invalid authentication callback.",
+        state_mismatch: "Security check failed. Please try again.",
+        token_exchange_failed: "Failed to complete Google sign-in. Please try again.",
+        server_error: "A server error occurred. Please try again.",
+      };
+      setError(messages[oauthError] || "Google Sign-In failed. Please try again.");
+    }
+  }, [searchParams]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -28,58 +42,17 @@ export default function SignInPage() {
   }, [currentUser, router]);
 
   useEffect(() => {
-    // Check for Google OIDC redirect result on mount
-    checkGoogleRedirectResult().then(async (res) => {
-      if (res && res.success && res.email) {
-        setLoading(true);
-        try {
-          const profile = await getUser(res.uid!);
-          const name = profile?.name || res.name || res.email.split("@")[0] || "RP Athlete";
-          const rewardPoints = profile?.rewardPoints ?? 100;
-          const addresses = profile?.addresses ?? [];
-
-          login(res.email, name, "customer", [], res.uid);
-          
-          useStore.setState({
-            currentUser: {
-              uid: res.uid,
-              email: res.email!,
-              name,
-              role: "customer",
-              addresses,
-              rewardPoints,
-            }
-          });
-
-          showToast(`Welcome back, ${name}!`, "success");
-          router.push("/");
-        } catch (err) {
-          console.error("Error loading user profile on redirect return:", err);
-          login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
-          router.push("/");
-        } finally {
-          setLoading(false);
-        }
-      } else if (res && res.error) {
-        setError(res.error);
-      }
-    }).catch((err) => console.error("Error checking redirect result:", err));
-
-    // Real-time Firebase Auth listener for Google OAuth / standard email auth tokens
+    // Real-time Firebase Auth listener for email auth
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user && user.email) {
         setLoading(true);
         try {
-          // Retrieve existing user profile details from Firestore
           const profile = await getUser(user.uid);
           const name = profile?.name || user.displayName || user.email.split("@")[0] || "RP Athlete";
           const rewardPoints = profile?.rewardPoints ?? 100;
           const addresses = profile?.addresses ?? [];
 
-          // Save/set authentication session details locally
           login(user.email, name, "customer", [], user.uid);
-          
-          // Update Zustand store state to preserve historical profile metrics
           useStore.setState({
             currentUser: {
               uid: user.uid,
@@ -141,65 +114,10 @@ export default function SignInPage() {
     }
   };
 
-  // Handle Google OAuth Sign In
+  // Handle Google OAuth Sign In — direct server-side OAuth (no popup, no Firebase redirect)
   const handleGoogleSignIn = () => {
-    // Call popup immediately as the first expression
-    const promise = signInWithGooglePopup();
-
-    setError("");
-    setLoading(true);
-    setPopupBlocked(false);
-
-    promise
-      .then(async (result) => {
-        const user = result.user;
-        const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
-        const email = user.email || `${user.uid}@google.com`;
-
-        // Save/update user profile in Firestore
-        await saveUser(user.uid, {
-          uid: user.uid,
-          email,
-          name,
-          role: "customer",
-        });
-
-        // Set local state session details
-        login(email, name, "customer", [], user.uid);
-        
-        // Fetch optional fields (addresses & rewards)
-        const profile = await getUser(user.uid);
-        const rewardPoints = profile?.rewardPoints ?? 100;
-        const addresses = profile?.addresses ?? [];
-
-        useStore.setState({
-          currentUser: {
-            uid: user.uid,
-            email,
-            name,
-            role: "customer",
-            addresses,
-            rewardPoints,
-          }
-        });
-
-        showToast(`Welcome back, ${name}!`, "success");
-        router.push("/");
-      })
-      .catch((err: any) => {
-        setLoading(false);
-        console.error("Google popup sign-in failed:", err);
-        
-        if (
-          err.code === "auth/popup-blocked" || 
-          err.code === "auth/cancelled-popup-request"
-        ) {
-          setPopupBlocked(true);
-          setError("Google Login popup was blocked. Please click the button below to open it manually.");
-        } else {
-          setError(err.message || "Google Sign-In failed. Please try again.");
-        }
-      });
+    const currentPath = window.location.pathname;
+    window.location.href = `/api/auth/google/start?redirect=${encodeURIComponent(currentPath === "/signin" ? "/" : currentPath)}`;
   };
 
   return (
@@ -342,26 +260,6 @@ export default function SignInPage() {
               </span>
             </div>
           </div>
-
-          {/* Popup Blocked Alert & Action */}
-          {popupBlocked && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-left space-y-3 mb-4">
-              <div className="flex gap-3">
-                <AlertCircle className="w-4.5 h-4.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="text-xs text-amber-800 font-medium leading-relaxed">
-                  <p className="font-bold mb-1">Popup Blocker / AdBlock Detected</p>
-                  <p>Your browser blocked the Google Sign-In window. Click the button below to manually open it.</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-display font-bold uppercase tracking-wider text-xs transition cursor-pointer text-center"
-              >
-                Open Sign-In Window
-              </button>
-            </div>
-          )}
 
           {/* Google OAuth Button */}
           <button

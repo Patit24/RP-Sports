@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, UserPlus, AlertCircle, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { signInWithGooglePopup, checkGoogleRedirectResult } from "@/lib/authService";
-import { onAuthStateChanged, createUserWithEmailAndPassword, updateProfile, signInWithRedirect } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { onAuthStateChanged, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { saveUser, addSubscriber } from "@/lib/firestoreService";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { currentUser, login, showToast } = useStore();
 
   const [form, setForm] = useState({
@@ -26,7 +26,20 @@ export default function SignUpPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [popupBlocked, setPopupBlocked] = useState(false);
+
+  // Show error from OAuth callback
+  useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (oauthError) {
+      const messages: Record<string, string> = {
+        google_cancelled: "Google sign-up was cancelled.",
+        state_mismatch: "Security check failed. Please try again.",
+        token_exchange_failed: "Failed to complete Google sign-up. Please try again.",
+        server_error: "A server error occurred. Please try again.",
+      };
+      setErrors({ google: messages[oauthError] || "Google Sign-Up failed. Please try again." });
+    }
+  }, [searchParams]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -36,47 +49,13 @@ export default function SignUpPage() {
   }, [currentUser, router]);
 
   useEffect(() => {
-    // Check for Google OIDC redirect result on mount
-    checkGoogleRedirectResult().then(async (res) => {
-      if (res && res.success && res.email) {
-        setLoading(true);
-        try {
-          const name = res.name || form.name || res.email.split("@")[0] || "RP Athlete";
-          
-          await saveUser(res.uid!, {
-            uid: res.uid,
-            email: res.email!,
-            name,
-            role: "customer",
-            addresses: [],
-            rewardPoints: 100,
-          });
-
-          login(res.email, name, "customer", [], res.uid);
-          addSubscriber(res.email).catch(console.error);
-
-          showToast(`Welcome to RP Sports, ${name}!`, "success");
-          router.push("/");
-        } catch (err) {
-          console.error("Error setting up user profile on redirect return:", err);
-          login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
-          router.push("/");
-        } finally {
-          setLoading(false);
-        }
-      } else if (res && res.error) {
-        setErrors({ google: res.error });
-      }
-    }).catch((err) => console.error("Error checking redirect result:", err));
-
-    // Real-time Firebase Auth listener for Google OAuth / email signup tokens
+    // Real-time Firebase Auth listener — handles email signup
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user && user.email) {
         const name = user.displayName || form.name || user.email.split("@")[0] || "RP Athlete";
         
         setLoading(true);
         try {
-          // Sync profile to Firestore
           await saveUser(user.uid, {
             uid: user.uid,
             email: user.email!,
@@ -86,7 +65,6 @@ export default function SignUpPage() {
             rewardPoints: 100,
           });
 
-          // Sync local state session
           login(user.email, name, "customer", [], user.uid);
           addSubscriber(user.email).catch(console.error);
 
@@ -141,52 +119,9 @@ export default function SignUpPage() {
     return newErrors;
   };
 
-  // Google OAuth Sign Up
+  // Google OAuth Sign Up — direct server-side OAuth (no popup, no Firebase redirect)
   const handleGoogleSignUp = () => {
-    // Call popup immediately as the first expression
-    const promise = signInWithGooglePopup();
-
-    setLoading(true);
-    setErrors({});
-    setPopupBlocked(false);
-
-    promise
-      .then(async (result) => {
-        const user = result.user;
-        const name = user.displayName || form.name || user.email?.split("@")[0] || "RP Athlete";
-        const email = user.email || `${user.uid}@google.com`;
-
-        // Sync profile to Firestore
-        await saveUser(user.uid, {
-          uid: user.uid,
-          email,
-          name,
-          role: "customer",
-          addresses: [],
-          rewardPoints: 100,
-        });
-
-        // Sync local state session
-        login(email, name, "customer", [], user.uid);
-        addSubscriber(email).catch(console.error);
-
-        showToast(`Welcome to RP Sports, ${name}!`, "success");
-        router.push("/");
-      })
-      .catch((err: any) => {
-        setLoading(false);
-        console.error("Google popup sign-up failed:", err);
-        
-        if (
-          err.code === "auth/popup-blocked" || 
-          err.code === "auth/cancelled-popup-request"
-        ) {
-          setPopupBlocked(true);
-          setErrors({ google: "Google Sign-Up popup was blocked. Please click the button below to open it manually." });
-        } else {
-          setErrors({ google: err.message || "Google Sign-Up failed." });
-        }
-      });
+    window.location.href = `/api/auth/google/start?redirect=${encodeURIComponent("/")}`;
   };
 
   // Main Form Submit
@@ -311,25 +246,7 @@ export default function SignUpPage() {
             </div>
           )}
 
-          {/* Popup Blocked Alert & Action */}
-          {popupBlocked && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-left space-y-3 mb-4">
-              <div className="flex gap-3">
-                <AlertCircle className="w-4.5 h-4.5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div className="text-xs text-amber-800 font-medium leading-relaxed">
-                  <p className="font-bold mb-1">Popup Blocker / AdBlock Detected</p>
-                  <p>Your browser blocked the Google Sign-Up window. Click the button below to manually open it.</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleGoogleSignUp}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-display font-bold uppercase tracking-wider text-xs transition cursor-pointer text-center"
-              >
-                Open Sign-Up Window
-              </button>
-            </div>
-          )}
+
 
           {/* Google OAuth Button */}
           <button
