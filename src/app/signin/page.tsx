@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn, AlertCircle, Mail, KeyRound, ShieldCheck } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle } from "@/lib/authService";
+import { signInWithGoogle, checkGoogleRedirectResult } from "@/lib/authService";
 import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getUser } from "@/lib/firestoreService";
@@ -27,6 +27,43 @@ export default function SignInPage() {
   }, [currentUser, router]);
 
   useEffect(() => {
+    // Check for Google OIDC redirect result on mount
+    checkGoogleRedirectResult().then(async (res) => {
+      if (res && res.success && res.email) {
+        setLoading(true);
+        try {
+          const profile = await getUser(res.uid!);
+          const name = profile?.name || res.name || res.email.split("@")[0] || "RP Athlete";
+          const rewardPoints = profile?.rewardPoints ?? 100;
+          const addresses = profile?.addresses ?? [];
+
+          login(res.email, name, "customer", [], res.uid);
+          
+          useStore.setState({
+            currentUser: {
+              uid: res.uid,
+              email: res.email!,
+              name,
+              role: "customer",
+              addresses,
+              rewardPoints,
+            }
+          });
+
+          showToast(`Welcome back, ${name}!`, "success");
+          router.push("/");
+        } catch (err) {
+          console.error("Error loading user profile on redirect return:", err);
+          login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
+          router.push("/");
+        } finally {
+          setLoading(false);
+        }
+      } else if (res && res.error) {
+        setError(res.error);
+      }
+    }).catch((err) => console.error("Error checking redirect result:", err));
+
     // Real-time Firebase Auth listener for Google OAuth / standard email auth tokens
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user && user.email) {

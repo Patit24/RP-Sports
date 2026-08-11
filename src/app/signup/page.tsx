@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, UserPlus, AlertCircle, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle } from "@/lib/authService";
+import { signInWithGoogle, checkGoogleRedirectResult } from "@/lib/authService";
 import { onAuthStateChanged, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { saveUser, addSubscriber } from "@/lib/firestoreService";
@@ -35,6 +35,39 @@ export default function SignUpPage() {
   }, [currentUser, router]);
 
   useEffect(() => {
+    // Check for Google OIDC redirect result on mount
+    checkGoogleRedirectResult().then(async (res) => {
+      if (res && res.success && res.email) {
+        setLoading(true);
+        try {
+          const name = res.name || form.name || res.email.split("@")[0] || "RP Athlete";
+          
+          await saveUser(res.uid!, {
+            uid: res.uid,
+            email: res.email!,
+            name,
+            role: "customer",
+            addresses: [],
+            rewardPoints: 100,
+          });
+
+          login(res.email, name, "customer", [], res.uid);
+          addSubscriber(res.email).catch(console.error);
+
+          showToast(`Welcome to RP Sports, ${name}!`, "success");
+          router.push("/");
+        } catch (err) {
+          console.error("Error setting up user profile on redirect return:", err);
+          login(res.email, res.name || "RP Athlete", "customer", [], res.uid);
+          router.push("/");
+        } finally {
+          setLoading(false);
+        }
+      } else if (res && res.error) {
+        setErrors({ google: res.error });
+      }
+    }).catch((err) => console.error("Error checking redirect result:", err));
+
     // Real-time Firebase Auth listener for Google OAuth / email signup tokens
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user && user.email) {

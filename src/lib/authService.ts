@@ -1,6 +1,7 @@
 import { 
   signInWithPopup, 
   signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider
 } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
@@ -76,6 +77,43 @@ export async function signInWithGoogle(): Promise<AuthResult> {
     return {
       success: false,
       error: error.message || "Google sign-in was cancelled or failed.",
+    };
+  }
+}
+
+/**
+ * Check for Google Sign-In result after redirect and authenticate
+ */
+export async function checkGoogleRedirectResult(): Promise<AuthResult | null> {
+  try {
+    const result = await getRedirectResult(auth);
+    if (!result) return null;
+
+    const user = result.user;
+    const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
+    const email = user.email || `${user.uid}@google.com`;
+    const photoURL = user.photoURL || undefined;
+
+    // Save/update user profile in Firestore
+    await saveUser(user.uid, {
+      uid: user.uid,
+      email,
+      name,
+      role: "customer",
+    });
+
+    return {
+      success: true,
+      email,
+      name,
+      photoURL,
+      uid: user.uid,
+    };
+  } catch (error: any) {
+    console.error("Google Redirect Result Error:", error);
+    return {
+      success: false,
+      error: error.message || "Google redirect sign-in failed.",
     };
   }
 }
