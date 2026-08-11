@@ -102,6 +102,25 @@ export async function getShiprocketToken(): Promise<string> {
 }
 
 /**
+ * Sanitize phone number to a clean 10-digit numeric string
+ */
+function sanitizePhone(phoneStr: string): string {
+  if (!phoneStr) return "9734019005"; // Default fallback to store admin phone
+  let clean = phoneStr.replace(/\D/g, "");
+  
+  if (clean.length === 12 && clean.startsWith("91")) {
+    clean = clean.slice(2);
+  } else if (clean.length > 10) {
+    clean = clean.slice(-10);
+  }
+  
+  if (clean.length !== 10) {
+    return "9734019005"; // Fallback to store admin phone if not 10 digits
+  }
+  return clean;
+}
+
+/**
  * Parse product weight string into a numeric kg value
  */
 function parseWeight(weightStr: string): number | null {
@@ -399,7 +418,7 @@ export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrd
       billing_state: order.shippingAddress.state,
       billing_country: "India",
       billing_email: "customer@rpsports.in",
-      billing_phone: order.shippingAddress.phone,
+      billing_phone: sanitizePhone(order.shippingAddress.phone),
       shipping_is_billing: true,
       order_items: order.items.map((item) => {
         const prod = item.product;
