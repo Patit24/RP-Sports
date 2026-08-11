@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useStore } from "@/lib/store";
-import { saveUser } from "@/lib/firestoreService";
+import { saveUser, getUser } from "@/lib/firestoreService";
 
 // Inner component uses useSearchParams — must be inside <Suspense>
 function AuthCallbackInner() {
@@ -47,14 +47,25 @@ function AuthCallbackInner() {
       const name = decodeURIComponent(fallbackName);
       const uid = decodeURIComponent(fallbackUid);
 
-      saveUser(uid, { uid, email, name, role: "customer" }).catch(console.error);
-      login(email, name, "customer", [], uid);
-      useStore.setState({
-        currentUser: { uid, email, name, role: "customer", addresses: [], rewardPoints: 100 },
+      getUser(uid).then((profile) => {
+        const role = profile?.role || (email === "admin@rpsports.com" ? "admin" : "customer");
+        saveUser(uid, { uid, email, name, role }).catch(console.error);
+        login(email, name, role, [], uid);
+        useStore.setState({
+          currentUser: { uid, email, name, role, addresses: profile?.addresses || [], rewardPoints: profile?.rewardPoints ?? 100 },
+        });
+        showToast(`Welcome, ${name}!`, "success");
+        router.push(redirectTo);
+      }).catch((err) => {
+        console.error("Fallback getUser failed:", err);
+        saveUser(uid, { uid, email, name, role: "customer" }).catch(console.error);
+        login(email, name, "customer", [], uid);
+        useStore.setState({
+          currentUser: { uid, email, name, role: "customer", addresses: [], rewardPoints: 100 },
+        });
+        showToast(`Welcome, ${name}!`, "success");
+        router.push(redirectTo);
       });
-
-      showToast(`Welcome, ${name}!`, "success");
-      router.push(redirectTo);
       return;
     }
 
@@ -72,24 +83,28 @@ function AuthCallbackInner() {
         const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
         const email = user.email || `${user.uid}@google.com`;
 
+        // Check if user already exists in DB to preserve their role
+        const profile = await getUser(user.uid);
+        const role = profile?.role || (email === "admin@rpsports.com" ? "admin" : "customer");
+
         // Save user profile to Firestore
         await saveUser(user.uid, {
           uid: user.uid,
           email,
           name,
-          role: "customer",
+          role,
         });
 
         // Update Zustand store
-        login(email, name, "customer", [], user.uid);
+        login(email, name, role, [], user.uid);
         useStore.setState({
           currentUser: {
             uid: user.uid,
             email,
             name,
-            role: "customer",
-            addresses: [],
-            rewardPoints: 100,
+            role,
+            addresses: profile?.addresses || [],
+            rewardPoints: profile?.rewardPoints ?? 100,
           },
         });
 

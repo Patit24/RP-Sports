@@ -34,15 +34,16 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
           const name = profile?.name || user.displayName || user.email.split("@")[0] || "RP Athlete";
           const rewardPoints = profile?.rewardPoints ?? 100;
           const addresses = profile?.addresses ?? [];
+          const role = profile?.role || (user.email === "admin@rpsports.com" ? "admin" : "customer");
 
-          login(user.email, name, "customer", [], user.uid);
+          login(user.email, name, role, [], user.uid);
 
           useStore.setState({
             currentUser: {
               uid: user.uid,
               email: user.email!,
               name,
-              role: "customer",
+              role,
               addresses,
               rewardPoints,
             }
@@ -53,7 +54,8 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
         } catch (err) {
           console.error("Error loading user profile during checkout gate:", err);
           const name = user.displayName || user.email.split("@")[0] || "RP Athlete";
-          login(user.email, name, "customer", [], user.uid);
+          const role = user.email === "admin@rpsports.com" ? "admin" : "customer";
+          login(user.email, name, role, [], user.uid);
           if (onSuccess) onSuccess();
         } finally {
           setLoading(false);

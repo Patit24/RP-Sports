@@ -52,14 +52,15 @@ function SignInPageInner() {
           const name = profile?.name || user.displayName || user.email.split("@")[0] || "RP Athlete";
           const rewardPoints = profile?.rewardPoints ?? 100;
           const addresses = profile?.addresses ?? [];
+          const role = profile?.role || (user.email === "admin@rpsports.com" ? "admin" : "customer");
 
-          login(user.email, name, "customer", [], user.uid);
+          login(user.email, name, role, [], user.uid);
           useStore.setState({
             currentUser: {
               uid: user.uid,
               email: user.email!,
               name,
-              role: "customer",
+              role,
               addresses,
               rewardPoints,
             }

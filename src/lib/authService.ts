@@ -5,7 +5,7 @@ import {
   GoogleAuthProvider
 } from "firebase/auth";
 import { auth, googleProvider } from "./firebase";
-import { saveUser } from "./firestoreService";
+import { saveUser, getUser } from "./firestoreService";
 
 export interface AuthResult {
   success: boolean;
@@ -35,12 +35,16 @@ export async function signInWithGoogle(): Promise<AuthResult> {
     const email = user.email || `${user.uid}@google.com`;
     const photoURL = user.photoURL || undefined;
 
+    // Fetch existing user to preserve role
+    const profile = await getUser(user.uid);
+    const role = profile?.role || (email === "admin@rpsports.com" ? "admin" : "customer");
+
     // Save/update user profile in Firestore
     await saveUser(user.uid, {
       uid: user.uid,
       email,
       name,
-      role: "customer",
+      role,
     });
 
     return {
@@ -94,12 +98,16 @@ export async function checkGoogleRedirectResult(): Promise<AuthResult | null> {
     const email = user.email || `${user.uid}@google.com`;
     const photoURL = user.photoURL || undefined;
 
+    // Fetch existing user to preserve role
+    const profile = await getUser(user.uid);
+    const role = profile?.role || (email === "admin@rpsports.com" ? "admin" : "customer");
+
     // Save/update user profile in Firestore
     await saveUser(user.uid, {
       uid: user.uid,
       email,
       name,
-      role: "customer",
+      role,
     });
 
     return {
