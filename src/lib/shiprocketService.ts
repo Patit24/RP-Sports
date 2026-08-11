@@ -402,7 +402,7 @@ export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrd
   try {
     const token = await getShiprocketToken();
     const settings = await getStoreSettings();
-    let pickupLocation = settings?.shiprocketPickupLocation || process.env.SHIPROCKET_PICKUP_LOCATION || "Dumdum Store";
+    let pickupLocation = settings?.shiprocketPickupLocation || process.env.SHIPROCKET_PICKUP_LOCATION || "Home";
 
     // Auto-fallback: Verify if configured location exists in Shiprocket, otherwise fallback to the first active one
     try {
@@ -418,9 +418,32 @@ export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrd
       console.warn("⚠️ Failed to verify pickup locations list:", err.message);
     }
 
+    // Safe date parsing helper
+    const parseOrderDate = (val: any): string => {
+      try {
+        if (!val) return new Date().toISOString().replace("T", " ").split(".")[0];
+        let d: Date;
+        if (typeof val.toDate === "function") {
+          d = val.toDate();
+        } else if (val.seconds !== undefined) {
+          d = new Date(val.seconds * 1000);
+        } else if (val instanceof Date) {
+          d = val;
+        } else {
+          d = new Date(val);
+        }
+        if (isNaN(d.getTime())) {
+          return new Date().toISOString().replace("T", " ").split(".")[0];
+        }
+        return d.toISOString().replace("T", " ").split(".")[0];
+      } catch {
+        return new Date().toISOString().replace("T", " ").split(".")[0];
+      }
+    };
+
     const orderPayload = {
       order_id: order.id,
-      order_date: new Date(order.createdAt).toISOString().replace("T", " ").split(".")[0],
+      order_date: parseOrderDate(order.createdAt),
       pickup_location: pickupLocation,
       channel_id: "",
       comment: "RP Sports Handcrafted Premium Sports Gear",

@@ -21,7 +21,7 @@ export default function AdminShippingPage() {
   // Shiprocket Diagnostics State
   const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "failed">("checking");
   const [connectionError, setConnectionError] = useState("");
-  const [pickupWarehouse, setPickupWarehouse] = useState("Dumdum Store (700028)");
+  const [pickupWarehouse, setPickupWarehouse] = useState("Home (700037)");
   const [lastConnected, setLastConnected] = useState("");
   const [checkingConnection, setCheckingConnection] = useState(false);
 
