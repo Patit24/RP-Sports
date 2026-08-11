@@ -174,18 +174,8 @@ export function getOrderPackageDetails(order: Order): { weight: number; length: 
     const qty = item.quantity;
     const prod = item.product;
     
-    const parsedWt = parseWeight(prod.weight);
-    const parsedDim = parseDimensions(prod.dimensions);
-    
-    if (parsedWt === null || parsedDim === null) {
-      return {
-        weight: 0,
-        length: 0,
-        breadth: 0,
-        height: 0,
-        error: `Shipping Configuration Required (Weight or dimensions missing or invalid for item '${prod.name}')`,
-      };
-    }
+    const parsedWt = parseWeight(prod.weight) ?? 0.4;
+    const parsedDim = parseDimensions(prod.dimensions) ?? { length: 15, breadth: 15, height: 5 };
     
     totalWeight += parsedWt * qty;
     maxLength = Math.max(maxLength, parsedDim.length);
