@@ -118,3 +118,14 @@ export async function checkGoogleRedirectResult(): Promise<AuthResult | null> {
   }
 }
 
+/**
+ * Synchronous popup initiator to guarantee popup blocker bypass.
+ * This MUST be called synchronously in click handlers before any await keywords.
+ */
+export function signInWithGooglePopup(): Promise<any> {
+  googleProvider.setCustomParameters({
+    prompt: "select_account"
+  });
+  return signInWithPopup(auth, googleProvider);
+}
+

@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LogIn, AlertCircle, Mail, KeyRound, ShieldCheck } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle, checkGoogleRedirectResult } from "@/lib/authService";
-import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { getUser } from "@/lib/firestoreService";
+import { signInWithGoogle, signInWithGooglePopup, checkGoogleRedirectResult } from "@/lib/authService";
+import { onAuthStateChanged, signInWithEmailAndPassword, signInWithRedirect } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
+import { getUser, saveUser } from "@/lib/firestoreService";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -141,19 +141,63 @@ export default function SignInPage() {
   };
 
   // Handle Google OAuth Sign In
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     setError("");
     setLoading(true);
-    const res = await signInWithGoogle();
 
-    if (res.success && res.email) {
-      // Auth state listener will handle the sync and redirect
-    } else if (res.redirecting) {
-      // Keep loading spinner active during browser redirection
-    } else {
-      setLoading(false);
-      setError(res.error || "Google Sign-In failed. Please try again.");
-    }
+    signInWithGooglePopup()
+      .then(async (result) => {
+        const user = result.user;
+        const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
+        const email = user.email || `${user.uid}@google.com`;
+
+        // Save/update user profile in Firestore
+        await saveUser(user.uid, {
+          uid: user.uid,
+          email,
+          name,
+          role: "customer",
+        });
+
+        // Set local state session details
+        login(email, name, "customer", [], user.uid);
+        
+        // Fetch optional fields (addresses & rewards)
+        const profile = await getUser(user.uid);
+        const rewardPoints = profile?.rewardPoints ?? 100;
+        const addresses = profile?.addresses ?? [];
+
+        useStore.setState({
+          currentUser: {
+            uid: user.uid,
+            email,
+            name,
+            role: "customer",
+            addresses,
+            rewardPoints,
+          }
+        });
+
+        showToast(`Welcome back, ${name}!`, "success");
+        router.push("/");
+      })
+      .catch((err: any) => {
+        setLoading(false);
+        // Fallback to Redirect mode if browser settings strictly block popups
+        if (
+          err.code === "auth/popup-blocked" || 
+          err.code === "auth/cancelled-popup-request"
+        ) {
+          setError("Popup blocked. Redirecting to Google secure login...");
+          signInWithRedirect(auth, googleProvider).catch((redirErr) => {
+            console.error("Google redirect fallback error:", redirErr);
+            setError(redirErr.message || "Google redirect failed.");
+          });
+        } else {
+          console.error("Google popup sign-in failed:", err);
+          setError(err.message || "Google Sign-In failed. Please try again.");
+        }
+      });
   };
 
   return (

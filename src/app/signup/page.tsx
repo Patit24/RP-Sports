@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, UserPlus, AlertCircle, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle, checkGoogleRedirectResult } from "@/lib/authService";
-import { onAuthStateChanged, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { signInWithGooglePopup, checkGoogleRedirectResult } from "@/lib/authService";
+import { onAuthStateChanged, createUserWithEmailAndPassword, updateProfile, signInWithRedirect } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 import { saveUser, addSubscriber } from "@/lib/firestoreService";
 
 export default function SignUpPage() {
@@ -106,7 +106,10 @@ export default function SignUpPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === "checkbox" ? checked : value });
+    setForm({
+      ...form,
+      [name]: type === "checkbox" ? checked : value,
+    });
     setErrors({ ...errors, [name]: "" });
   };
 
@@ -138,19 +141,50 @@ export default function SignUpPage() {
   };
 
   // Google OAuth Sign Up
-  const handleGoogleSignUp = async () => {
+  const handleGoogleSignUp = () => {
     setLoading(true);
     setErrors({});
-    const res = await signInWithGoogle();
-    
-    if (res.success && res.email) {
-      // Auth state listener handles Firestore sync and redirect
-    } else if (res.redirecting) {
-      // Keep loading active during browser redirection
-    } else {
-      setLoading(false);
-      setErrors({ google: res.error || "Google Sign-Up failed." });
-    }
+
+    signInWithGooglePopup()
+      .then(async (result) => {
+        const user = result.user;
+        const name = user.displayName || form.name || user.email?.split("@")[0] || "RP Athlete";
+        const email = user.email || `${user.uid}@google.com`;
+
+        // Sync profile to Firestore
+        await saveUser(user.uid, {
+          uid: user.uid,
+          email,
+          name,
+          role: "customer",
+          addresses: [],
+          rewardPoints: 100,
+        });
+
+        // Sync local state session
+        login(email, name, "customer", [], user.uid);
+        addSubscriber(email).catch(console.error);
+
+        showToast(`Welcome to RP Sports, ${name}!`, "success");
+        router.push("/");
+      })
+      .catch((err: any) => {
+        setLoading(false);
+        // Fallback to Redirect mode if browser settings strictly block popups
+        if (
+          err.code === "auth/popup-blocked" || 
+          err.code === "auth/cancelled-popup-request"
+        ) {
+          setErrors({ google: "Popup blocked. Redirecting to Google secure signup..." });
+          signInWithRedirect(auth, googleProvider).catch((redirErr) => {
+            console.error("Google redirect fallback error:", redirErr);
+            setErrors({ google: redirErr.message || "Google redirect failed." });
+          });
+        } else {
+          console.error("Google popup sign-up failed:", err);
+          setErrors({ google: err.message || "Google Sign-Up failed." });
+        }
+      });
   };
 
   // Main Form Submit

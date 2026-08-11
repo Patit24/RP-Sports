@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
-import { signInWithGoogle, checkGoogleRedirectResult } from "@/lib/authService";
-import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { signInWithGoogle, signInWithGooglePopup, checkGoogleRedirectResult } from "@/lib/authService";
+import { onAuthStateChanged, signInWithEmailAndPassword, signInWithRedirect } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 import { Lock, Mail, AlertCircle, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
-import { getUser } from "@/lib/firestoreService";
+import { getUser, saveUser } from "@/lib/firestoreService";
 
 interface CheckoutAuthGateProps {
   onSuccess?: () => void;
@@ -103,17 +103,63 @@ export default function CheckoutAuthGate({ onSuccess }: CheckoutAuthGateProps) {
   }, [login, showToast, onSuccess]);
 
   // Handle Google Sign-In
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     setError("");
     setLoading(true);
-    const res = await signInWithGoogle();
-    setLoading(false);
 
-    if (res.success && res.email) {
-      // Auth state listener handles the login and onSuccess trigger
-    } else {
-      setError(res.error || "Google sign-in failed. Please try again.");
-    }
+    signInWithGooglePopup()
+      .then(async (result) => {
+        const user = result.user;
+        const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
+        const email = user.email || `${user.uid}@google.com`;
+
+        // Save/update user profile in Firestore
+        await saveUser(user.uid, {
+          uid: user.uid,
+          email,
+          name,
+          role: "customer",
+        });
+
+        // Set local state session details
+        login(email, name, "customer", [], user.uid);
+
+        // Fetch user profile metrics
+        const profile = await getUser(user.uid);
+        const rewardPoints = profile?.rewardPoints ?? 100;
+        const addresses = profile?.addresses ?? [];
+
+        useStore.setState({
+          currentUser: {
+            uid: user.uid,
+            email,
+            name,
+            role: "customer",
+            addresses,
+            rewardPoints,
+          }
+        });
+
+        showToast(`Logged in as ${name}`, "success");
+        if (onSuccess) onSuccess();
+      })
+      .catch((err: any) => {
+        setLoading(false);
+        // Fallback to Redirect mode if browser settings strictly block popups
+        if (
+          err.code === "auth/popup-blocked" || 
+          err.code === "auth/cancelled-popup-request"
+        ) {
+          setError("Popup blocked. Redirecting to Google secure login...");
+          signInWithRedirect(auth, googleProvider).catch((redirErr) => {
+            console.error("Google redirect fallback error at checkout:", redirErr);
+            setError(redirErr.message || "Google redirect failed.");
+          });
+        } else {
+          console.error("Google popup sign-in failed during checkout:", err);
+          setError(err.message || "Google Sign-In failed. Please try again.");
+        }
+      });
   };
 
   // Handle Email Sign-In
