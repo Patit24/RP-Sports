@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useStore } from "@/lib/store";
 import { saveUser } from "@/lib/firestoreService";
 
-export default function AuthCallbackPage() {
+// Inner component uses useSearchParams — must be inside <Suspense>
+function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, showToast } = useStore();
@@ -28,6 +29,7 @@ export default function AuthCallbackPage() {
         token_exchange_failed: "Failed to complete Google sign-in. Please try again.",
         profile_fetch_failed: "Could not fetch Google profile. Please try again.",
         server_error: "A server error occurred. Please try again.",
+        oauth_not_configured: "Google Sign-In is being configured. Please use Email login for now.",
       };
       setErrorMsg(messages[error] || "Sign-in failed. Please try again.");
       setStatus("error");
@@ -86,7 +88,6 @@ export default function AuthCallbackPage() {
       <div className="text-center space-y-4 p-8">
         {status === "loading" ? (
           <>
-            {/* Spinner */}
             <div className="w-14 h-14 mx-auto border-4 border-gray-200 border-t-[#CC0000] rounded-full animate-spin" />
             <p className="text-[#111111] font-display font-bold text-lg uppercase tracking-wider">
               Signing you in...
@@ -106,5 +107,28 @@ export default function AuthCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Loading fallback shown while the inner component is being hydrated
+function AuthCallbackFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F9F9F9]">
+      <div className="text-center space-y-4 p-8">
+        <div className="w-14 h-14 mx-auto border-4 border-gray-200 border-t-[#CC0000] rounded-full animate-spin" />
+        <p className="text-[#111111] font-display font-bold text-lg uppercase tracking-wider">
+          Signing you in...
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Page export wraps inner component in Suspense — required by Next.js for useSearchParams
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<AuthCallbackFallback />}>
+      <AuthCallbackInner />
+    </Suspense>
   );
 }

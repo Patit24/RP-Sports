@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, UserPlus, AlertCircle, Check } from "lucide-react";
@@ -9,7 +9,7 @@ import { onAuthStateChanged, createUserWithEmailAndPassword, updateProfile } fro
 import { auth } from "@/lib/firebase";
 import { saveUser, addSubscriber } from "@/lib/firestoreService";
 
-export default function SignUpPage() {
+function SignUpPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currentUser, login, showToast } = useStore();
@@ -444,5 +444,13 @@ export default function SignUpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#F9F9F9]"><div className="w-10 h-10 border-4 border-gray-200 border-t-[#CC0000] rounded-full animate-spin" /></div>}>
+      <SignUpPageInner />
+    </Suspense>
   );
 }
