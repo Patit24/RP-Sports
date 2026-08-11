@@ -142,11 +142,21 @@ export async function getAllOrders(): Promise<(Order & { firestoreId: string })[
 
 /** Update order status in Firestore */
 export async function updateOrderStatusInDB(
-  firestoreId: string,
+  orderIdOrFirestoreId: string,
   status: Order["status"]
 ): Promise<void> {
   try {
-    await updateDoc(doc(db, "orders", firestoreId), {
+    let docId = orderIdOrFirestoreId;
+    if (orderIdOrFirestoreId.startsWith("ORD-")) {
+      const resolvedId = await getOrderDocumentId(orderIdOrFirestoreId);
+      if (resolvedId) {
+        docId = resolvedId;
+      } else {
+        console.warn(`Firestore updateOrderStatusInDB warning: Order '${orderIdOrFirestoreId}' not found.`);
+        return;
+      }
+    }
+    await updateDoc(doc(db, "orders", docId), {
       status,
       updatedAt: serverTimestamp(),
     });
@@ -157,11 +167,21 @@ export async function updateOrderStatusInDB(
 
 /** Update arbitrary order fields in Firestore */
 export async function updateOrderInDB(
-  firestoreId: string,
+  orderIdOrFirestoreId: string,
   data: Partial<Order>
 ): Promise<void> {
   try {
-    await updateDoc(doc(db, "orders", firestoreId), {
+    let docId = orderIdOrFirestoreId;
+    if (orderIdOrFirestoreId.startsWith("ORD-")) {
+      const resolvedId = await getOrderDocumentId(orderIdOrFirestoreId);
+      if (resolvedId) {
+        docId = resolvedId;
+      } else {
+        console.warn(`Firestore updateOrderInDB warning: Order '${orderIdOrFirestoreId}' not found.`);
+        return;
+      }
+    }
+    await updateDoc(doc(db, "orders", docId), {
       ...data,
       updatedAt: serverTimestamp(),
     });
