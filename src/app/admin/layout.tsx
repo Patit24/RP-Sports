@@ -39,7 +39,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     await new Promise((r) => setTimeout(r, 400));
     setLoading(false);
 
-    const isSuper = adminEmail.includes("super") || adminEmail.includes("admin");
+    // Validate admin credentials against known admin accounts
+    const validAdminEmails = ["admin@rpsports.com", "super_admin@rpsports.com"];
+    const isValidAdmin = validAdminEmails.includes(adminEmail);
+
+    if (!isValidAdmin) {
+      setLoginError("Invalid admin email. Use admin@rpsports.com or super_admin@rpsports.com.");
+      return;
+    }
+
+    // For valid admin emails, authenticate with hardcoded credentials
+    const isSuper = adminEmail.includes("super");
     const name = isSuper ? "Master Chief (Admin)" : "RP Store Manager";
     const role = isSuper ? "super_admin" : "admin";
 

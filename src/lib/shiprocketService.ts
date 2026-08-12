@@ -65,7 +65,7 @@ export async function getShiprocketToken(): Promise<string> {
   const password = process.env.SHIPROCKET_PASSWORD;
 
   if (!email || !password) {
-    if (process.env.SHIPROCKET_MOCK_MODE === "true" || process.env.NODE_ENV === "development") {
+    if (process.env.SHIPROCKET_MOCK_MODE === "true" && process.env.NODE_ENV !== "production") {
       return "mock_shiprocket_jwt_token";
     }
     throw new Error("Shiprocket credentials are not configured in environment variables.");

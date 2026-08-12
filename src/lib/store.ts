@@ -370,7 +370,7 @@ export const useStore = create<SportsStoreState>()(
         const couponDiscount = Math.round((subtotal * discountPercent) / 100);
         const grandTotal = subtotal + tax + shipping - couponDiscount;
 
-        const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+        const orderId = "ORD-" + Date.now().toString(36) + Math.floor(Math.random() * 10000);
         const isKolkataLocal = address.pincode.startsWith("700");
         const carrierName = isKolkataLocal ? "Delhivery Express" : "Blue Dart Logistics";
         const awbNumber = `${isKolkataLocal ? 'DLH' : 'BLD'}-KOL-${Math.floor(100000 + Math.random() * 900000)}`;

@@ -154,8 +154,8 @@ export async function verifyAdmin(request: Request): Promise<{ uid: string; emai
     const token = authHeader.split("Bearer ")[1];
     if (!token) return null;
 
-    // Check if it's a mock admin bypass token for dev/demo mode
-    if (token === "mock_admin_bypass_token") {
+    // Check if it's a mock admin bypass token for dev/demo mode only
+    if (token === "mock_admin_bypass_token" && process.env.NODE_ENV !== "production") {
       return { uid: "admin_rpsports_com", email: "admin@rpsports.com" };
     }
 
