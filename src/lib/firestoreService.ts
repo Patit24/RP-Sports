@@ -511,25 +511,11 @@ export interface Category {
 export function listenToCategories(callback: (cats: Category[]) => void): Unsubscribe {
   const q = collection(db, "categories");
   return onSnapshot(q, (snap) => {
-    if (snap.empty) {
-      const mockCategories: Category[] = [
-        { id: "cricket", name: "Cricket Equipment", icon: "🏏", banner: "/category_cricket_1783225297200.jpg", subcategories: ["bats", "shoes", "pads", "gloves"] },
-        { id: "football", name: "Football & Accessories", icon: "⚽", banner: "/category_football_1783225306612.jpg", subcategories: ["footballs", "shin-guards", "boots"] },
-        { id: "badminton", name: "Badminton Rackets & Gear", icon: "🏸", banner: "/category_badminton_1783225318763.jpg", subcategories: ["rackets", "shuttles", "shoes"] },
-        { id: "apparel", name: "Apparel & Match Jerseys", icon: "👕", banner: "/jerseys_category_rp_1785961757107.jpg", subcategories: ["jerseys", "trackpants", "caps"] },
-        { id: "custom-trophies", name: "Custom Trophies & Awards", icon: "🏆", banner: "/cricket_locker_room.jpg", subcategories: ["trophies", "medals", "shields"] }
-      ];
-      mockCategories.forEach((c) => {
-        setDoc(doc(db, "categories", c.id), c).catch(console.error);
-      });
-      callback(mockCategories);
-    } else {
-      const list: Category[] = [];
-      snap.forEach((d) => {
-        list.push({ ...d.data(), id: d.id } as Category);
-      });
-      callback(list);
-    }
+    const list: Category[] = [];
+    snap.forEach((d) => {
+      list.push({ ...d.data(), id: d.id } as Category);
+    });
+    callback(list);
   }, (err) => {
     console.warn("Firestore listenToCategories warning:", err.message);
   });
@@ -578,65 +564,11 @@ export interface TestimonialVideo {
 export function listenToTestimonials(callback: (tests: TestimonialVideo[]) => void): Unsubscribe {
   const q = collection(db, "testimonials");
   return onSnapshot(q, (snap) => {
-    if (snap.empty) {
-      const mockTestimonials: TestimonialVideo[] = [
-        {
-          id: "v1",
-          title: "Unboxing & Testing My New RP Elite Bat at Dumdum Store!",
-          author: "Rajiv Mukherjee",
-          role: "Dumdum Sub-Division Batter",
-          location: "Bought at Dumdum Store, Kolkata",
-          rating: 5,
-          duration: "04:12",
-          thumbnail: "/images/rp_customer_video_1.jpg",
-          quote: "I visited the RP Sports Dumdum store yesterday and Raj-da personally helped me pick this Grade-1 bat. Pre-knocked, oiled, and ready for match play!",
-          productName: "RP Elite English Willow Bat",
-          productPrice: "₹18,999",
-          date: "Aug 2026",
-          videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        },
-        {
-          id: "v2",
-          title: "RP Spark Spike Shoes & Bat Net Practice Ping Test",
-          author: "Ayan Sengupta",
-          role: "Kolkata 1st Division All-Rounder",
-          location: "Salt Lake Nets, Kolkata",
-          rating: 5,
-          duration: "03:45",
-          thumbnail: "/products/cricket_action_hero.jpg",
-          quote: "Bought both the RP Spark spike shoes and bat from the Kolkata store. Spikes give great grip on turf and the bat ping is explosive!",
-          productName: "RP Spark Pro Cricket Spikes",
-          productPrice: "₹5,499",
-          date: "Jul 2026",
-          videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        },
-        {
-          id: "v3",
-          title: "Custom Sublimated Team Jerseys & Equipment Review",
-          author: "Sourav Das",
-          role: "Dumdum Cricket Club Captain",
-          location: "Dumdum Club, Kolkata",
-          rating: 5,
-          duration: "05:20",
-          thumbnail: "/products/cricket_locker_room.jpg",
-          quote: "We ordered 16 custom team jerseys with player names, numbers & club logo from RP Sports. Print quality and fabric comfort is outstanding!",
-          productName: "RP Custom Team Jersey Kit",
-          productPrice: "₹3,500",
-          date: "Jul 2026",
-          videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        }
-      ];
-      mockTestimonials.forEach((t) => {
-        setDoc(doc(db, "testimonials", t.id), t).catch(console.error);
-      });
-      callback(mockTestimonials);
-    } else {
-      const list: TestimonialVideo[] = [];
-      snap.forEach((d) => {
-        list.push({ ...d.data(), id: d.id } as TestimonialVideo);
-      });
-      callback(list);
-    }
+    const list: TestimonialVideo[] = [];
+    snap.forEach((d) => {
+      list.push({ ...d.data(), id: d.id } as TestimonialVideo);
+    });
+    callback(list);
   }, (err) => {
     console.warn("Firestore listenToTestimonials warning:", err.message);
   });
