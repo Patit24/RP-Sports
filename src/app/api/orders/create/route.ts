@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminDb, getAdminAuth } from "@/lib/serverAuth";
+import { getAdminDb, verifyFirebaseIdToken } from "@/lib/serverAuth";
 import { FieldValue } from "firebase-admin/firestore";
 import type { CartItem, Order, DeliveryPartnerInfo } from "@/lib/store";
 import { createShiprocketOrder } from "@/lib/shiprocketService";
@@ -25,8 +25,7 @@ export async function POST(request: Request) {
     if (authHeader && authHeader.startsWith("Bearer ")) {
       try {
         const token = authHeader.split("Bearer ")[1];
-        const auth = getAdminAuth();
-        const decoded = await auth.verifyIdToken(token);
+        const decoded = await verifyFirebaseIdToken(token);
         if (decoded && decoded.email) {
           userEmail = decoded.email;
         }
