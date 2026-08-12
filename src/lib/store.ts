@@ -178,7 +178,7 @@ interface SportsStoreState {
 export const useStore = create<SportsStoreState>()(
   persist(
     (set, get) => ({
-      products: mockProducts,
+      products: [],
       cart: [],
       wishlist: [],
       compareList: [],
@@ -551,12 +551,17 @@ export const useStore = create<SportsStoreState>()(
     }),
     {
       name: "rp-sports-store",
-      version: 7,
+      version: 8,
       migrate: (persistedState: any, version: number) => {
-        if (version < 7) {
+        if (version < 8) {
           return {
             ...persistedState,
-            products: mockProducts,
+            products: [],
+            categories: [],
+            testimonials: [],
+            orders: [],
+            cart: [],
+            wishlist: []
           };
         }
         return persistedState;
