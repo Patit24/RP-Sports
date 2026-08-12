@@ -15,11 +15,13 @@ export default function ShopPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const products = useStore((state) => state.products);
+  const categories = useStore((state) => state.categories);
 
   // States
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSport, setSelectedSport] = useState<string>("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [priceRange, setPriceRange] = useState<number>(30000);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
@@ -27,24 +29,43 @@ export default function ShopPageContent() {
   const [sortBy, setSortBy] = useState("popular");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Active category list
+  const activeCategories = categories && categories.length > 0 ? categories : CATEGORIES;
+
   // Read URL params
   const categoryParam = searchParams.get("category");
+  const subcategoryParam = searchParams.get("subcategory");
+
   useEffect(() => {
     if (categoryParam) {
       setSelectedSport(categoryParam);
     }
   }, [categoryParam]);
 
+  useEffect(() => {
+    if (subcategoryParam) {
+      setSelectedSubcategory(subcategoryParam);
+    } else {
+      setSelectedSubcategory("");
+    }
+  }, [subcategoryParam]);
+
   // Clean all filters
   const resetFilters = () => {
     setSearchQuery("");
     setSelectedSport("");
+    setSelectedSubcategory("");
     setSelectedBrand("");
     setPriceRange(30000);
     setSelectedRating(null);
     setOnlyInStock(false);
     setSortBy("popular");
     router.replace("/shop");
+  };
+
+  const handleSportChange = (sportId: string) => {
+    setSelectedSport(sportId);
+    setSelectedSubcategory("");
   };
 
   // Filter & Sort Logic
@@ -59,6 +80,7 @@ export default function ShopPageContent() {
           if (!matchesName && !matchesDesc && !matchesSku) return false;
         }
         if (selectedSport && prod.category !== selectedSport) return false;
+        if (selectedSubcategory && prod.subcategory !== selectedSubcategory) return false;
         if (selectedBrand && prod.brand !== selectedBrand) return false;
         if (prod.price > priceRange) return false;
         if (selectedRating && prod.rating < selectedRating) return false;
@@ -72,7 +94,7 @@ export default function ShopPageContent() {
         if (sortBy === "newest") return a.id.localeCompare(b.id); 
         return b.reviewsCount - a.reviewsCount;
       });
-  }, [products, searchQuery, selectedSport, selectedBrand, priceRange, selectedRating, onlyInStock, sortBy]);
+  }, [products, searchQuery, selectedSport, selectedSubcategory, selectedBrand, priceRange, selectedRating, onlyInStock, sortBy]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-foreground pb-20 pt-28">
@@ -88,13 +110,18 @@ export default function ShopPageContent() {
               {selectedSport && (
                 <>
                   <span>/</span>
-                  <span className="text-primary">{CATEGORIES.find(c => c.id === selectedSport)?.name || selectedSport}</span>
+                  <span className="text-primary">{activeCategories.find(c => c.id === selectedSport)?.name || selectedSport}</span>
                 </>
               )}
             </div>
             <h1 className="text-3xl md:text-5xl font-black uppercase text-primary tracking-tight">
-              {selectedSport ? CATEGORIES.find(c => c.id === selectedSport)?.name : "All Products"}
+              {selectedSport ? activeCategories.find(c => c.id === selectedSport)?.name : "All Products"}
             </h1>
+            {selectedSubcategory && (
+              <span className="inline-block mt-2 bg-slate-100 border border-slate-200 text-xs font-bold font-mono tracking-widest text-[#CC0000] px-3 py-1 rounded">
+                TAG: {selectedSubcategory.toUpperCase()}
+              </span>
+            )}
             <p className="text-secondary mt-2 text-sm md:text-base">Showing {filteredProducts.length} items</p>
           </div>
           
@@ -151,22 +178,49 @@ export default function ShopPageContent() {
                       type="radio"
                       name="sportRadio"
                       checked={selectedSport === ""}
-                      onChange={() => setSelectedSport("")}
+                      onChange={() => handleSportChange("")}
                       className="w-4 h-4 text-accent border-slate-300 focus:ring-accent"
                     />
                     <span className={selectedSport === "" ? "text-primary font-bold" : "text-slate-600 group-hover:text-primary"}>All Categories</span>
                   </label>
-                  {CATEGORIES.map((cat) => (
-                    <label key={cat.id} className="flex items-center gap-3 text-sm font-medium cursor-pointer group">
-                      <input
-                        type="radio"
-                        name="sportRadio"
-                        checked={selectedSport === cat.id}
-                        onChange={() => setSelectedSport(cat.id)}
-                        className="w-4 h-4 text-accent border-slate-300 focus:ring-accent"
-                      />
-                      <span className={selectedSport === cat.id ? "text-primary font-bold" : "text-slate-600 group-hover:text-primary"}>{cat.name}</span>
-                    </label>
+                  {activeCategories.map((cat) => (
+                    <div key={cat.id} className="space-y-1.5">
+                      <label className="flex items-center gap-3 text-sm font-medium cursor-pointer group">
+                        <input
+                          type="radio"
+                          name="sportRadio"
+                          checked={selectedSport === cat.id}
+                          onChange={() => handleSportChange(cat.id)}
+                          className="w-4 h-4 text-accent border-slate-300 focus:ring-accent"
+                        />
+                        <span className={selectedSport === cat.id ? "text-primary font-bold" : "text-slate-600 group-hover:text-primary"}>{cat.name}</span>
+                      </label>
+
+                      {/* Accordion Subcategories List */}
+                      {selectedSport === cat.id && cat.subcategories && cat.subcategories.length > 0 && (
+                        <div className="pl-7 pr-2 py-1 space-y-1 flex flex-col border-l border-slate-200 ml-2">
+                          <button
+                            onClick={() => setSelectedSubcategory("")}
+                            className={`text-left text-xs py-1 transition-colors cursor-pointer ${
+                              selectedSubcategory === "" ? "text-accent font-bold" : "text-slate-500 hover:text-slate-800"
+                            }`}
+                          >
+                            All {cat.name}
+                          </button>
+                          {cat.subcategories.map((sub) => (
+                            <button
+                              key={sub}
+                              onClick={() => setSelectedSubcategory(sub)}
+                              className={`text-left text-xs py-1 transition-colors font-mono uppercase tracking-wider cursor-pointer ${
+                                selectedSubcategory === sub ? "text-accent font-bold" : "text-slate-500 hover:text-slate-800"
+                              }`}
+                            >
+                              - {sub}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -418,14 +472,41 @@ export default function ShopPageContent() {
                 <h4 className="text-xs font-bold text-primary uppercase mb-3 tracking-widest">Categories</h4>
                 <div className="space-y-3">
                   <label className="flex items-center gap-3 text-sm font-medium cursor-pointer">
-                    <input type="radio" name="sportRadioMob" checked={selectedSport === ""} onChange={() => setSelectedSport("")} className="w-4 h-4 text-accent border-slate-300 focus:ring-accent" />
+                    <input type="radio" name="sportRadioMob" checked={selectedSport === ""} onChange={() => handleSportChange("")} className="w-4 h-4 text-accent border-slate-300 focus:ring-accent" />
                     <span className="text-slate-700">All Categories</span>
                   </label>
-                  {CATEGORIES.map((cat) => (
-                    <label key={cat.id} className="flex items-center gap-3 text-sm font-medium cursor-pointer">
-                      <input type="radio" name="sportRadioMob" checked={selectedSport === cat.id} onChange={() => setSelectedSport(cat.id)} className="w-4 h-4 text-accent border-slate-300 focus:ring-accent" />
-                      <span className="text-slate-700">{cat.name}</span>
-                    </label>
+                  {activeCategories.map((cat) => (
+                    <div key={cat.id} className="space-y-2">
+                      <label className="flex items-center gap-3 text-sm font-medium cursor-pointer">
+                        <input type="radio" name="sportRadioMob" checked={selectedSport === cat.id} onChange={() => handleSportChange(cat.id)} className="w-4 h-4 text-accent border-slate-300 focus:ring-accent" />
+                        <span className="text-slate-700">{cat.name}</span>
+                      </label>
+
+                      {/* Accordion Subcategories List Mobile */}
+                      {selectedSport === cat.id && cat.subcategories && cat.subcategories.length > 0 && (
+                        <div className="pl-6 space-y-1.5 flex flex-col border-l border-slate-200 ml-2">
+                          <button
+                            onClick={() => { setSelectedSubcategory(""); setSidebarOpen(false); }}
+                            className={`text-left text-xs py-1 transition-colors ${
+                              selectedSubcategory === "" ? "text-accent font-bold" : "text-slate-500 hover:text-slate-800"
+                            }`}
+                          >
+                            All {cat.name}
+                          </button>
+                          {cat.subcategories.map((sub) => (
+                            <button
+                              key={sub}
+                              onClick={() => { setSelectedSubcategory(sub); setSidebarOpen(false); }}
+                              className={`text-left text-xs py-1 transition-colors font-mono uppercase tracking-wider ${
+                                selectedSubcategory === sub ? "text-accent font-bold" : "text-slate-500 hover:text-slate-800"
+                              }`}
+                            >
+                              - {sub}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

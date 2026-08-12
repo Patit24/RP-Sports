@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useStore } from "@/lib/store";
 import {
   ArrowRight, Star, ShoppingCart, MapPin, Phone, Clock, ChevronRight,
   ShieldCheck, Truck, RotateCcw, Award, Users, Package, Zap, Trophy
@@ -41,7 +42,18 @@ const STATS = [
 export default function Home() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const featuredProducts = mockProducts.filter((p) => p.featured).slice(0, 8);
+  
+  const { products, categories } = useStore();
+  const featuredProducts = (products || []).filter((p: any) => p.featured).slice(0, 8);
+
+  const activeFeaturedCategories = categories && categories.length > 0
+    ? categories.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        image: c.banner || "/category_cricket_1783225297200.jpg",
+        desc: c.subcategories ? c.subcategories.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(", ") : "Explore items"
+      }))
+    : FEATURED_CATEGORIES;
 
   const SLIDES = [
     {
@@ -208,7 +220,7 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-          {FEATURED_CATEGORIES.map((cat) => (
+          {activeFeaturedCategories.map((cat: any) => (
             <Link
               key={cat.id}
               href={`/shop?category=${cat.id}`}
@@ -250,7 +262,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-            {featuredProducts.map((product) => (
+            {featuredProducts.map((product: any) => (
               <Link key={product.id} href={`/product/${product.id}`} className="product-card group">
                 {/* Image */}
                 <div className="relative aspect-square bg-white overflow-hidden hover-zoom-container">

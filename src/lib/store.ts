@@ -8,7 +8,9 @@ import {
   addProductToDB, 
   updateProductInDB, 
   deleteProductFromDB, 
-  updateOrderStatusInDB 
+  updateOrderStatusInDB,
+  Category,
+  TestimonialVideo
 } from "./firestoreService";
 import { notifyDeliveryPartner } from "./deliveryPartnerService";
 import { mockProducts, Product } from "./mockData";
@@ -132,6 +134,8 @@ interface SportsStoreState {
   quickViewProduct: Product | null;
   toast: ToastMessage | null;
   activeCoupon: Coupon | null;
+  categories: Category[];
+  testimonials: TestimonialVideo[];
   
   // Actions
   login: (email: string, name: string, role?: "admin" | "customer" | "super_admin", permissions?: string[], uid?: string) => void;
@@ -160,6 +164,9 @@ interface SportsStoreState {
   ) => Order | null;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
   setOrders: (orders: Order[]) => void;
+  setProducts: (products: Product[]) => void;
+  setCategories: (categories: Category[]) => void;
+  setTestimonials: (testimonials: TestimonialVideo[]) => void;
   
   // Admin Product CRUD
   addProduct: (product: Omit<Product, "id" | "slug" | "sku">) => void;
@@ -180,6 +187,8 @@ export const useStore = create<SportsStoreState>()(
       quickViewProduct: null,
       toast: null,
       activeCoupon: null,
+      categories: [],
+      testimonials: [],
 
       showToast: (message, type = "success") => {
         set({ toast: { id: Date.now().toString(), message, type } });
@@ -468,6 +477,18 @@ export const useStore = create<SportsStoreState>()(
 
       setOrders: (orders) => {
         set({ orders });
+      },
+
+      setProducts: (products) => {
+        set({ products });
+      },
+
+      setCategories: (categories) => {
+        set({ categories });
+      },
+
+      setTestimonials: (testimonials) => {
+        set({ testimonials });
       },
 
       addProduct: (prodData) => {

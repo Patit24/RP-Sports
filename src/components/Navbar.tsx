@@ -10,11 +10,15 @@ import {
   LogOut, Plus, Minus, ChevronDown, ArrowRight, Scale 
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { listenToProducts, listenToCategories, listenToTestimonials } from "@/lib/firestoreService";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { cart, wishlist, compareList, currentUser, login, logout, showToast, updateCartQuantity, removeFromCart } = useStore();
+  const { 
+    cart, wishlist, compareList, currentUser, login, logout, showToast, 
+    updateCartQuantity, removeFromCart, setProducts, setCategories, setTestimonials 
+  } = useStore();
   
   const [scrolled, setScrolled] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -50,6 +54,36 @@ export default function Navbar() {
     window.location.href = "/";
   };
 
+  // Real-time Database Snapshot Subscriptions
+  useEffect(() => {
+    // 1. Sync Catalog Products
+    const unsubscribeProducts = listenToProducts((dbProducts) => {
+      if (dbProducts && dbProducts.length > 0) {
+        setProducts(dbProducts);
+      }
+    });
+
+    // 2. Sync Taxonomy Categories & Subcategories
+    const unsubscribeCategories = listenToCategories((dbCategories) => {
+      if (dbCategories && dbCategories.length > 0) {
+        setCategories(dbCategories);
+      }
+    });
+
+    // 3. Sync Testimonial Videos
+    const unsubscribeTestimonials = listenToTestimonials((dbTestimonials) => {
+      if (dbTestimonials && dbTestimonials.length > 0) {
+        setTestimonials(dbTestimonials);
+      }
+    });
+
+    return () => {
+      unsubscribeProducts();
+      unsubscribeCategories();
+      unsubscribeTestimonials();
+    };
+  }, [setProducts, setCategories, setTestimonials]);
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -60,13 +94,22 @@ export default function Navbar() {
 
   const cartTotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
 
-  const categories = [
-    { name: "Cricket", sub: ["Bats", "Balls", "Pads & Gloves", "Helmets", "Protection"] },
-    { name: "Football", sub: ["Footballs", "Boots", "Shin Guards", "Goalkeeper Gloves"] },
-    { name: "Badminton", sub: ["Rackets", "Shuttlecocks", "Grips", "Kit Bags"] },
-    { name: "Apparel", sub: ["Match Jerseys", "Tracksuits", "Training Tees", "Caps"] },
-    { name: "Footwear", sub: ["Spikes", "Turf Shoes", "Running Shoes"] },
-  ];
+  // Load categories dynamically from store, with static fallback for first-load
+  const dbCategories = useStore((state) => state.categories);
+  const categories = dbCategories && dbCategories.length > 0 
+    ? dbCategories.map(c => ({
+        id: c.id,
+        name: c.name,
+        sub: c.subcategories.map(s => s.charAt(0).toUpperCase() + s.slice(1))
+      }))
+    : [
+        { id: "cricket", name: "Cricket", sub: ["Bats", "Balls", "Pads & Gloves", "Helmets", "Protection"] },
+        { id: "football", name: "Football", sub: ["Footballs", "Boots", "Shin Guards", "Goalkeeper Gloves"] },
+        { id: "badminton", name: "Badminton", sub: ["Rackets", "Shuttlecocks", "Grips", "Kit Bags"] },
+        { id: "apparel", name: "Apparel", sub: ["Match Jerseys", "Tracksuits", "Training Tees", "Caps"] },
+        { id: "footwear", name: "Footwear", sub: ["Spikes", "Turf Shoes", "Running Shoes"] },
+      ];
+
 
   return (
     <>
@@ -227,7 +270,7 @@ export default function Navbar() {
                   onMouseLeave={() => setActiveCategory(null)}
                 >
                   <Link 
-                    href={`/shop?category=${cat.name.toLowerCase()}`}
+                    href={`/shop?category=${cat.id}`}
                     className="hover:text-white flex items-center gap-1 py-1 transition-colors"
                   >
                     {cat.name}
@@ -247,7 +290,7 @@ export default function Navbar() {
                         {cat.sub.map((subItem) => (
                           <Link
                             key={subItem}
-                            href={`/shop?category=${cat.name.toLowerCase()}&subcategory=${subItem.toLowerCase().replace(/ & /g, "-")}`}
+                            href={`/shop?category=${cat.id}&subcategory=${subItem.toLowerCase().replace(/ & /g, "-")}`}
                             className="block px-4 py-2 hover:bg-secondary/10 hover:text-accent font-semibold transition-colors normal-case text-sm"
                           >
                             {subItem}
@@ -386,7 +429,7 @@ export default function Navbar() {
 
             <div className="flex flex-col flex-grow px-6 py-8 gap-6">
               {categories.map(cat => (
-                <Link key={cat.name} href={`/shop?category=${cat.name.toLowerCase()}`} onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold tracking-wide border-b border-white/10 pb-4 flex justify-between items-center">
+                <Link key={cat.name} href={`/shop?category=${cat.id}`} onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold tracking-wide border-b border-white/10 pb-4 flex justify-between items-center">
                   {cat.name}
                   <ArrowRight className="w-5 h-5 text-accent" />
                 </Link>

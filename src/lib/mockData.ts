@@ -41,11 +41,11 @@ export interface Product {
 }
 
 export const CATEGORIES = [
-  { id: "cricket", name: "Cricket", icon: "🏏", banner: "/category_cricket_1783225297200.jpg" },
-  { id: "football", name: "Football", icon: "⚽", banner: "/category_football_1783225306612.jpg" },
-  { id: "badminton", name: "Badminton", icon: "🏸", banner: "/category_badminton_1783225318763.jpg" },
-  { id: "jerseys", name: "Jerseys", icon: "👕", banner: "/jerseys_category_rp_1785961757107.jpg" },
-  { id: "trophies", name: "Trophies", icon: "🏆", banner: "/generated_trophy_1783192099951.jpg" },
+  { id: "cricket", name: "Cricket", icon: "🏏", banner: "/category_cricket_1783225297200.jpg", subcategories: ["bats", "balls", "gloves", "pads", "helmets", "kits"] },
+  { id: "football", name: "Football", icon: "⚽", banner: "/category_football_1783225306612.jpg", subcategories: ["balls", "boots", "guards", "accessories"] },
+  { id: "badminton", name: "Badminton", icon: "🏸", banner: "/category_badminton_1783225318763.jpg", subcategories: ["rackets", "shuttlecocks", "grips", "accessories"] },
+  { id: "jerseys", name: "Jerseys", icon: "👕", banner: "/jerseys_category_rp_1785961757107.jpg", subcategories: ["custom-jersey", "team-kits", "caps", "shorts"] },
+  { id: "trophies", name: "Trophies", icon: "🏆", banner: "/generated_trophy_1783192099951.jpg", subcategories: ["trophies", "medals", "awards", "plaques"] },
 ];
 
 export const BRANDS = ["RP Sports", "RP Custom Apparel", "RP Trophies", "SS", "SG", "DSC", "MRF"];

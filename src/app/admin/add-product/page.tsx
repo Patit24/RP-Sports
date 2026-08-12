@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { BRANDS } from "@/lib/mockData";
+import { BRANDS, CATEGORIES } from "@/lib/mockData";
 import { 
   PlusCircle, Image as ImageIcon, CheckCircle, Package, 
   IndianRupee, Tag, ShieldCheck, ListChecks, Sparkles, Plus, Trash2,
@@ -17,7 +17,8 @@ interface CustomSpecRow {
 
 export default function AddProductPage() {
   const router = useRouter();
-  const { addProduct, currentUser } = useStore();
+  const { addProduct, currentUser, categories } = useStore();
+  const activeCategories = categories && categories.length > 0 ? categories : CATEGORIES;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -326,7 +327,16 @@ export default function AddProductPage() {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({ ...prev, [name]: checked }));
     } else if (name === "category") {
-      const detected = detectProductType(value, formData.subcategory);
+      const selectedCat = activeCategories.find(c => c.id === value);
+      const defaultSub = selectedCat && selectedCat.subcategories && selectedCat.subcategories.length > 0
+        ? selectedCat.subcategories[0]
+        : "";
+      setFormData(prev => ({
+        ...prev,
+        category: value,
+        subcategory: defaultSub
+      }));
+      const detected = detectProductType(value, defaultSub);
       handleProductTypeChange(detected);
     } else if (name === "subcategory") {
       const detected = detectProductType(formData.category, value);
@@ -673,14 +683,11 @@ export default function AddProductPage() {
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000]"
+                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000] cursor-pointer"
               >
-                <option value="footwear">Footwear & Spikes</option>
-                <option value="cricket">Cricket Equipment</option>
-                <option value="apparel">Apparel & Match Jerseys</option>
-                <option value="badminton">Badminton Rackets & Gear</option>
-                <option value="football">Football & Accessories</option>
-                <option value="custom-trophies">Custom Trophies & Awards</option>
+                {activeCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
               </select>
             </div>
 
@@ -688,14 +695,16 @@ export default function AddProductPage() {
               <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
                 Subcategory Tag
               </label>
-              <input
-                type="text"
+              <select
                 name="subcategory"
                 value={formData.subcategory}
                 onChange={handleChange}
-                placeholder="e.g. spikes, turf-shoes, jerseys, bats"
-                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
-              />
+                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000] cursor-pointer"
+              >
+                {activeCategories.find(c => c.id === formData.category)?.subcategories?.map((sub) => (
+                  <option key={sub} value={sub}>{sub.charAt(0).toUpperCase() + sub.slice(1)}</option>
+                )) || <option value="">No subcategories</option>}
+              </select>
             </div>
 
             <div>

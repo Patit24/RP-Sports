@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Play, Star, CheckCircle2, X, ShoppingBag, ArrowRight, MapPin } from "lucide-react";
+import { useStore } from "@/lib/store";
 
 interface TestimonialVideo {
   id: string;
@@ -16,6 +17,7 @@ interface TestimonialVideo {
   productName: string;
   productPrice: string;
   date: string;
+  videoUrl?: string;
 }
 
 const TESTIMONIAL_VIDEOS: TestimonialVideo[] = [
@@ -65,6 +67,25 @@ const TESTIMONIAL_VIDEOS: TestimonialVideo[] = [
 
 export default function CustomerTestimonialsVideo() {
   const [activeVideo, setActiveVideo] = useState<TestimonialVideo | null>(null);
+  
+  // Connect to Zustand store testimonies list
+  const { testimonials: dbTestimonials } = useStore();
+  const testimonialList = dbTestimonials && dbTestimonials.length > 0
+    ? dbTestimonials
+    : TESTIMONIAL_VIDEOS;
+
+  const getEmbedUrl = (url?: string) => {
+    if (!url) return "";
+    let videoId = "";
+    if (url.includes("youtube.com/watch?v=")) {
+      videoId = url.split("v=")[1]?.split("&")[0] || "";
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1]?.split("?")[0] || "";
+    } else if (url.includes("youtube.com/embed/")) {
+      videoId = url.split("embed/")[1]?.split("?")[0] || "";
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : "";
+  };
 
   return (
     <section className="bg-[#111111] text-white py-16 md:py-24 px-4 md:px-8 border-t-4 border-[#CC0000] relative overflow-hidden">
@@ -93,7 +114,7 @@ export default function CustomerTestimonialsVideo() {
 
         {/* Video Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {TESTIMONIAL_VIDEOS.map((video) => (
+          {testimonialList.map((video: TestimonialVideo) => (
             <div
               key={video.id}
               className="bg-[#1A1A1A] border border-white/10 rounded-2xl overflow-hidden hover:border-[#CC0000]/60 transition-all duration-300 group flex flex-col justify-between shadow-xl"
@@ -108,73 +129,51 @@ export default function CustomerTestimonialsVideo() {
                   alt={video.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
                 />
-
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                {/* Duration Badge */}
-                <span className="absolute bottom-3 right-3 bg-black/80 text-white font-mono font-bold text-[11px] px-2 py-0.5 rounded border border-white/20">
-                  {video.duration}
-                </span>
-
+                
                 {/* Play Button Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-[#CC0000] text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform duration-300 shadow-red-600/50">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/45 transition-colors">
+                  <div className="w-14 h-14 rounded-full bg-[#CC0000] text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
                     <Play className="w-6 h-6 fill-white text-white ml-1" />
                   </div>
                 </div>
+
+                {/* Duration Badge */}
+                <span className="absolute bottom-3 right-3 bg-black/75 px-2 py-0.5 rounded text-[10px] font-bold font-mono tracking-wider">
+                  {video.duration}
+                </span>
+
+                {/* Stars Badge */}
+                <div className="absolute top-3 left-3 bg-[#CC0000] px-2.5 py-1 rounded-sm text-[9px] font-bold tracking-wider uppercase flex items-center gap-1 shadow-md">
+                  <Star className="w-3.5 h-3.5 fill-white text-white" />
+                  <span>{video.rating.toFixed(1)} Rating</span>
+                </div>
               </div>
 
-              {/* Card Content Body */}
-              <div className="p-6 flex-grow flex flex-col justify-between">
-                
-                <div>
-                  {/* Rating & Verified Buyer Badge */}
-                  <div className="flex items-center justify-between text-xs mb-3">
-                    <div className="flex items-center gap-1 text-amber-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      ))}
-                      <span className="font-bold text-white ml-1">5.0</span>
-                    </div>
-
-                    <span className="inline-flex items-center gap-1 text-emerald-400 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-                      <CheckCircle2 className="w-3 h-3" /> Verified Buyer
-                    </span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 
-                    onClick={() => setActiveVideo(video)}
-                    className="font-display font-bold text-lg text-white uppercase leading-snug hover:text-[#CC0000] transition-colors cursor-pointer mb-2 line-clamp-2"
-                    style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
-                  >
+              {/* Review Text Detail */}
+              <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <h3 className="font-display font-bold text-base md:text-lg text-white group-hover:text-[#CC0000] transition-colors leading-tight line-clamp-2" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
                     {video.title}
                   </h3>
-
-                  {/* Quote */}
-                  <p className="text-gray-400 text-xs italic line-clamp-3 leading-relaxed mb-4">
+                  <p className="text-gray-400 text-xs italic font-medium leading-relaxed line-clamp-3">
                     "{video.quote}"
                   </p>
                 </div>
 
-                {/* Author Footer */}
-                <div className="pt-4 border-t border-white/10 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-display font-bold text-sm text-white">{video.author}</h4>
-                    <p className="text-gray-400 text-[11px] font-medium flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-[#CC0000]" /> {video.location}
-                    </p>
+                {/* Product Tags & Author details */}
+                <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <span className="text-[9px] font-bold tracking-wider text-[#CC0000] uppercase block">REVIEWER</span>
+                    <strong className="text-xs text-white truncate block">{video.author}</strong>
+                    <span className="text-[10px] text-gray-500 font-mono block truncate">{video.role}</span>
                   </div>
 
-                  <button
-                    onClick={() => setActiveVideo(video)}
-                    className="text-xs font-display font-bold text-[#CC0000] hover:text-white uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors"
-                  >
-                    Watch <Play className="w-3 h-3 fill-current" />
-                  </button>
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-[9px] font-bold tracking-wider text-gray-500 uppercase block">RECOMMENDED ITEM</span>
+                    <strong className="text-xs text-white block">{video.productName}</strong>
+                    <span className="text-xs font-bold text-red-400 font-mono block">{video.productPrice}</span>
+                  </div>
                 </div>
-
               </div>
 
             </div>
@@ -208,18 +207,30 @@ export default function CustomerTestimonialsVideo() {
 
             {/* Video Player Display */}
             <div className="relative aspect-video bg-black flex items-center justify-center">
-              <img
-                src={activeVideo.thumbnail}
-                alt={activeVideo.title}
-                className="w-full h-full object-cover opacity-80"
-              />
-              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-20 h-20 rounded-full bg-[#CC0000] text-white flex items-center justify-center shadow-2xl mb-4 animate-pulse">
-                  <Play className="w-9 h-9 fill-white text-white ml-1.5" />
-                </div>
-                <h4 className="text-xl font-display font-bold text-white mb-2">{activeVideo.author} ({activeVideo.role})</h4>
-                <p className="text-gray-300 text-xs md:text-sm max-w-md italic">"{activeVideo.quote}"</p>
-              </div>
+              {activeVideo.videoUrl && getEmbedUrl(activeVideo.videoUrl) ? (
+                <iframe
+                  src={getEmbedUrl(activeVideo.videoUrl)}
+                  title={activeVideo.title}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : (
+                <>
+                  <img
+                    src={activeVideo.thumbnail}
+                    alt={activeVideo.title}
+                    className="w-full h-full object-cover opacity-80"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="w-20 h-20 rounded-full bg-[#CC0000] text-white flex items-center justify-center shadow-2xl mb-4 animate-pulse">
+                      <Play className="w-9 h-9 fill-white text-white ml-1.5" />
+                    </div>
+                    <h4 className="text-xl font-display font-bold text-white mb-2">{activeVideo.author} ({activeVideo.role})</h4>
+                    <p className="text-gray-300 text-xs md:text-sm max-w-md italic">"{activeVideo.quote}"</p>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Modal Footer Info */}
@@ -230,7 +241,7 @@ export default function CustomerTestimonialsVideo() {
               </div>
 
               <a
-                href="/shop?category=Cricket"
+                href="/shop"
                 onClick={() => setActiveVideo(null)}
                 className="btn-primary px-6 py-3 text-xs font-display font-bold uppercase tracking-widest inline-flex items-center gap-2 shadow-lg shadow-[#CC0000]/40"
               >
