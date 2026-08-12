@@ -31,46 +31,37 @@ export default function AddProductPage() {
   const [productType, setProductType] = useState<"bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies">("bats");
 
   const [formData, setFormData] = useState({
-    name: "RP Elite Player Edition Kashmir Willow Cricket Bat",
+    name: "",
     brand: "RP Sports",
     category: "cricket",
     subcategory: "bats",
-    sportsType: "Cricket",
-    willowType: "Grade A+ Kashmir Willow",
-    willowGrade: "Grade A+",
-    handleSize: "Short Handle (SH)",
-    playerLevel: "Tournament & Club Player",
-    mrp: "4999",
-    price: "3499",
-    stock: "25",
+    sportsType: "",
+    willowType: "",
+    willowGrade: "",
+    handleSize: "",
+    playerLevel: "",
+    mrp: "",
+    price: "",
+    stock: "",
     deliveryDays: "3",
-    description: "Handcrafted in Kolkata from premium hand-selected Kashmir Willow. Curved blade design with massive 40mm edges and mid-to-low sweet spot engineered for powerful strokeplay on Indian subcontinent pitches.",
-    shortDescription: "Grade A+ Kashmir Willow with 40mm thick edges and 9-piece cane handle.",
-    highlightsInput: "Handcrafted Grade A+ Kashmir Willow\nMassive 40mm Edges & Curved Blade\nSingapore Cane 9-Piece Full Rubber Handle\nPre-Knocked (5,000 Machine Strikes)",
-    weight: "1180 - 1220 grams",
-    dimensions: "85cm x 11cm x 6cm",
+    description: "",
+    shortDescription: "",
+    highlightsInput: "",
+    weight: "",
+    dimensions: "",
     countryOfOrigin: "India",
     manufacturerDetails: "RP Sports Works, Dumdum Metro Gate 2, Kolkata – 700028",
-    badge: "Bestseller",
-    featured: true,
+    badge: "New Arrival",
+    featured: false,
     customizable: false,
-    colors: "Natural Wood Finish",
-    sizes: "Short Handle (SH), Harrow, Size 6",
+    colors: "",
+    sizes: "",
   });
 
   // Uploaded Photos (Data URLs from Desktop or Live Camera Capture)
-  const [uploadedImages, setUploadedImages] = useState<string[]>([
-    "/cricket_bat_studio.jpg",
-    "/cricket_bat_lineup.jpg",
-    "/cricket_action_batsman.jpg"
-  ]);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
-  const [customSpecs, setCustomSpecs] = useState<CustomSpecRow[]>([
-    { key: "Willow Type", value: "Grade A+ Kashmir Willow" },
-    { key: "Edge Profile", value: "40mm Thick Edges" },
-    { key: "Handle", value: "Singapore Cane 9-Piece Full Rubber Grip" },
-    { key: "Sweet Spot", value: "Mid to Low" },
-  ]);
+  const [customSpecs, setCustomSpecs] = useState<CustomSpecRow[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -337,13 +328,11 @@ export default function AddProductPage() {
         subcategory: defaultSub
       }));
       const detected = detectProductType(value, defaultSub);
-      handleProductTypeChange(detected);
+      setProductType(detected);
     } else if (name === "subcategory") {
       const detected = detectProductType(formData.category, value);
       setFormData(prev => ({ ...prev, subcategory: value }));
-      if (detected !== productType) {
-        setProductType(detected);
-      }
+      setProductType(detected);
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -601,7 +590,7 @@ export default function AddProductPage() {
       <div className="mb-8 bg-white p-5 rounded-2xl border-2 border-red-100 shadow-md">
         <label className="block text-xs font-display font-bold uppercase tracking-wider text-[#CC0000] mb-3 flex items-center gap-1.5">
           <Flame className="w-4 h-4 text-[#CC0000]" />
-          Select Equipment Category Preset:
+          Load Sample Mock Template (Optional):
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
           {[
@@ -616,7 +605,11 @@ export default function AddProductPage() {
             <button
               key={item.id}
               type="button"
-              onClick={() => handleProductTypeChange(item.id as any)}
+              onClick={() => {
+                if (window.confirm(`Load sample mock template details for ${item.label}? This will replace your current inputs.`)) {
+                  handleProductTypeChange(item.id as any);
+                }
+              }}
               className={`p-3 rounded-xl border-2 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
                 productType === item.id
                   ? "bg-[#CC0000] border-[#CC0000] text-white shadow-lg shadow-[#CC0000]/30 scale-105"

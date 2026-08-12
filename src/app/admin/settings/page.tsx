@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { auth } from "@/lib/firebase";
 import { 
   getStoreSettings, 
   saveStoreSettings, 
@@ -92,7 +93,12 @@ export default function SettingsPage() {
   const verifyShiprocket = async () => {
     setCheckingConnection(true);
     try {
-      const res = await fetch("/api/shiprocket/test-connection");
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/shiprocket/test-connection", {
+        headers: {
+          "Authorization": token ? `Bearer ${token}` : ""
+        }
+      });
       const data = await res.json();
       if (data.connected) {
         setConnectionStatus("connected");
