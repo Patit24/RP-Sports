@@ -3,7 +3,12 @@ import crypto from "crypto";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const redirectTo = searchParams.get("redirect") || "/";
+  const rawRedirect = searchParams.get("redirect") || "/";
+  // [SECURITY C-2] Validate redirect is a relative path to prevent open redirect attacks.
+  // An attacker could craft ?redirect=https://evil.com to steal Firebase tokens post-login.
+  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.includes("://")
+    ? rawRedirect
+    : "/";
 
   // Guard: ensure required env vars are present
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.NEXT_PUBLIC_APP_URL) {

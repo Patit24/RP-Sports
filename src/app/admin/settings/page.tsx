@@ -93,9 +93,12 @@ export default function SettingsPage() {
   const verifyShiprocket = async () => {
     setCheckingConnection(true);
     try {
-      const token = auth.currentUser 
-        ? await auth.currentUser.getIdToken() 
-        : "mock_admin_bypass_token";
+      if (!auth.currentUser) {
+        setConnectionStatus("failed");
+        setConnectionError("Administrator is not logged in");
+        return;
+      }
+      const token = await auth.currentUser.getIdToken();
       const res = await fetch("/api/shiprocket/test-connection", {
         headers: {
           "Authorization": `Bearer ${token}`

@@ -86,16 +86,23 @@ export async function GET(request: Request) {
       console.warn("[OAuth Callback] Could not read state cookie:", err);
     }
 
-    if (!savedState || savedState !== parsedState.state) {
-      console.warn("[OAuth Callback] State mismatch. saved:", savedState?.slice(0, 8), "returned:", parsedState.state?.slice(0, 8));
-      // Don't hard-block on cookie failure — cookies can fail in some environments
-      // Continue if state looks structurally valid
-      if (!parsedState.state || parsedState.state.length < 16) {
-        return NextResponse.redirect(`${appUrl}/signin?error=state_mismatch`);
-      }
+    if (!savedState) {
+      // [SECURITY H-2] Hard-reject if state cookie is absent — do NOT silently bypass CSRF protection.
+      // Cookies can be blocked in some environments but security must take precedence.
+      console.warn("[OAuth Callback] State cookie missing — possible CSRF attempt.");
+      return NextResponse.redirect(`${appUrl}/signin?error=state_mismatch`);
     }
 
-    const redirectTo = parsedState.redirectTo || "/";
+    if (savedState !== parsedState.state) {
+      console.warn("[OAuth Callback] State mismatch. saved:", savedState?.slice(0, 8), "returned:", parsedState.state?.slice(0, 8));
+      return NextResponse.redirect(`${appUrl}/signin?error=state_mismatch`);
+    }
+
+    const rawRedirect = parsedState.redirectTo || "/";
+    // [SECURITY C-2] Validate redirect to be a relative path only
+    const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.includes("://")
+      ? rawRedirect
+      : "/";
 
     // Exchange authorization code for Google tokens
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
@@ -175,9 +182,19 @@ export async function GET(request: Request) {
 
     // Clear the state cookie and redirect to auth callback page
     const response = NextResponse.redirect(
-      `${appUrl}/auth/callback?token=${encodeURIComponent(customToken)}&redirect=${encodeURIComponent(redirectTo)}`
+      `${appUrl}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
     );
     response.cookies.delete("google_oauth_state");
+    
+    // [SECURITY L-4] Pass the Firebase custom token via a secure, short-lived, httpOnly cookie
+    // instead of a query parameter to avoid URL token leakage in logs/history.
+    response.cookies.set("firebase_custom_token", customToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60, // 1 minute is plenty for consumption
+      path: "/",
+    });
     return response;
 
   } catch (err: any) {

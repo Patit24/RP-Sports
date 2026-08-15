@@ -17,7 +17,10 @@ function AuthCallbackInner() {
 
   useEffect(() => {
     const token = searchParams.get("token");
-    const redirectTo = searchParams.get("redirect") || "/";
+    const rawRedirect = searchParams.get("redirect") || "/";
+    const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.includes("://")
+      ? rawRedirect
+      : "/";
     const error = searchParams.get("error");
     const fallback = searchParams.get("fallback");
     const fallbackEmail = searchParams.get("email");
@@ -77,62 +80,79 @@ function AuthCallbackInner() {
       return;
     }
 
-    if (!token) {
-      setErrorMsg("Missing authentication token. Redirecting...");
-      setStatus("error");
-      setTimeout(() => router.push("/signin"), 2000);
-      return;
-    }
+    async function authenticate() {
+      let token = searchParams.get("token");
+      if (!token) {
+        try {
+          const res = await fetch("/api/auth/token");
+          const data = await res.json();
+          if (data.token) {
+            token = data.token;
+          }
+        } catch (err) {
+          console.warn("Could not retrieve token from cookie:", err);
+        }
+      }
 
-    const isAdminEmail = (e: string) => {
-      const norm = e.toLowerCase().trim();
-      return norm === "admin@rpsports.com" || 
-             norm === "superadmin@colortrade.app" || 
-             norm === "admin@colortrade.app" ||
-             norm === "patitroy29@gmail.com";
-    };
+      if (!token) {
+        setErrorMsg("Missing authentication token. Redirecting...");
+        setStatus("error");
+        setTimeout(() => router.push("/signin"), 2000);
+        return;
+      }
 
-    // Sign in to Firebase with the custom token
-    signInWithCustomToken(auth, token)
-      .then(async (result) => {
-        const user = result.user;
-        const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
-        const email = user.email || `${user.uid}@google.com`;
+      const isAdminEmail = (e: string) => {
+        const norm = e.toLowerCase().trim();
+        return norm === "admin@rpsports.com" || 
+               norm === "superadmin@colortrade.app" || 
+               norm === "admin@colortrade.app" ||
+               norm === "patitroy29@gmail.com";
+      };
 
-        // Check if user already exists in DB to preserve their role
-        const profile = await getUser(user.uid);
-        const role = profile?.role || (isAdminEmail(email) ? (email.includes("superadmin") ? "super_admin" : "admin") : "customer");
+      // Sign in to Firebase with the custom token
+      signInWithCustomToken(auth, token)
+        .then(async (result) => {
+          const user = result.user;
+          const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
+          const email = user.email || `${user.uid}@google.com`;
 
-        // Save user profile to Firestore
-        await saveUser(user.uid, {
-          uid: user.uid,
-          email,
-          name,
-          role,
-        });
+          // Check if user already exists in DB to preserve their role
+          const profile = await getUser(user.uid);
+          const role = profile?.role || (isAdminEmail(email) ? (email.includes("superadmin") ? "super_admin" : "admin") : "customer");
 
-        // Update Zustand store
-        login(email, name, role, [], user.uid);
-        useStore.setState({
-          currentUser: {
+          // Save user profile to Firestore
+          await saveUser(user.uid, {
             uid: user.uid,
             email,
             name,
             role,
-            addresses: profile?.addresses || [],
-            rewardPoints: profile?.rewardPoints ?? 100,
-          },
-        });
+          });
 
-        showToast(`Welcome, ${name}!`, "success");
-        router.push(redirectTo);
-      })
-      .catch((err) => {
-        console.error("Custom token sign-in failed:", err);
-        setErrorMsg("Failed to complete sign-in. Please try again.");
-        setStatus("error");
-        setTimeout(() => router.push("/signin"), 3000);
-      });
+          // Update Zustand store
+          login(email, name, role, [], user.uid);
+          useStore.setState({
+            currentUser: {
+              uid: user.uid,
+              email,
+              name,
+              role,
+              addresses: profile?.addresses || [],
+              rewardPoints: profile?.rewardPoints ?? 100,
+            },
+          });
+
+          showToast(`Welcome, ${name}!`, "success");
+          router.push(redirectTo);
+        })
+        .catch((err) => {
+          console.error("Custom token sign-in failed:", err);
+          setErrorMsg("Failed to complete sign-in. Please try again.");
+          setStatus("error");
+          setTimeout(() => router.push("/signin"), 3000);
+        });
+    }
+
+    authenticate();
   }, [searchParams, router, login, showToast]);
 
   return (

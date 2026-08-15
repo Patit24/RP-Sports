@@ -15,8 +15,8 @@ service cloud.firestore {
 
     // ── USERS ──────────────────────────────────────────────────────────────
     match /users/{userId} {
-      // Anyone can read user profile summaries
-      allow read: if true;
+      // Only the user themselves or an admin can read the user profile
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
       // User can write their own profile, or admins can write
       allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
     }
@@ -31,8 +31,8 @@ service cloud.firestore {
                   (request.auth != null && request.auth.uid != null && resource.data.userEmail == request.auth.uid) ||
                   request.method == 'get';
       
-      // Creating orders is allowed for everyone (to support guest checkout)
-      allow create: if true;
+      // Creating orders directly is blocked for guests (orders must be created via server-side secure API proxy)
+      allow create: if isAdmin();
       
       // Modifying/Deleting orders is restricted to administrators
       allow update, delete: if isAdmin();

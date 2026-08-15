@@ -57,7 +57,7 @@ export default function AdminShippingPage() {
     } catch (e) {
       console.warn("Failed to get auth token:", e);
     }
-    return "mock_admin_bypass_token";
+    return null;
   };
 
   // Verify Connection Method

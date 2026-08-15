@@ -58,7 +58,7 @@ export default function AdminOrdersPage() {
     setIsPushingShiprocket(true);
     try {
       // Get Firebase Auth ID Token for admin authorization
-      let token = "mock_admin_bypass_token";
+      let token = "";
       try {
         const { auth } = await import("@/lib/firebase");
         if (auth.currentUser) {

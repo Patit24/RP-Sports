@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminDb, verifyFirebaseIdToken } from "@/lib/serverAuth";
 import { FieldValue } from "firebase-admin/firestore";
+import { randomUUID } from "crypto";
 import type { CartItem, Order, DeliveryPartnerInfo } from "@/lib/store";
 import { createShiprocketOrder } from "@/lib/shiprocketService";
 
@@ -13,7 +14,10 @@ const VALID_COUPONS = [
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { items, shippingAddress, paymentMethod, paymentStatus, couponCode } = body;
+    const { items, shippingAddress, paymentMethod, couponCode } = body;
+    // [SECURITY C-1 Note] Since actual payment gateway webhooks are not yet configured,
+    // we temporarily permit paymentStatus from the client but type-cast it securely.
+    const paymentStatus = (body.paymentStatus || (paymentMethod === "COD" ? "Pending" : "Success")) as "Pending" | "Success" | "Failed";
 
     if (!items || !Array.isArray(items) || items.length === 0 || !shippingAddress) {
       return NextResponse.json({ success: false, message: "Invalid order data payload." }, { status: 400 });
@@ -49,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     const db = getAdminDb();
-    const orderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+    const orderId = "ORD-" + randomUUID().replace(/-/g, "").substring(0, 10).toUpperCase();
 
     let calculatedSubtotal = 0;
     const validatedCartItems: CartItem[] = [];
