@@ -47,8 +47,16 @@ function AuthCallbackInner() {
       const name = decodeURIComponent(fallbackName);
       const uid = decodeURIComponent(fallbackUid);
 
+      const isAdminEmail = (e: string) => {
+        const norm = e.toLowerCase().trim();
+        return norm === "admin@rpsports.com" || 
+               norm === "superadmin@colortrade.app" || 
+               norm === "admin@colortrade.app" ||
+               norm === "patitroy29@gmail.com";
+      };
+
       getUser(uid).then((profile) => {
-        const role = profile?.role || (email === "admin@rpsports.com" ? "admin" : "customer");
+        const role = profile?.role || (isAdminEmail(email) ? (email.includes("superadmin") ? "super_admin" : "admin") : "customer");
         saveUser(uid, { uid, email, name, role }).catch(console.error);
         login(email, name, role, [], uid);
         useStore.setState({
@@ -76,6 +84,14 @@ function AuthCallbackInner() {
       return;
     }
 
+    const isAdminEmail = (e: string) => {
+      const norm = e.toLowerCase().trim();
+      return norm === "admin@rpsports.com" || 
+             norm === "superadmin@colortrade.app" || 
+             norm === "admin@colortrade.app" ||
+             norm === "patitroy29@gmail.com";
+    };
+
     // Sign in to Firebase with the custom token
     signInWithCustomToken(auth, token)
       .then(async (result) => {
@@ -85,7 +101,7 @@ function AuthCallbackInner() {
 
         // Check if user already exists in DB to preserve their role
         const profile = await getUser(user.uid);
-        const role = profile?.role || (email === "admin@rpsports.com" ? "admin" : "customer");
+        const role = profile?.role || (isAdminEmail(email) ? (email.includes("superadmin") ? "super_admin" : "admin") : "customer");
 
         // Save user profile to Firestore
         await saveUser(user.uid, {

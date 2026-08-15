@@ -19,6 +19,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Invalid order data payload." }, { status: 400 });
     }
 
+    if (!shippingAddress.phone || typeof shippingAddress.phone !== "string") {
+      return NextResponse.json({ success: false, message: "Delivery phone number is required." }, { status: 400 });
+    }
+
+    const cleanPhone = shippingAddress.phone.replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      return NextResponse.json({ success: false, message: "Please enter a valid 10-digit delivery phone number." }, { status: 400 });
+    }
+
     // Try to extract authenticated user email if token is present
     let userEmail = "guest@rpsports.in";
     const authHeader = request.headers.get("Authorization");

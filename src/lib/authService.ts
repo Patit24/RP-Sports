@@ -37,7 +37,14 @@ export async function signInWithGoogle(): Promise<AuthResult> {
 
     // Fetch existing user to preserve role
     const profile = await getUser(user.uid);
-    const role = profile?.role || (email === "admin@rpsports.com" ? "admin" : "customer");
+    const isAdminEmail = (e: string) => {
+      const norm = e.toLowerCase().trim();
+      return norm === "admin@rpsports.com" || 
+             norm === "superadmin@colortrade.app" || 
+             norm === "admin@colortrade.app" ||
+             norm === "patitroy29@gmail.com";
+    };
+    const role = profile?.role || (isAdminEmail(email) ? (email.includes("superadmin") ? "super_admin" : "admin") : "customer");
 
     // Save/update user profile in Firestore
     await saveUser(user.uid, {
@@ -100,7 +107,14 @@ export async function checkGoogleRedirectResult(): Promise<AuthResult | null> {
 
     // Fetch existing user to preserve role
     const profile = await getUser(user.uid);
-    const role = profile?.role || (email === "admin@rpsports.com" ? "admin" : "customer");
+    const isAdminEmail = (e: string) => {
+      const norm = e.toLowerCase().trim();
+      return norm === "admin@rpsports.com" || 
+             norm === "superadmin@colortrade.app" || 
+             norm === "admin@colortrade.app" ||
+             norm === "patitroy29@gmail.com";
+    };
+    const role = profile?.role || (isAdminEmail(email) ? (email.includes("superadmin") ? "super_admin" : "admin") : "customer");
 
     // Save/update user profile in Firestore
     await saveUser(user.uid, {

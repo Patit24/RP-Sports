@@ -444,7 +444,7 @@ export async function createShiprocketOrder(order: Order): Promise<ShiprocketOrd
       billing_pincode: order.shippingAddress.pincode,
       billing_state: order.shippingAddress.state,
       billing_country: "India",
-      billing_email: "customer@rpsports.in",
+      billing_email: order.userEmail || "customer@rpsports.in",
       billing_phone: sanitizePhone(order.shippingAddress.phone),
       shipping_is_billing: true,
       order_items: order.items.map((item) => {
@@ -574,7 +574,12 @@ export async function trackShiprocketOrder(shipmentIdOrAwb: string) {
       };
     }
 
-    const res = await fetch(`${SHIPROCKET_BASE_URL}/courier/track/awb/${shipmentIdOrAwb}`, {
+    const isOrderId = /^\d+$/.test(shipmentIdOrAwb) && shipmentIdOrAwb.length < 10;
+    const trackingUrl = isOrderId
+      ? `${SHIPROCKET_BASE_URL}/courier/track/order/${shipmentIdOrAwb}`
+      : `${SHIPROCKET_BASE_URL}/courier/track/awb/${shipmentIdOrAwb}`;
+
+    const res = await fetch(trackingUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -586,15 +591,21 @@ export async function trackShiprocketOrder(shipmentIdOrAwb: string) {
 
     const data = await res.json();
     
-    // Parse response
-    const track = data.tracking_data?.shipment_track?.[0];
-    const scans = data.tracking_data?.shipment_track_activities || [];
+    // Extract tracking data depending on endpoint structure
+    let trackingInfo = data.tracking_data;
+    if (!trackingInfo && isOrderId) {
+      // If tracking by Order ID, response details are nested under order ID key or first value of object
+      trackingInfo = data[shipmentIdOrAwb] || Object.values(data)[0];
+    }
+    
+    const track = trackingInfo?.shipment_track?.[0];
+    const scans = trackingInfo?.shipment_track_activities || [];
     
     return {
       success: true,
       trackingData: track ? {
-        track_status: data.tracking_data.track_status,
-        shipment_status: data.tracking_data.shipment_status,
+        track_status: trackingInfo.track_status,
+        shipment_status: trackingInfo.shipment_status,
         current_status: track.current_status,
         courier_name: track.courier_name,
         awb_code: track.awb_code,

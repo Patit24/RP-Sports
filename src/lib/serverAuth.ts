@@ -38,6 +38,7 @@ export function getAdminDb() {
 interface DecodedToken {
   uid: string;
   email?: string;
+  name?: string;
   exp: number;
   iss: string;
   aud: string;
@@ -131,6 +132,7 @@ export async function verifyFirebaseIdToken(token: string): Promise<DecodedToken
     return {
       uid: payload.sub,
       email: payload.email,
+      name: payload.name || payload.displayName,
       exp: payload.exp,
       iss: payload.iss,
       aud: payload.aud,
@@ -162,14 +164,47 @@ export async function verifyAdmin(request: Request): Promise<{ uid: string; emai
     const decoded = await verifyFirebaseIdToken(token);
     if (!decoded || !decoded.uid) return null;
 
+    // Admin email list for auto-promotion and bypass
+    const ADMIN_EMAILS = [
+      "admin@rpsports.com",
+      "superadmin@colortrade.app",
+      "admin@colortrade.app",
+      "patitroy29@gmail.com"
+    ];
+
+    const isBackupAdmin = decoded.email && ADMIN_EMAILS.includes(decoded.email.toLowerCase().trim());
+
     // Skip Firestore role checks if Firebase Admin credentials are not set up
     const projectId = process.env.FIREBASE_PROJECT_ID;
     if (!projectId) {
       return { uid: decoded.uid, email: decoded.email };
     }
 
-    // Check role in users collection in Firestore
     const db = getAdminDb();
+
+    // Auto-promote backup admin email if profile role is missing in Firestore
+    if (isBackupAdmin) {
+      try {
+        const userRef = db.collection("users").doc(decoded.uid);
+        const userDoc = await userRef.get();
+        if (!userDoc.exists || !["admin", "super_admin"].includes(userDoc.data()?.role)) {
+          const role = decoded.email!.toLowerCase().includes("superadmin") ? "super_admin" : "admin";
+          await userRef.set({
+            uid: decoded.uid,
+            email: decoded.email!.toLowerCase().trim(),
+            name: decoded.name || decoded.email!.split("@")[0],
+            role: role,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+          console.log(`[Auto-Promote] Successfully promoted backup admin ${decoded.email} to ${role} in Firestore.`);
+        }
+      } catch (err: any) {
+        console.error("[Auto-Promote] Error promoting user:", err.message);
+      }
+      return { uid: decoded.uid, email: decoded.email };
+    }
+
+    // Check role in users collection in Firestore
     const userDoc = await db.collection("users").doc(decoded.uid).get();
     
     // Fallback: If it's a simulated admin user ID (like admin_rpsports_com) or has admin role field
@@ -186,11 +221,6 @@ export async function verifyAdmin(request: Request): Promise<{ uid: string; emai
       if (role === "admin" || role === "super_admin") {
         return { uid: decoded.uid, email: decoded.email };
       }
-    }
-
-    // Secondary fallback: check email string directly as backup admin
-    if (decoded.email === "admin@rpsports.com") {
-      return { uid: decoded.uid, email: decoded.email };
     }
 
     return null;

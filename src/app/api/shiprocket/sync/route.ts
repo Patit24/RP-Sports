@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { getAllOrders, updateOrderInDB } from "@/lib/firestoreService";
+import { updateOrderInDB } from "@/lib/firestoreService";
 import { trackShiprocketOrder } from "@/lib/shiprocketService";
-import { verifyAdmin } from "@/lib/serverAuth";
+import { verifyAdmin, getAdminDb } from "@/lib/serverAuth";
 import type { Order } from "@/lib/store";
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(request: Request) {
   try {
@@ -15,16 +17,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const orders = await getAllOrders();
+    const db = getAdminDb();
+    const snap = await db
+      .collection("orders")
+      .where("status", "not-in", ["Delivered", "Cancelled"])
+      .get();
+
+    const activeOrders = snap.docs.map((doc) => ({
+      ...doc.data(),
+      firestoreId: doc.id,
+    })) as any[];
+
     let syncedCount = 0;
 
-    for (const order of orders) {
-      // Only sync orders that have been pushed to Shiprocket and are not in terminal states
-      if (
-        (order.awb_code || order.shiprocket_order_id) && 
-        order.status !== "Delivered" && 
-        order.status !== "Cancelled"
-      ) {
+    for (const order of activeOrders) {
+      // Only sync orders that have been pushed to Shiprocket
+      if (order.awb_code || order.shiprocket_order_id) {
+        // Sequential rate-limiting buffer delay of 250ms
+        await delay(250);
+
         const trackingKey = order.awb_code || String(order.shiprocket_order_id);
         const trackRes = await trackShiprocketOrder(trackingKey);
 

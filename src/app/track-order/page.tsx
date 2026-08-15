@@ -4,39 +4,46 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { listenToOrders, listenToUserOrders } from "@/lib/firestoreService";
 import { Truck, Search, CheckCircle2, Clock, MapPin, Package, ArrowLeft, AlertCircle, Phone, Building2 } from "lucide-react";
 
 function TrackOrderContent() {
   const searchParams = useSearchParams();
   const initialOrderId = searchParams.get("orderId") || "";
 
-  const { orders, setOrders, currentUser } = useStore();
+  const { currentUser } = useStore();
   const [searchId, setSearchId] = useState(initialOrderId);
   const [searched, setSearched] = useState(Boolean(initialOrderId));
+  const [loading, setLoading] = useState(false);
+  const [guestOrder, setGuestOrder] = useState<any | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  // Real-time listener on track-order page
-  useEffect(() => {
-    let unsubscribe: () => void;
-    if (currentUser?.email) {
-      if (currentUser.role === "admin" || currentUser.role === "super_admin") {
-        unsubscribe = listenToOrders((dbOrders) => setOrders(dbOrders));
+  const fetchOrderDetails = async (id: string) => {
+    if (!id.trim()) return;
+    setLoading(true);
+    setErrorMsg("");
+    setGuestOrder(null);
+    try {
+      const res = await fetch(`/api/orders/details?id=${encodeURIComponent(id.trim())}`);
+      const data = await res.json();
+      if (data.success && data.order) {
+        setGuestOrder(data.order);
       } else {
-        unsubscribe = listenToUserOrders(currentUser.email, (dbOrders) => setOrders(dbOrders));
+        setErrorMsg(data.message || "Order not found. Please verify the ID.");
       }
-    } else {
-      unsubscribe = listenToOrders((dbOrders) => setOrders(dbOrders));
+    } catch (err: any) {
+      setErrorMsg("Failed to retrieve tracking details due to a connection issue.");
+    } finally {
+      setLoading(false);
     }
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [currentUser, setOrders]);
+  };
 
-  const currentOrder = orders.find(
-    (o) => o.id.toLowerCase() === searchId.trim().toLowerCase() || 
-           o.trackingNumber === searchId.trim() ||
-           (o.awb_code && o.awb_code.trim() !== "" && o.awb_code.toLowerCase() === searchId.trim().toLowerCase())
-  ) || (searched && orders.length > 0 ? orders[0] : null);
+  useEffect(() => {
+    if (initialOrderId) {
+      fetchOrderDetails(initialOrderId);
+    }
+  }, [initialOrderId]);
+
+  const currentOrder = guestOrder;
 
   const STEPS = [
     { key: "Pending", label: "Order Received", desc: "Your order is logged in our Dumdum system." },
@@ -65,6 +72,7 @@ function TrackOrderContent() {
     e.preventDefault();
     if (searchId.trim()) {
       setSearched(true);
+      fetchOrderDetails(searchId);
     }
   };
 
@@ -106,7 +114,12 @@ function TrackOrderContent() {
       </form>
 
       {/* Active Order Tracker Visual */}
-      {currentOrder ? (
+      {loading ? (
+        <div className="bg-white border border-gray-200 p-12 rounded-2xl text-center max-w-md mx-auto shadow-sm flex flex-col items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-t-2 border-[#CC0000] border-r-2 border-gray-300 animate-spin mb-3" />
+          <p className="text-xs text-gray-500 font-medium">Fetching secure tracking details...</p>
+        </div>
+      ) : currentOrder ? (
         <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-10 shadow-xl space-y-8">
           
           {/* Header Bar */}
@@ -203,7 +216,7 @@ function TrackOrderContent() {
                 <Package className="w-4 h-4 text-[#CC0000]" /> Shipment Contents
               </h4>
               <ul className="space-y-1 text-xs text-gray-700">
-                {currentOrder.items.map((item, i) => (
+                {currentOrder.items.map((item: any, i: number) => (
                   <li key={i} className="flex justify-between font-medium">
                     <span>{item.quantity}x {item.product.name}</span>
                     <span className="font-bold text-[#CC0000]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>₹{(item.product.price * item.quantity).toLocaleString()}</span>
@@ -214,11 +227,11 @@ function TrackOrderContent() {
           </div>
 
         </div>
-      ) : searched ? (
+      ) : searched && errorMsg ? (
         <div className="bg-white border border-gray-200 p-8 rounded-2xl text-center max-w-md mx-auto shadow-sm">
           <AlertCircle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
           <h3 className="text-lg font-bold text-[#111111] mb-1">Order Not Found</h3>
-          <p className="text-xs text-gray-500 mb-4">Please check the Order ID format (e.g. ORD-123456) and try again.</p>
+          <p className="text-xs text-gray-500 mb-4">{errorMsg}</p>
         </div>
       ) : null}
 
