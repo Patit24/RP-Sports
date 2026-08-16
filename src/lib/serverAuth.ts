@@ -2,11 +2,21 @@ import { getApps, initializeApp, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import crypto from "crypto";
 
-let isInitialized = false;
+function formatPrivateKey(rawKey: string): string {
+  let cleanKey = rawKey.trim();
+  // Strip outer double or single quotes if present
+  if ((cleanKey.startsWith('"') && cleanKey.endsWith('"')) || (cleanKey.startsWith("'") && cleanKey.endsWith("'"))) {
+    cleanKey = cleanKey.slice(1, -1).trim();
+  }
+  // Replace literal '\n' or '\\n' with actual newlines
+  cleanKey = cleanKey.replace(/\\n/g, "\n");
+  // Normalize Windows CRLF to standard Unix LF
+  cleanKey = cleanKey.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  return cleanKey;
+}
 
 function initAdminSDK() {
-  if (isInitialized || getApps().length > 0) {
-    isInitialized = true;
+  if (getApps().length > 0) {
     return;
   }
 
@@ -15,19 +25,10 @@ function initAdminSDK() {
   const rawKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (!projectId || !clientEmail || !rawKey || rawKey.includes("PLACEHOLDER")) {
-    console.warn("⚠️ Firebase Admin credentials are not fully configured (using placeholders). Falling back to mock database mode.");
-    isInitialized = true;
-    return;
+    throw new Error("Missing or placeholder Firebase Admin credentials. Please configure FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in environment variables.");
   }
 
-  let cleanKey = rawKey.trim();
-  if (cleanKey.startsWith('"') && cleanKey.endsWith('"')) {
-    cleanKey = cleanKey.substring(1, cleanKey.length - 1);
-  }
-  if (cleanKey.startsWith("'") && cleanKey.endsWith("'")) {
-    cleanKey = cleanKey.substring(1, cleanKey.length - 1);
-  }
-  const privateKey = cleanKey.includes("\\n") ? cleanKey.replace(/\\n/g, "\n") : cleanKey;
+  const privateKey = formatPrivateKey(rawKey);
 
   try {
     initializeApp({
@@ -38,16 +39,15 @@ function initAdminSDK() {
       }),
     });
   } catch (err: any) {
-    console.error("❌ Failed to initialize Firebase Admin SDK with private key:", err.message);
+    console.error("❌ Failed to initialize Firebase Admin SDK:", err.message || err);
+    throw new Error(`Firebase Admin initialization error: ${err.message || err}`);
   }
-  isInitialized = true;
 }
 
 export function getAdminDb() {
   initAdminSDK();
-  const rawKey = process.env.FIREBASE_PRIVATE_KEY;
-  if (!rawKey || rawKey.includes("PLACEHOLDER")) {
-    throw new Error("Firebase Admin SDK is not initialized. Please add FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in Vercel settings and trigger a new deployment.");
+  if (getApps().length === 0) {
+    throw new Error("Firebase Admin app is not initialized. Please verify your environment credentials.");
   }
   return getFirestore();
 }

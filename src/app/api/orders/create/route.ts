@@ -69,12 +69,10 @@ export async function POST(request: Request) {
     }
 
     let cleanKey = rawKey.trim();
-    if (cleanKey.startsWith('"') && cleanKey.endsWith('"')) {
-      cleanKey = cleanKey.substring(1, cleanKey.length - 1);
+    if ((cleanKey.startsWith('"') && cleanKey.endsWith('"')) || (cleanKey.startsWith("'") && cleanKey.endsWith("'"))) {
+      cleanKey = cleanKey.slice(1, -1).trim();
     }
-    if (cleanKey.startsWith("'") && cleanKey.endsWith("'")) {
-      cleanKey = cleanKey.substring(1, cleanKey.length - 1);
-    }
+    cleanKey = cleanKey.replace(/\\n/g, "\n").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
     if (!cleanKey.startsWith("-----BEGIN PRIVATE KEY-----")) {
       return NextResponse.json({
