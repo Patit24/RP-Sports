@@ -13,6 +13,7 @@ function AuthCallbackInner() {
   const searchParams = useSearchParams();
   const { login, showToast } = useStore();
   const [status, setStatus] = useState<"loading" | "error">("loading");
+  const [loadingStep, setLoadingStep] = useState<"signin" | "account" | "checkout">("signin");
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
@@ -46,6 +47,7 @@ function AuthCallbackInner() {
 
     // Fallback mode — Firebase Admin not configured yet, use profile info directly
     if (fallback === "1" && fallbackEmail && fallbackName && fallbackUid) {
+      setLoadingStep("account");
       const email = decodeURIComponent(fallbackEmail);
       const name = decodeURIComponent(fallbackName);
       const uid = decodeURIComponent(fallbackUid);
@@ -61,6 +63,7 @@ function AuthCallbackInner() {
       getUser(uid).then((profile) => {
         const role = profile?.role || (isAdminEmail(email) ? (email.includes("superadmin") ? "super_admin" : "admin") : "customer");
         saveUser(uid, { uid, email, name, role }).catch(console.error);
+        setLoadingStep("checkout");
         login(email, name, role, [], uid);
         useStore.setState({
           currentUser: { uid, email, name, role, addresses: profile?.addresses || [], rewardPoints: profile?.rewardPoints ?? 100 },
@@ -70,6 +73,7 @@ function AuthCallbackInner() {
       }).catch((err) => {
         console.error("Fallback getUser failed:", err);
         saveUser(uid, { uid, email, name, role: "customer" }).catch(console.error);
+        setLoadingStep("checkout");
         login(email, name, "customer", [], uid);
         useStore.setState({
           currentUser: { uid, email, name, role: "customer", addresses: [], rewardPoints: 100 },
@@ -81,6 +85,7 @@ function AuthCallbackInner() {
     }
 
     async function authenticate() {
+      setLoadingStep("signin");
       let token = searchParams.get("token");
       if (!token) {
         try {
@@ -112,6 +117,7 @@ function AuthCallbackInner() {
       // Sign in to Firebase with the custom token
       signInWithCustomToken(auth, token)
         .then(async (result) => {
+          setLoadingStep("account");
           const user = result.user;
           const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
           const email = user.email || `${user.uid}@google.com`;
@@ -128,6 +134,7 @@ function AuthCallbackInner() {
             role,
           });
 
+          setLoadingStep("checkout");
           // Update Zustand store
           login(email, name, role, [], user.uid);
           useStore.setState({
@@ -162,10 +169,14 @@ function AuthCallbackInner() {
           <>
             <div className="w-14 h-14 mx-auto border-4 border-gray-200 border-t-[#CC0000] rounded-full animate-spin" />
             <p className="text-[#111111] font-display font-bold text-lg uppercase tracking-wider">
-              Signing you in...
+              {loadingStep === "signin" && "Signing you in..."}
+              {loadingStep === "account" && "Creating your account..."}
+              {loadingStep === "checkout" && "Preparing your checkout..."}
             </p>
             <p className="text-gray-500 text-sm">
-              Completing Google authentication, please wait.
+              {loadingStep === "signin" && "Completing authentication and establishing secure session."}
+              {loadingStep === "account" && "Synchronizing customer profile databases."}
+              {loadingStep === "checkout" && "Restoring your active checkout cart state."}
             </p>
           </>
         ) : (

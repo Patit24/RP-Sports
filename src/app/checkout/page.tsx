@@ -1,29 +1,93 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { ShieldCheck, Lock, CreditCard, ChevronRight, CheckCircle2, AlertCircle, MapPin, Phone, User as UserIcon, Building, Hash, ArrowLeft, Truck, Tag } from "lucide-react";
 import confetti from "canvas-confetti";
 import CheckoutAuthGate from "@/components/CheckoutAuthGate";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, currentUser, activeCoupon, clearCart, removeCoupon } = useStore();
 
   // Step state
+  const [isMounted, setIsMounted] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Step state
   const [step, setStep] = useState<"address" | "payment" | "processing">("address");
 
   // Address inputs default to Dumdum, Kolkata for authentic local store experience
-  const [fullName, setFullName] = useState(currentUser?.name || "");
-  const [phone, setPhone] = useState(currentUser?.email || "");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [addressLine, setAddressLine] = useState("Flat 405, Carbon Towers, Sports City Road");
   const [city, setCity] = useState("Kolkata");
   const [stateName, setStateName] = useState("West Bengal");
   const [pincode, setPincode] = useState("700028");
   const [paymentMethod, setPaymentMethod] = useState<"UPI" | "Razorpay" | "Card" | "COD">("Razorpay");
   const [formError, setFormError] = useState("");
+
+  // 1. Sync & verify active Firebase Auth session on mount
+  useEffect(() => {
+    setIsMounted(true);
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      try {
+        if (firebaseUser && firebaseUser.email) {
+          // Verify customer profile exists in DB
+          const { getUser } = await import("@/lib/firestoreService");
+          const profile = await getUser(firebaseUser.uid);
+          const name = profile?.name || firebaseUser.displayName || firebaseUser.email.split("@")[0] || "RP Athlete";
+          const rewardPoints = profile?.rewardPoints ?? 100;
+          const addresses = profile?.addresses ?? [];
+          const role = profile?.role || (firebaseUser.email === "admin@rpsports.com" ? "admin" : "customer");
+
+          // Sync verified state to store
+          useStore.setState({
+            currentUser: {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name,
+              role,
+              addresses,
+              rewardPoints,
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("Secure checkout session verification skipped:", err);
+      } finally {
+        setAuthLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // 2. Synchronize address form fields when authentication resolves or currentUser changes
+  useEffect(() => {
+    if (!authLoading && currentUser) {
+      const defaultAddress = currentUser.addresses?.[0];
+      setFullName((prev) => prev || defaultAddress?.fullName || currentUser.name || "");
+      setPhone((prev) => {
+        // Clear phone if it is still empty or has copy-pasted email address
+        if (!prev || prev.includes("@")) {
+          return defaultAddress?.phone || "";
+        }
+        return prev;
+      });
+      if (defaultAddress) {
+        setAddressLine((prev) => prev === "Flat 405, Carbon Towers, Sports City Road" ? (defaultAddress.addressLine || prev) : prev);
+        setCity((prev) => prev === "Kolkata" ? (defaultAddress.city || prev) : prev);
+        setStateName((prev) => prev === "West Bengal" ? (defaultAddress.state || prev) : prev);
+        setPincode((prev) => prev === "700028" ? (defaultAddress.pincode || prev) : prev);
+      }
+    }
+  }, [authLoading, currentUser]);
 
   const cartSubtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const gstTax = Math.round(cartSubtotal * 0.18);
@@ -124,6 +188,20 @@ export default function CheckoutPage() {
     }
   };
 
+
+  if (!isMounted || authLoading) {
+    return (
+      <div className="min-h-screen bg-[#F9F9F9] flex items-center justify-center p-6 text-[#111111] pt-32">
+        <div className="text-center bg-white border border-gray-200 p-12 rounded-2xl max-w-md shadow-sm space-y-4">
+          <div className="w-12 h-12 mx-auto border-4 border-gray-200 border-t-[#CC0000] rounded-full animate-spin" />
+          <h2 className="text-xl font-display font-bold uppercase tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+            Verifying Secure Session...
+          </h2>
+          <p className="text-gray-500 text-xs font-medium">Please wait while we confirm your authentication details and load your profile.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (cart.length === 0 && step !== "processing") {
     return (
