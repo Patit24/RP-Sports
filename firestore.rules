@@ -46,6 +46,22 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── CATEGORIES ─────────────────────────────────────────────────────────
+    match /categories/{categoryId} {
+      // Anyone can view categories
+      allow read: if true;
+      // Only admins can write categories
+      allow write: if isAdmin();
+    }
+
+    // ── TESTIMONIALS ───────────────────────────────────────────────────────
+    match /testimonials/{testimonialId} {
+      // Anyone can view testimonials
+      allow read: if true;
+      // Only admins can write testimonials
+      allow write: if isAdmin();
+    }
+
     // ── WISHLISTS ──────────────────────────────────────────────────────────
     match /wishlists/{userId} {
       // User owns their wishlist, or admin

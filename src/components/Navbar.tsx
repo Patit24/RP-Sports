@@ -193,7 +193,7 @@ export default function Navbar() {
                             <p className="text-xs text-secondary">{currentUser.email}</p>
                           </div>
                           <Link href="/dashboard" className="block text-foreground hover:text-accent transition-colors mb-3 font-semibold text-sm">My Dashboard</Link>
-                          <Link href="/orders" className="block text-foreground hover:text-accent transition-colors mb-3 font-semibold text-sm">Order History</Link>
+                          <Link href="/dashboard" className="block text-foreground hover:text-accent transition-colors mb-3 font-semibold text-sm">Order History</Link>
                           {currentUser.role !== "customer" && (
                             <Link href="/admin" className="block text-accent hover:text-primary transition-colors mb-4 font-bold text-sm">Admin Panel</Link>
                           )}
