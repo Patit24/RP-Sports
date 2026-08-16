@@ -359,16 +359,42 @@ export default function AdminOrdersPage() {
               </div>
 
               {/* Order Total Breakdown */}
-              <div className="pt-4 border-t border-gray-200 flex flex-col items-end text-xs space-y-1 font-medium">
-                <div className="flex justify-between w-48 text-gray-600">
+              <div className="pt-4 border-t border-gray-200 flex flex-col items-end text-xs space-y-1.5 font-medium">
+                <div className="flex justify-between w-56 text-gray-600">
                   <span>Subtotal:</span>
-                  <span>₹{selectedOrder.items.reduce((acc, i) => acc + i.product.price * i.quantity, 0).toLocaleString("en-IN")}</span>
+                  <span>
+                    ₹{((selectedOrder.subtotal !== undefined) 
+                      ? selectedOrder.subtotal 
+                      : selectedOrder.items.reduce((acc, i) => acc + i.product.price * i.quantity, 0)
+                    ).toLocaleString("en-IN")}
+                  </span>
                 </div>
-                <div className="flex justify-between w-48 text-gray-600">
+                
+                {selectedOrder.discount !== undefined && selectedOrder.discount > 0 && (
+                  <div className="flex justify-between w-56 text-emerald-600 font-bold">
+                    <span>Discount:</span>
+                    <span>-₹{selectedOrder.discount.toLocaleString("en-IN")}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between w-56 text-gray-600">
+                  <span>Delivery Fee:</span>
+                  <span className={selectedOrder.deliveryFee === 0 || selectedOrder.freeDelivery ? "text-emerald-600 font-bold" : "text-gray-900"}>
+                    {selectedOrder.deliveryFee === 0 || selectedOrder.freeDelivery ? "FREE" : `₹${selectedOrder.deliveryFee}`}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between w-56 text-gray-600">
                   <span>GST Tax (18%):</span>
-                  <span>₹{Math.round(selectedOrder.items.reduce((acc, i) => acc + i.product.price * i.quantity, 0) * 0.18).toLocaleString("en-IN")}</span>
+                  <span>
+                    ₹{((selectedOrder.tax !== undefined)
+                      ? selectedOrder.tax
+                      : Math.round(selectedOrder.items.reduce((acc, i) => acc + i.product.price * i.quantity, 0) * 0.18)
+                    ).toLocaleString("en-IN")}
+                  </span>
                 </div>
-                <div className="flex justify-between w-48 font-black text-sm text-[#111111] pt-2 border-t border-gray-200">
+                
+                <div className="flex justify-between w-56 font-black text-sm text-[#111111] pt-2.5 border-t border-gray-200">
                   <span>Grand Total:</span>
                   <span className="text-[#CC0000]">₹{selectedOrder.total.toLocaleString("en-IN")}</span>
                 </div>

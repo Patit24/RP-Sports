@@ -27,8 +27,8 @@ export default function CheckoutPage() {
 
   const cartSubtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const gstTax = Math.round(cartSubtotal * 0.18);
-  const freeShippingThreshold = 5000;
-  const shipping = cartSubtotal >= freeShippingThreshold || cartSubtotal === 0 ? 0 : 250;
+  const FREE_DELIVERY_THRESHOLD = 999;
+  const shipping = cartSubtotal >= FREE_DELIVERY_THRESHOLD || cartSubtotal === 0 ? 0 : 250;
   
   const discountPercent = activeCoupon ? activeCoupon.discountPercent : 0;
   const couponDiscount = Math.round((cartSubtotal * discountPercent) / 100);
@@ -371,6 +371,15 @@ export default function CheckoutPage() {
                   <span>Delivery</span>
                   <span className="font-bold text-emerald-600">{shipping === 0 ? "FREE" : `₹${shipping}`}</span>
                 </div>
+                {cartSubtotal >= FREE_DELIVERY_THRESHOLD ? (
+                  <div className="bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-200/80 text-[11px] font-bold flex items-center gap-1.5 my-1">
+                    <span>🎉 You’ve unlocked FREE DELIVERY</span>
+                  </div>
+                ) : (
+                  <div className="bg-amber-50 text-amber-800 p-2.5 rounded-xl border border-amber-200/80 text-[11px] font-semibold my-1">
+                    Add <span className="font-bold">₹{(FREE_DELIVERY_THRESHOLD - cartSubtotal).toLocaleString("en-IN")}</span> more to get <span className="font-bold">FREE DELIVERY</span>
+                  </div>
+                )}
                 {activeCoupon && (
                   <div className="flex justify-between text-emerald-600 font-bold bg-emerald-50 p-2 rounded">
                     <span>Coupon ({activeCoupon.code})</span>
@@ -439,6 +448,18 @@ export default function CheckoutPage() {
                 >
                   <Lock className="w-4 h-4" /> PAY ₹{grandTotal.toLocaleString()} & PLACE ORDER
                 </button>
+
+                <p className="text-[11px] text-gray-500 text-center leading-relaxed font-medium pt-1 px-4">
+                  By placing your order, you agree to our{" "}
+                  <Link href="/terms" target="_blank" className="text-[#CC0000] underline font-bold hover:text-[#990000]">
+                    Terms & Conditions
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/refund-policy" target="_blank" className="text-[#CC0000] underline font-bold hover:text-[#990000]">
+                    Return & Refund Policy
+                  </Link>
+                  .
+                </p>
 
                 <button
                   type="button"

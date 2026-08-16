@@ -80,6 +80,7 @@ export default function Footer() {
               { label: "Terms & Conditions", href: "/terms" },
               { label: "Shipping Policy", href: "/shipping-policy" },
               { label: "Refund & Replacement", href: "/refund-policy" },
+              { label: "Contact Us", href: "/contact" },
             ].map(({ label, href }) => (
               <li key={label}>
                 <Link href={href} className="text-white/60 hover:text-white hover:translate-x-1 transition-all inline-flex items-center gap-2 text-xs font-medium">

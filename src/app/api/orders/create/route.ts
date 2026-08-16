@@ -58,6 +58,10 @@ export async function POST(request: Request) {
     let calculatedSubtotal = 0;
     const validatedCartItems: CartItem[] = [];
     let grandTotal = 0;
+    let gstTax = 0;
+    let shipping = 0;
+    let couponDiscount = 0;
+    const FREE_DELIVERY_THRESHOLD = 999;
 
     // Run Firestore transaction to atomically verify inventory stock and write the order document
     await db.runTransaction(async (transaction) => {
@@ -72,6 +76,14 @@ export async function POST(request: Request) {
         const productData = productDoc.data()!;
         const currentStock = productData.stock ?? 0;
         const actualPrice = productData.price ?? 0;
+
+        // Secure Quantity & Price Inputs Checks
+        if (!item.quantity || typeof item.quantity !== "number" || !Number.isInteger(item.quantity) || item.quantity <= 0) {
+          throw new Error("Invalid product quantity provided.");
+        }
+        if (item.quantity > 100) {
+          throw new Error("Quantity per item cannot exceed 100 units.");
+        }
 
         if (currentStock < item.quantity) {
           throw new Error(`Insufficient stock for product '${productData.name}'. Only ${currentStock} units left.`);
@@ -98,8 +110,11 @@ export async function POST(request: Request) {
       }
 
       // Calculate checkout totals server-side
-      const gstTax = Math.round(calculatedSubtotal * 0.18);
-      const shipping = calculatedSubtotal > 5000 ? 0 : 250;
+      // BUSINESS RULE: Free delivery for orders of ₹999 or more
+      // Subtotal is based on the merchandise subtotal after valid product-level discounts but before delivery charges.
+      const DEFAULT_SHIPPING_CHARGE = 250;
+      gstTax = Math.round(calculatedSubtotal * 0.18);
+      shipping = calculatedSubtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DEFAULT_SHIPPING_CHARGE;
       
       let discountPercent = 0;
       if (couponCode) {
@@ -109,7 +124,7 @@ export async function POST(request: Request) {
         }
       }
       
-      const couponDiscount = Math.round((calculatedSubtotal * discountPercent) / 100);
+      couponDiscount = Math.round((calculatedSubtotal * discountPercent) / 100);
       grandTotal = calculatedSubtotal + gstTax + shipping - couponDiscount;
 
       // Delivery partner routing details
@@ -144,6 +159,12 @@ export async function POST(request: Request) {
         paymentMethod,
         paymentStatus: paymentStatus || "Success",
         status: "Confirmed",
+        subtotal: calculatedSubtotal,
+        discount: couponDiscount,
+        deliveryFee: shipping,
+        tax: gstTax,
+        freeDelivery: calculatedSubtotal >= FREE_DELIVERY_THRESHOLD,
+        currency: "INR",
         total: grandTotal,
         createdAt: FieldValue.serverTimestamp(),
         trackingNumber: awbNumber,
@@ -166,6 +187,12 @@ export async function POST(request: Request) {
           paymentMethod,
           paymentStatus: paymentStatus || "Success",
           status: "Confirmed",
+          subtotal: calculatedSubtotal,
+          discount: couponDiscount,
+          deliveryFee: shipping,
+          tax: gstTax,
+          freeDelivery: calculatedSubtotal >= FREE_DELIVERY_THRESHOLD,
+          currency: "INR",
           total: grandTotal,
           createdAt: new Date().toISOString(),
           trackingNumber: validatedCartItems[0]?.product?.sku || "RP-GEAR",

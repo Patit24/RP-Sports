@@ -94,6 +94,12 @@ export interface Order {
   delivered_at?: string;
   shiprocket_status?: string;
   userEmail?: string;
+  subtotal?: number;
+  discount?: number;
+  deliveryFee?: number;
+  tax?: number;
+  freeDelivery?: boolean;
+  currency?: string;
 }
 
 export interface User {

@@ -11,7 +11,7 @@ export default function CartPage() {
 
   const subtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const gstTax = Math.round(subtotal * 0.18);
-  const freeShippingThreshold = 5000;
+  const freeShippingThreshold = 999;
   const shipping = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 250;
   
   const discountPercent = activeCoupon ? activeCoupon.discountPercent : 0;
@@ -88,9 +88,9 @@ export default function CartPage() {
                   <span className="flex items-center gap-2 text-gray-700">
                     <Truck className="w-4 h-4 text-[#CC0000]" />
                     {subtotal >= freeShippingThreshold ? (
-                      <strong className="text-emerald-600">🎉 Congratulations! You have UNLOCKED FREE SHIPPING</strong>
+                      <strong className="text-emerald-600">🎉 Congratulations! You have UNLOCKED FREE DELIVERY</strong>
                     ) : (
-                      <span>Add <strong className="text-[#CC0000]">₹{(freeShippingThreshold - subtotal).toLocaleString()}</strong> more for FREE Shipping!</span>
+                      <span>Add <strong className="text-[#CC0000]">₹{(freeShippingThreshold - subtotal).toLocaleString("en-IN")}</strong> more for FREE Delivery!</span>
                     )}
                   </span>
                   <span className="text-gray-400 font-mono">{Math.round(freeShippingProgress)}%</span>
@@ -231,7 +231,7 @@ export default function CartPage() {
                   <div className="flex justify-between text-gray-600 text-xs">
                     <span>Courier Delivery Charge</span>
                     <span className="font-bold text-emerald-600">
-                      {shipping === 0 ? "FREE SHIPPING" : `₹${shipping}`}
+                      {shipping === 0 ? "FREE DELIVERY" : `₹${shipping}`}
                     </span>
                   </div>
                   
