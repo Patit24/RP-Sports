@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { ShieldCheck, Lock, CreditCard, ChevronRight, CheckCircle2, AlertCircle, MapPin, Phone, User as UserIcon, Building, Hash, ArrowLeft, Truck, Tag, Star, ArrowRight } from "lucide-react";
+import { ShieldCheck, Lock, CreditCard, ChevronRight, CheckCircle2, AlertCircle, MapPin, Phone, User as UserIcon, Building, Hash, ArrowLeft, Truck, Tag, Star, ArrowRight, Plus, Minus } from "lucide-react";
 import confetti from "canvas-confetti";
 import CheckoutAuthGate from "@/components/CheckoutAuthGate";
 import { onAuthStateChanged } from "firebase/auth";
@@ -12,7 +12,7 @@ import { auth } from "@/lib/firebase";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, currentUser, activeCoupon, clearCart, removeCoupon } = useStore();
+  const { cart, currentUser, activeCoupon, clearCart, removeCoupon, updateCartQuantity, removeFromCart } = useStore();
 
   // Step state
   const [isMounted, setIsMounted] = useState(false);
@@ -509,8 +509,39 @@ export default function CheckoutPage() {
                               )}
                             </div>
 
-                            <div className="flex items-center gap-2 pt-1">
-                              <span className="text-[11px] font-bold text-slate-500">Qty: {item.quantity}</span>
+                            <div className="flex items-center gap-4 pt-1">
+                              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Qty:</span>
+                              <div className="flex items-center border border-slate-200 rounded-md bg-white shadow-sm">
+                                <button 
+                                  type="button" 
+                                  onClick={() => {
+                                    if (item.quantity > 1) {
+                                      updateCartQuantity(item.id, item.quantity - 1);
+                                    } else {
+                                      removeFromCart(item.id);
+                                    }
+                                  }}
+                                  className="px-2.5 py-1 text-slate-500 hover:text-[#CC0000] transition-colors cursor-pointer"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <span className="px-2 text-xs font-black text-slate-800 min-w-[20px] text-center">{item.quantity}</span>
+                                <button 
+                                  type="button" 
+                                  onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
+                                  className="px-2.5 py-1 text-slate-500 hover:text-blue-600 transition-colors cursor-pointer"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </button>
+                              </div>
+                              
+                              <button
+                                type="button"
+                                onClick={() => removeFromCart(item.id)}
+                                className="text-[10px] font-black text-[#CC0000] hover:underline uppercase tracking-wider cursor-pointer"
+                              >
+                                Remove
+                              </button>
                             </div>
                           </div>
 
