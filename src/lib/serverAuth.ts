@@ -45,6 +45,10 @@ function initAdminSDK() {
 
 export function getAdminDb() {
   initAdminSDK();
+  const rawKey = process.env.FIREBASE_PRIVATE_KEY;
+  if (!rawKey || rawKey.includes("PLACEHOLDER")) {
+    throw new Error("Firebase Admin SDK is not initialized. Please add FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY in Vercel settings and trigger a new deployment.");
+  }
   return getFirestore();
 }
 
