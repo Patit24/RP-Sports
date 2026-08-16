@@ -81,10 +81,18 @@ export async function POST(request: Request) {
 
     // Run Firestore transaction to atomically verify inventory stock and write the order document
     await db.runTransaction(async (transaction) => {
-      for (const item of items) {
-        const productRef = db.collection("products").doc(item.product.id);
-        const productDoc = await transaction.get(productRef);
+      // ── PHASE 1: EXECUTE ALL READS FIRST ──
+      const productDocs = await Promise.all(
+        items.map(async (item) => {
+          const productRef = db.collection("products").doc(item.product.id);
+          const doc = await transaction.get(productRef);
+          return { item, productRef, doc };
+        })
+      );
 
+      const stockUpdates: { ref: FirebaseFirestore.DocumentReference; newStock: number }[] = [];
+
+      for (const { item, productRef, doc: productDoc } of productDocs) {
         if (!productDoc.exists) {
           throw new Error(`Product '${item.product.name}' was not found in our catalog.`);
         }
@@ -105,9 +113,8 @@ export async function POST(request: Request) {
           throw new Error(`Insufficient stock for product '${productData.name}'. Only ${currentStock} units left.`);
         }
 
-        // Deduct inventory
         const newStock = currentStock - item.quantity;
-        transaction.update(productRef, { stock: newStock });
+        stockUpdates.push({ ref: productRef, newStock });
 
         calculatedSubtotal += actualPrice * item.quantity;
 
@@ -189,6 +196,11 @@ export async function POST(request: Request) {
         deliveryPartnerInfo,
         userEmail,
       };
+
+      // ── PHASE 2: EXECUTE ALL WRITES AFTER ALL READS ──
+      for (const update of stockUpdates) {
+        transaction.update(update.ref, { stock: update.newStock });
+      }
 
       // Write verified order directly from server
       const newOrderRef = db.collection("orders").doc();
