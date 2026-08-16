@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
@@ -44,7 +44,24 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   
   const { products, categories } = useStore();
-  const featuredProducts = (products || []).filter((p: any) => p.featured).slice(0, 8);
+  const [activeProductTab, setActiveProductTab] = useState<"featured" | "bestseller" | "trending" | "new">("featured");
+
+  const displayedProducts = useMemo(() => {
+    const list = products || [];
+    if (activeProductTab === "bestseller") {
+      const filtered = list.filter((p: any) => p.isBestSeller || p.badge === "Bestseller");
+      return filtered.length > 0 ? filtered.slice(0, 8) : list.slice(0, 4);
+    }
+    if (activeProductTab === "trending") {
+      const filtered = list.filter((p: any) => p.badge === "Trending" || p.rating >= 4.8 || p.badge === "Pro Edition");
+      return filtered.length > 0 ? filtered.slice(0, 8) : list.slice(0, 4);
+    }
+    if (activeProductTab === "new") {
+      const filtered = list.filter((p: any) => p.isNew || p.badge === "New Arrival" || p.badge === "New");
+      return filtered.length > 0 ? filtered.slice(0, 8) : list.slice(0, 4);
+    }
+    return list.filter((p: any) => p.featured).slice(0, 8);
+  }, [products, activeProductTab]);
 
   const activeFeaturedCategories = categories && categories.length > 0
     ? categories.map((c: any) => ({
@@ -261,41 +278,89 @@ export default function Home() {
             </Link>
           </div>
 
+          {/* Tab Selector buttons */}
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-8 border-b border-slate-200/80 pb-4">
+            <button
+              onClick={() => setActiveProductTab("featured")}
+              className={`px-4 py-2 text-sm font-display font-bold uppercase tracking-wider transition-all duration-300 border-b-2 cursor-pointer ${
+                activeProductTab === "featured"
+                  ? "border-[#CC0000] text-[#CC0000]"
+                  : "border-transparent text-slate-500 hover:text-secondary"
+              }`}
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              Featured
+            </button>
+            <button
+              onClick={() => setActiveProductTab("bestseller")}
+              className={`px-4 py-2 text-sm font-display font-bold uppercase tracking-wider transition-all duration-300 border-b-2 cursor-pointer ${
+                activeProductTab === "bestseller"
+                  ? "border-[#CC0000] text-[#CC0000]"
+                  : "border-transparent text-slate-500 hover:text-secondary"
+              }`}
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              Best Selling
+            </button>
+            <button
+              onClick={() => setActiveProductTab("trending")}
+              className={`px-4 py-2 text-sm font-display font-bold uppercase tracking-wider transition-all duration-300 border-b-2 cursor-pointer ${
+                activeProductTab === "trending"
+                  ? "border-[#CC0000] text-[#CC0000]"
+                  : "border-transparent text-slate-500 hover:text-secondary"
+              }`}
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              Trending Products
+            </button>
+            <button
+              onClick={() => setActiveProductTab("new")}
+              className={`px-4 py-2 text-sm font-display font-bold uppercase tracking-wider transition-all duration-300 border-b-2 cursor-pointer ${
+                activeProductTab === "new"
+                  ? "border-[#CC0000] text-[#CC0000]"
+                  : "border-transparent text-slate-500 hover:text-secondary"
+              }`}
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              New Arrivals
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-            {featuredProducts.map((product: any) => (
+            {displayedProducts.map((product: any) => (
               <Link key={product.id} href={`/product/${product.id}`} className="product-card group">
                 {/* Image */}
                 <div className="relative aspect-square bg-white overflow-hidden hover-zoom-container">
                   <img src={product.images[0]} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
                   {product.badge && (
                     <span className={`absolute top-2 left-2 text-[10px] font-display font-bold uppercase tracking-wider px-2.5 py-1 z-10 ${
-                      product.badge === "Sale" ? "badge-sale" :
-                      product.badge === "New" ? "badge-new" : "badge-limited"
+                      product.badge === "Sale" || product.badge === "Special Sale" ? "badge-sale" :
+                      product.badge === "New" || product.badge === "New Arrival" ? "badge-new" : "badge-limited"
                     }`}>
                       {product.badge}
                     </span>
                   )}
                   <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-                    <button className="w-full bg-primary text-white font-display font-bold uppercase text-xs tracking-wider py-2.5 flex items-center justify-center gap-2">
+                    <button className="w-full bg-[#CC0000] text-white font-display font-bold uppercase text-xs tracking-wider py-2.5 flex items-center justify-center gap-2">
                       <ShoppingCart className="w-3.5 h-3.5" /> Quick Add
                     </button>
                   </div>
                 </div>
                 {/* Info */}
                 <div className="p-3 md:p-4">
-                  <p className="text-[10px] text-primary font-display font-bold uppercase tracking-widest mb-1">{product.brand}</p>
+                  <p className="text-[10px] text-[#CC0000] font-display font-bold uppercase tracking-widest mb-1">{product.brand}</p>
                   <h4 className="font-semibold text-secondary text-sm leading-tight mb-2 line-clamp-2">{product.name}</h4>
                   <div className="flex items-center gap-1 mb-3">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating) ? "text-amber-400 fill-amber-400" : "text-gray-200 fill-gray-200"}`} />
                     ))}
-                    <span className="text-xs text-gray-400 ml-1">({product.reviewsCount})</span>
+                    <span className="text-xs text-gray-400 ml-1">({product.reviewsCount || product.reviewCount || 0})</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-primary font-display font-extrabold text-lg">₹{product.price.toLocaleString()}</span>
+                      <span className="text-[#CC0000] font-display font-extrabold text-lg">₹{product.price.toLocaleString("en-IN")}</span>
                       {product.mrp > product.price && (
-                        <span className="text-gray-400 text-xs line-through ml-2">₹{product.mrp.toLocaleString()}</span>
+                        <span className="text-gray-400 text-xs line-through ml-2">₹{product.mrp.toLocaleString("en-IN")}</span>
                       )}
                     </div>
                     {product.mrp > product.price && (

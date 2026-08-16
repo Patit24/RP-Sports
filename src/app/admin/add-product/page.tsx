@@ -712,6 +712,7 @@ export default function AddProductPage() {
               >
                 <option value="Bestseller">Bestseller</option>
                 <option value="New Arrival">New Arrival</option>
+                <option value="Trending">Trending</option>
                 <option value="Special Sale">Special Sale</option>
                 <option value="Pro Edition">Pro Edition</option>
                 <option value="Limited Edition">Limited Edition</option>
