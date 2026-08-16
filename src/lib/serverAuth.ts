@@ -40,6 +40,23 @@ function initAdminSDK() {
     return;
   }
 
+  // 1. Check for entire Service Account JSON string in FIREBASE_SERVICE_ACCOUNT or FIREBASE_PRIVATE_KEY
+  const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_PRIVATE_KEY;
+  if (serviceAccountRaw && serviceAccountRaw.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(serviceAccountRaw.trim());
+      if (parsed.project_id && parsed.private_key) {
+        initializeApp({
+          credential: cert(parsed),
+        });
+        return;
+      }
+    } catch (jsonErr: any) {
+      console.warn("Could not parse service account JSON string:", jsonErr.message);
+    }
+  }
+
+  // 2. Individual Environment Variables
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const rawKey = process.env.FIREBASE_PRIVATE_KEY;
