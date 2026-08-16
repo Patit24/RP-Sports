@@ -365,7 +365,7 @@ export default function AdminOrdersPage() {
                   <span>
                     ₹{((selectedOrder.subtotal !== undefined) 
                       ? selectedOrder.subtotal 
-                      : selectedOrder.items.reduce((acc, i) => acc + i.product.price * i.quantity, 0)
+                      : Math.round(selectedOrder.items.reduce((acc, i) => acc + i.product.price * i.quantity, 0) / 1.18)
                     ).toLocaleString("en-IN")}
                   </span>
                 </div>
@@ -389,7 +389,7 @@ export default function AdminOrdersPage() {
                   <span>
                     ₹{((selectedOrder.tax !== undefined)
                       ? selectedOrder.tax
-                      : Math.round(selectedOrder.items.reduce((acc, i) => acc + i.product.price * i.quantity, 0) * 0.18)
+                      : (selectedOrder.items.reduce((acc, i) => acc + i.product.price * i.quantity, 0) - Math.round(selectedOrder.items.reduce((acc, i) => acc + i.product.price * i.quantity, 0) / 1.18))
                     ).toLocaleString("en-IN")}
                   </span>
                 </div>

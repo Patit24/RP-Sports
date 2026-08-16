@@ -369,12 +369,13 @@ export const useStore = create<SportsStoreState>()(
         const cart = get().cart;
         if (cart.length === 0) return null;
 
-        const subtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-        const tax = Math.round(subtotal * 0.18); // 18% GST
-        const shipping = subtotal > 5000 ? 0 : 250;
+        const totalInclusive = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+        const subtotalExcludingGst = Math.round(totalInclusive / 1.18);
+        const tax = totalInclusive - subtotalExcludingGst;
+        const shipping = totalInclusive >= 999 ? 0 : 250;
         const discountPercent = get().activeCoupon ? get().activeCoupon!.discountPercent : 0;
-        const couponDiscount = Math.round((subtotal * discountPercent) / 100);
-        const grandTotal = subtotal + tax + shipping - couponDiscount;
+        const couponDiscount = Math.round((totalInclusive * discountPercent) / 100);
+        const grandTotal = totalInclusive + shipping - couponDiscount;
 
         const orderId = "ORD-" + Date.now().toString(36) + Math.floor(Math.random() * 10000);
         const isKolkataLocal = address.pincode.startsWith("700");
@@ -408,6 +409,12 @@ export const useStore = create<SportsStoreState>()(
           paymentMethod,
           paymentStatus,
           status: "Confirmed",
+          subtotal: subtotalExcludingGst,
+          discount: couponDiscount,
+          deliveryFee: shipping,
+          tax: tax,
+          freeDelivery: totalInclusive >= 999,
+          currency: "INR",
           total: grandTotal,
           createdAt: new Date().toISOString(),
           trackingNumber: awbNumber,

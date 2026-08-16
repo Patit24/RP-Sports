@@ -89,14 +89,15 @@ export default function CheckoutPage() {
     }
   }, [authLoading, currentUser]);
 
-  const cartSubtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-  const gstTax = Math.round(cartSubtotal * 0.18);
+  const totalInclusive = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+  const cartSubtotal = Math.round(totalInclusive / 1.18);
+  const gstTax = totalInclusive - cartSubtotal;
   const FREE_DELIVERY_THRESHOLD = 999;
-  const shipping = cartSubtotal >= FREE_DELIVERY_THRESHOLD || cartSubtotal === 0 ? 0 : 250;
+  const shipping = totalInclusive >= FREE_DELIVERY_THRESHOLD || totalInclusive === 0 ? 0 : 250;
   
   const discountPercent = activeCoupon ? activeCoupon.discountPercent : 0;
-  const couponDiscount = Math.round((cartSubtotal * discountPercent) / 100);
-  const grandTotal = cartSubtotal + gstTax + shipping - couponDiscount;
+  const couponDiscount = Math.round((totalInclusive * discountPercent) / 100);
+  const grandTotal = totalInclusive + shipping - couponDiscount;
 
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -449,13 +450,13 @@ export default function CheckoutPage() {
                   <span>Delivery</span>
                   <span className="font-bold text-emerald-600">{shipping === 0 ? "FREE" : `₹${shipping}`}</span>
                 </div>
-                {cartSubtotal >= FREE_DELIVERY_THRESHOLD ? (
+                {totalInclusive >= FREE_DELIVERY_THRESHOLD ? (
                   <div className="bg-emerald-50 text-emerald-800 p-2.5 rounded-xl border border-emerald-200/80 text-[11px] font-bold flex items-center gap-1.5 my-1">
                     <span>🎉 You’ve unlocked FREE DELIVERY</span>
                   </div>
                 ) : (
                   <div className="bg-amber-50 text-amber-800 p-2.5 rounded-xl border border-amber-200/80 text-[11px] font-semibold my-1">
-                    Add <span className="font-bold">₹{(FREE_DELIVERY_THRESHOLD - cartSubtotal).toLocaleString("en-IN")}</span> more to get <span className="font-bold">FREE DELIVERY</span>
+                    Add <span className="font-bold">₹{(FREE_DELIVERY_THRESHOLD - totalInclusive).toLocaleString("en-IN")}</span> more to get <span className="font-bold">FREE DELIVERY</span>
                   </div>
                 )}
                 {activeCoupon && (

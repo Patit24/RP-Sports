@@ -9,14 +9,15 @@ export default function CartPage() {
   const { cart, updateCartQuantity, removeFromCart, activeCoupon, applyCoupon, removeCoupon } = useStore();
   const [couponCodeInput, setCouponCodeInput] = useState("");
 
-  const subtotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-  const gstTax = Math.round(subtotal * 0.18);
+  const totalInclusive = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+  const subtotal = Math.round(totalInclusive / 1.18);
+  const gstTax = totalInclusive - subtotal;
   const freeShippingThreshold = 999;
-  const shipping = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 250;
+  const shipping = totalInclusive >= freeShippingThreshold || totalInclusive === 0 ? 0 : 250;
   
   const discountPercent = activeCoupon ? activeCoupon.discountPercent : 0;
-  const couponDiscount = Math.round((subtotal * discountPercent) / 100);
-  const grandTotal = subtotal + gstTax + shipping - couponDiscount;
+  const couponDiscount = Math.round((totalInclusive * discountPercent) / 100);
+  const grandTotal = totalInclusive + shipping - couponDiscount;
 
   const handleApplyCouponForm = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +27,7 @@ export default function CartPage() {
     }
   };
 
-  const freeShippingProgress = Math.min(100, (subtotal / freeShippingThreshold) * 100);
+  const freeShippingProgress = Math.min(100, (totalInclusive / freeShippingThreshold) * 100);
 
   return (
     <div className="min-h-screen bg-[#F9F9F9] text-[#111111] pt-28 md:pt-32 pb-20">

@@ -113,7 +113,9 @@ export async function POST(request: Request) {
       // BUSINESS RULE: Free delivery for orders of ₹999 or more
       // Subtotal is based on the merchandise subtotal after valid product-level discounts but before delivery charges.
       const DEFAULT_SHIPPING_CHARGE = 250;
-      gstTax = Math.round(calculatedSubtotal * 0.18);
+      
+      const subtotalExcludingGst = Math.round(calculatedSubtotal / 1.18);
+      gstTax = calculatedSubtotal - subtotalExcludingGst;
       shipping = calculatedSubtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DEFAULT_SHIPPING_CHARGE;
       
       let discountPercent = 0;
@@ -125,7 +127,7 @@ export async function POST(request: Request) {
       }
       
       couponDiscount = Math.round((calculatedSubtotal * discountPercent) / 100);
-      grandTotal = calculatedSubtotal + gstTax + shipping - couponDiscount;
+      grandTotal = calculatedSubtotal + shipping - couponDiscount;
 
       // Delivery partner routing details
       const isKolkataLocal = shippingAddress.pincode.startsWith("700");
@@ -159,7 +161,7 @@ export async function POST(request: Request) {
         paymentMethod,
         paymentStatus: paymentStatus || "Success",
         status: "Confirmed",
-        subtotal: calculatedSubtotal,
+        subtotal: subtotalExcludingGst,
         discount: couponDiscount,
         deliveryFee: shipping,
         tax: gstTax,
@@ -187,7 +189,7 @@ export async function POST(request: Request) {
           paymentMethod,
           paymentStatus: paymentStatus || "Success",
           status: "Confirmed",
-          subtotal: calculatedSubtotal,
+          subtotal: calculatedSubtotal - gstTax, // equal to subtotalExcludingGst
           discount: couponDiscount,
           deliveryFee: shipping,
           tax: gstTax,
