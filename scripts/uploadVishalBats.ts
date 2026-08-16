@@ -1,70 +1,20 @@
-export interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  sku: string;
-  brand: string;
-  category: string;
-  subcategory: string;
-  image: string;
-  images: string[];
-  gallery: string[];
-  mrp: number;
-  originalPrice: number;
-  price: number;
-  rating: number;
-  reviewCount: number;
-  reviewsCount: number;
-  deliveryDays: string | number;
-  stock: number;
-  description: string;
-  shortDescription: string;
-  highlights: string[];
-  specs: Record<string, string>;
-  specifications: Record<string, string>;
-  colors: string[];
-  sizes: string[];
-  sportsType: string;
-  weight?: string;
-  dimensions?: string;
-  badge?: string;
-  featured?: boolean;
-  isNew?: boolean;
-  isBestSeller?: boolean;
-  customizable?: boolean;
-  willowType?: string;
-  willowGrade?: string;
-  handleSize?: string;
-  playerLevel?: string;
-  countryOfOrigin?: string;
-  manufacturerDetails?: string;
-}
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 
-export const CATEGORIES = [
-  { id: "cricket", name: "Cricket", icon: "🏏", banner: "/category_cricket_1783225297200.jpg", subcategories: ["bats", "balls", "gloves", "pads", "helmets", "kits"] },
-  { id: "football", name: "Football", icon: "⚽", banner: "/category_football_1783225306612.jpg", subcategories: ["balls", "boots", "guards", "accessories"] },
-  { id: "badminton", name: "Badminton", icon: "🏸", banner: "/category_badminton_1783225318763.jpg", subcategories: ["rackets", "shuttlecocks", "grips", "accessories"] },
-  { id: "jerseys", name: "Jerseys", icon: "👕", banner: "/jerseys_category_rp_1785961757107.jpg", subcategories: ["custom-jersey", "team-kits", "caps", "shorts"] },
-  { id: "trophies", name: "Trophies", icon: "🏆", banner: "/generated_trophy_1783192099951.jpg", subcategories: ["trophies", "medals", "awards", "plaques"] },
-];
+const firebaseConfig = {
+  apiKey: "AIzaSyANQ3H4WNGxsbcNDSLCRUoCH0wl_zgU4CY",
+  authDomain: "rpsports-data.firebaseapp.com",
+  projectId: "rpsports-data",
+  storageBucket: "rpsports-data.firebasestorage.app",
+  messagingSenderId: "212466668507",
+  appId: "1:212466668507:web:95eda401514d63524d4dfe",
+  measurementId: "G-HP0KNXB2MS",
+};
 
-export const BRANDS = ["RP Sports", "RP Custom Apparel", "RP Trophies", "SS", "SG", "DSC", "MRF"];
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-export const MOCK_BLOGS = [
-  {
-    id: "blog-1",
-    slug: "how-to-choose-kashmir-willow-bat",
-    title: "How to Choose the Perfect Kashmir Willow Bat in Kolkata",
-    date: "August 2026",
-    image: "/cricket_bat_studio.jpg",
-    excerpt: "Comprehensive guide for selecting grain alignment, sweet spot position, and bat weight for Indian pitches.",
-    content: "Selecting the ideal cricket bat requires understanding wood density, edge thickness, and pickup...",
-    author: "RP Sports Master Craftsman",
-    readTime: "4 min read",
-  }
-];
-
-export const MOCK_PRODUCTS: Product[] = [
+const newBats = [
   {
     id: "rp-premium-bat",
     name: "RP Premium Kashmir Willow Cricket Bat",
@@ -424,7 +374,10 @@ export const MOCK_PRODUCTS: Product[] = [
     featured: true,
     countryOfOrigin: "India",
     manufacturerDetails: "RP Sports Works, Dumdum, Kolkata"
-  },
+  }
+];
+
+const otherProducts = [
   {
     id: "rp-003",
     name: "RP Custom Sublimated Match Jersey 2026",
@@ -597,4 +550,32 @@ export const MOCK_PRODUCTS: Product[] = [
   }
 ];
 
-export const mockProducts = MOCK_PRODUCTS;
+const allProducts = [...newBats, ...otherProducts];
+
+async function seed() {
+  console.log("🔥 Connecting to Firestore project: rpsports-data");
+  const snap = await getDocs(collection(db, "products"));
+  console.log(`Found ${snap.docs.length} existing products in Firestore. Deleting...`);
+  
+  for (const document of snap.docs) {
+    console.log(`  Deleting doc ID: ${document.id}`);
+    await deleteDoc(doc(db, "products", document.id));
+  }
+  
+  console.log(`Uploading ${allProducts.length} items to Firestore...`);
+  for (const product of allProducts) {
+    await setDoc(doc(db, "products", product.id), {
+      ...product,
+      updatedAt: serverTimestamp(),
+    });
+    console.log(`  ✓ Uploaded: ${product.name} (ID: ${product.id})`);
+  }
+  
+  console.log("🎉 Successfully seeded all products to Firestore!");
+  process.exit(0);
+}
+
+seed().catch(err => {
+  console.error("❌ Seeding failed:", err);
+  process.exit(1);
+});

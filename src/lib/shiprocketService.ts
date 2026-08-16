@@ -174,8 +174,8 @@ export function getOrderPackageDetails(order: Order): { weight: number; length: 
     const qty = item.quantity;
     const prod = item.product;
     
-    const parsedWt = parseWeight(prod.weight) ?? 0.4;
-    const parsedDim = parseDimensions(prod.dimensions) ?? { length: 15, breadth: 15, height: 5 };
+    const parsedWt = parseWeight(prod.weight || "") ?? 0.4;
+    const parsedDim = parseDimensions(prod.dimensions || "") ?? { length: 15, breadth: 15, height: 5 };
     
     totalWeight += parsedWt * qty;
     maxLength = Math.max(maxLength, parsedDim.length);
