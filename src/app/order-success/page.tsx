@@ -1,20 +1,63 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { generateLogisticsMessage } from "@/lib/deliveryPartnerService";
-import { CheckCircle2, Package, Truck, ArrowRight, Printer, MapPin, Phone, ShieldCheck, Share2, Copy, Check } from "lucide-react";
+import { CheckCircle2, Package, Truck, ArrowRight, Printer, MapPin, Phone, ShieldCheck, Share2, Copy, Check, AlertCircle } from "lucide-react";
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId") || "";
 
   const { orders } = useStore();
-  const order = orders.find((o) => o.id === orderId) || orders[0];
-
+  const [order, setOrder] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copiedPayload, setCopiedPayload] = useState(false);
+
+  useEffect(() => {
+    if (!orderId) {
+      if (orders && orders.length > 0) {
+        setOrder(orders[0]);
+      } else {
+        setError("No Order ID provided.");
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Try finding in Zustand first
+    const localOrder = orders.find((o) => o.id === orderId);
+    if (localOrder) {
+      setOrder(localOrder);
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise, fetch from server database
+    const fetchOrder = async () => {
+      try {
+        const res = await fetch(`/api/orders/details?id=${orderId}`);
+        if (!res.ok) {
+          throw new Error(`Server returned status ${res.status}`);
+        }
+        const data = await res.json();
+        if (data.success && data.order) {
+          setOrder(data.order);
+        } else {
+          setError(data.message || "Order not found in our database");
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to load order details from database");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [orderId, orders]);
 
   const handlePrint = () => {
     if (typeof window !== "undefined") {
@@ -23,13 +66,16 @@ function OrderSuccessContent() {
   };
 
   const handleCopyLogisticsDispatch = () => {
-    if (!order || !order.deliveryPartnerInfo) return;
+    if (!order) return;
+    const awb = order.deliveryPartnerInfo?.awbNumber || order.awb_code || order.trackingNumber || "N/A";
+    const carrier = order.deliveryPartnerInfo?.carrier || order.courier_name || "Delhivery Express";
+    const hub = order.deliveryPartnerInfo?.hub || "Kolkata Central Hub, Dumdum";
     
     const dispatchMessage = `📦 RP SPORTS LOGISTICS PICKUP ALERT
 Order ID: ${order.id}
-AWB No: ${order.deliveryPartnerInfo.awbNumber}
-Carrier: ${order.deliveryPartnerInfo.carrier}
-Hub: ${order.deliveryPartnerInfo.hub}
+AWB No: ${awb}
+Carrier: ${carrier}
+Hub: ${hub}
 Customer: ${order.shippingAddress.fullName} (${order.shippingAddress.phone})
 Address: ${order.shippingAddress.addressLine}, ${order.shippingAddress.city} - ${order.shippingAddress.pincode}
 Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")})`;
@@ -38,6 +84,40 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
     setCopiedPayload(true);
     setTimeout(() => setCopiedPayload(false), 2500);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F9F9F9] flex items-center justify-center p-8">
+        <div className="text-center bg-white border border-gray-200 p-12 rounded-2xl max-w-md shadow-sm space-y-4">
+          <div className="w-10 h-10 mx-auto border-4 border-gray-200 border-t-[#CC0000] rounded-full animate-spin" />
+          <h3 className="text-lg font-display font-black uppercase text-[#111] tracking-wider" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+            Loading Order Details...
+          </h3>
+          <p className="text-xs text-gray-400 font-medium">Retrieving verified invoice and logistics information from Dumdum server.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-[#F9F9F9] flex items-center justify-center p-6 text-[#111111] pt-32">
+        <div className="text-center bg-white border border-gray-200 p-12 rounded-2xl max-w-md shadow-sm">
+          <AlertCircle className="w-12 h-12 text-[#CC0000] mx-auto mb-4" />
+          <h2 className="text-xl font-display font-black uppercase text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+            Order Lookup Failed
+          </h2>
+          <p className="text-gray-500 text-xs mt-2 font-medium">{error || "The order details could not be found."}</p>
+          <Link
+            href="/shop"
+            className="mt-6 btn-primary inline-flex items-center gap-2 font-display font-bold uppercase tracking-wider text-xs px-6 py-3"
+          >
+            Browse Cricket Store
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F9F9F9] py-12 px-4 sm:px-8 max-w-4xl mx-auto">
@@ -171,10 +251,10 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
               <Package className="w-5 h-5 text-[#CC0000]" /> Purchased Items ({order.items.length})
             </h3>
             <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-              {order.items.map((item, idx) => (
+              {order.items.map((item: any, idx: number) => (
                 <div key={idx} className="p-4 flex items-center gap-4 bg-gray-50/50">
                   <img
-                    src={item.product.image || item.product.gallery?.[0] || "/hero-banner.jpg"}
+                    src={item.product.image || item.product.gallery?.[0] || item.product.images?.[0] || "/hero-banner.jpg"}
                     alt={item.product.name}
                     className="w-16 h-16 object-cover rounded-lg bg-white p-1 border border-gray-200"
                   />
