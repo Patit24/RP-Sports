@@ -2,17 +2,48 @@ import { getApps, initializeApp, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import crypto from "crypto";
 
-function formatPrivateKey(rawKey: string): string {
-  let cleanKey = rawKey.trim();
-  // Strip outer double or single quotes if present
-  if ((cleanKey.startsWith('"') && cleanKey.endsWith('"')) || (cleanKey.startsWith("'") && cleanKey.endsWith("'"))) {
-    cleanKey = cleanKey.slice(1, -1).trim();
+export function formatPrivateKey(rawKey: string): string {
+  let key = rawKey.trim();
+
+  // Remove wrapping quotes if any
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1).trim();
   }
-  // Replace literal '\n' or '\\n' with actual newlines
-  cleanKey = cleanKey.replace(/\\n/g, "\n");
-  // Normalize Windows CRLF to standard Unix LF
-  cleanKey = cleanKey.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  return cleanKey;
+
+  // Handle all types of escaped newlines and line endings
+  key = key.replace(/\\\\n/g, "\n").replace(/\\n/g, "\n");
+  key = key.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+
+  try {
+    crypto.createPrivateKey(key);
+    return key;
+  } catch {
+    // If direct parse fails, reconstruct a clean PEM structure
+    const header = "-----BEGIN PRIVATE KEY-----";
+    const footer = "-----END PRIVATE KEY-----";
+
+    let body = key
+      .replace(/-----BEGIN PRIVATE KEY-----/g, "")
+      .replace(/-----END PRIVATE KEY-----/g, "")
+      .replace(/-----BEGIN RSA PRIVATE KEY-----/g, "")
+      .replace(/-----END RSA PRIVATE KEY-----/g, "")
+      .replace(/\\n/g, "")
+      .replace(/\\/g, "")
+      .replace(/\s+/g, "");
+
+    const chunks: string[] = [];
+    for (let i = 0; i < body.length; i += 64) {
+      chunks.push(body.slice(i, i + 64));
+    }
+
+    const reconstructedPEM = `${header}\n${chunks.join("\n")}\n${footer}\n`;
+    try {
+      crypto.createPrivateKey(reconstructedPEM);
+      return reconstructedPEM;
+    } catch {
+      return key;
+    }
+  }
 }
 
 function initAdminSDK() {

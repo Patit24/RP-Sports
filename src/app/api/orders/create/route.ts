@@ -68,19 +68,6 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    let cleanKey = rawKey.trim();
-    if ((cleanKey.startsWith('"') && cleanKey.endsWith('"')) || (cleanKey.startsWith("'") && cleanKey.endsWith("'"))) {
-      cleanKey = cleanKey.slice(1, -1).trim();
-    }
-    cleanKey = cleanKey.replace(/\\n/g, "\n").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-
-    if (!cleanKey.startsWith("-----BEGIN PRIVATE KEY-----")) {
-      return NextResponse.json({
-        success: false,
-        message: "FIREBASE_PRIVATE_KEY format is invalid. It must start with '-----BEGIN PRIVATE KEY-----'. Please re-copy the key from Firebase Service Account JSON (including header and footer) to Vercel."
-      }, { status: 500 });
-    }
-
     const db = getAdminDb();
     const orderId = "ORD-" + randomUUID().replace(/-/g, "").substring(0, 10).toUpperCase();
 
