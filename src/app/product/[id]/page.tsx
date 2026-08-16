@@ -3,7 +3,10 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { Star, ShieldCheck, Heart, Truck, Plus, Minus, ArrowRight, ShoppingCart, Share2, Zap } from "lucide-react";
+import { 
+  Star, ShieldCheck, Heart, Truck, Plus, Minus, ArrowRight, ShoppingCart, Share2, Zap,
+  MapPin, ChevronDown, ChevronUp, RefreshCw, IndianRupee, CheckCircle2, Award 
+} from "lucide-react";
 import Link from "next/link";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -41,6 +44,8 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] || "");
   const [quantity, setQuantity] = useState(1);
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [peaceOpen, setPeaceOpen] = useState(true);
+  const [highlightsOpen, setHighlightsOpen] = useState(true);
 
   // Zoom state
   const [showZoom, setShowZoom] = useState(false);
@@ -103,6 +108,41 @@ export default function ProductDetailPage() {
       .slice(0, 4);
   }, [products, product]);
 
+  const productHighlights = useMemo(() => {
+    const nameLower = product.name.toLowerCase();
+    
+    if (product.category === "cricket" || nameLower.includes("bat")) {
+      return [
+        { label: "Material", text: "Grade-1 premium English Willow" },
+        { label: "Weight Status", text: "Optimal weight under 980 grams for light pickup" },
+        { label: "Profile", text: "Thick 40mm edges with deep sweetspot spine" },
+        { label: "Knocking", text: "Pre-knocked 10,000+ strokes & oiled with linseed oil" },
+      ];
+    }
+    if (product.category === "badminton" || nameLower.includes("racket") || nameLower.includes("shuttle")) {
+      return [
+        { label: "Material", text: "High modulus carbon graphite frame" },
+        { label: "Tension", text: "Pre-strung at high tension (28-30 lbs) for smash power" },
+        { label: "Weight", text: "Ultralight aerodynamic shaft & perfect balance" },
+        { label: "Inclusions", text: "Includes padded heavy-duty thermal head cover" },
+      ];
+    }
+    if (nameLower.includes("jersey") || nameLower.includes("t-shirt") || nameLower.includes("wear")) {
+      return [
+        { label: "Fabric", text: "100% Dry-Fit honeycomb breathable active polyester" },
+        { label: "Print Quality", text: "Dye-sublimation fade-resistant rich colors" },
+        { label: "Fit & Feel", text: "Athletic cut fit with skin-friendly flatlock seams" },
+        { label: "Customization", text: "Supports custom names & team numbers" },
+      ];
+    }
+    return [
+      { label: "Authenticity", text: "100% genuine RP Sports brand certified" },
+      { label: "Design", text: "Professional-grade sports engineering" },
+      { label: "Quality Check", text: "Hand-inspected by Kolkata Dumdum hub before dispatch" },
+      { label: "Inclusions", text: "Secure original box packaging with instructions" },
+    ];
+  }, [product]);
+
   const categoryName = CATEGORIES.find(c => c.id === product.category)?.name || product.category;
 
   return (
@@ -121,10 +161,10 @@ export default function ProductDetailPage() {
 
       {/* 50/50 SPLIT LAYOUT */}
       <div className="max-w-[1600px] mx-auto px-0 md:px-8">
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 bg-white md:rounded-2xl md:shadow-sm md:border border-slate-200 overflow-hidden relative">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 bg-white md:rounded-2xl md:shadow-sm md:border border-slate-200 overflow-hidden relative">
           
           {/* LEFT: Image Gallery */}
-          <div className="w-full lg:w-1/2 flex flex-col relative bg-white">
+          <div className="w-full lg:w-1/2 flex flex-col relative bg-white lg:border-r border-slate-100">
             
             <div className="md:hidden absolute top-4 left-4 z-20">
               <Link href="/shop" className="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-primary shadow-sm border border-slate-200">
@@ -150,96 +190,190 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <div 
-              className="w-full aspect-square lg:aspect-auto lg:h-[700px] flex items-center justify-center p-8 md:p-16 relative group cursor-crosshair overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-100"
-              onMouseEnter={() => setShowZoom(true)}
-              onMouseLeave={() => setShowZoom(false)}
-              onMouseMove={handleMouseMove}
-            >
-              <img 
-                src={product.images[activeImgIdx]} 
-                alt={product.name} 
-                className={`w-full h-full object-contain mix-blend-multiply drop-shadow-xl ${
-                  showZoom ? 'transition-none' : 'transition-transform duration-[1.5s] ease-[0.16,1,0.3,1] group-hover:scale-105'
-                }`}
-                style={
-                  showZoom 
-                    ? {
-                        transform: 'scale(2.5)',
-                        transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`
-                      }
-                    : {}
-                }
-              />
+            {/* FLIPKART-STYLE IMAGE GRID (DESKTOP) */}
+            <div className="hidden lg:grid grid-cols-2 gap-4 p-6 bg-slate-50">
+              {product.images.map((img, idx) => (
+                <div 
+                  key={idx} 
+                  className="aspect-[4/5] bg-white rounded-2xl overflow-hidden border border-slate-200 p-6 flex items-center justify-center relative group shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  <img 
+                    src={img} 
+                    alt={`${product.name} view ${idx + 1}`} 
+                    className="w-full h-full object-contain mix-blend-multiply drop-shadow-md group-hover:scale-105 transition-transform duration-500" 
+                  />
+                  {idx === 0 && (
+                    <span className="absolute bottom-3 left-3 bg-[#CC0000] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded">
+                      RP ORIGINAL
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
 
-            {/* Thumbnails */}
-            <div className="flex gap-4 p-4 md:p-6 overflow-x-auto custom-scrollbar border-t border-slate-100 lg:border-t-0 lg:absolute lg:bottom-0 lg:left-0 lg:right-0 lg:bg-gradient-to-t lg:from-white lg:to-transparent lg:pb-8 lg:border-r">
-              {product.images.map((img, idx) => (
-                <button type="button"
-                  key={idx}
-                  onClick={() => setActiveImgIdx(idx)}
-                  className={`w-20 h-20 shrink-0 bg-slate-50 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
-                    activeImgIdx === idx ? "border-accent shadow-md" : "border-transparent opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <img src={img} alt="thumbnail" className="w-full h-full object-contain p-2 mix-blend-multiply" />
-                </button>
-              ))}
+            {/* Mobile View Slider */}
+            <div className="lg:hidden">
+              <div 
+                className="w-full aspect-square flex items-center justify-center p-8 relative overflow-hidden border-b border-slate-100"
+              >
+                <img 
+                  src={product.images[activeImgIdx]} 
+                  alt={product.name} 
+                  className="w-full h-full object-contain mix-blend-multiply drop-shadow-xl"
+                />
+              </div>
+
+              {/* Thumbnails */}
+              <div className="flex gap-4 p-4 overflow-x-auto custom-scrollbar">
+                {product.images.map((img, idx) => (
+                  <button type="button"
+                    key={idx}
+                    onClick={() => setActiveImgIdx(idx)}
+                    className={`w-16 h-16 shrink-0 bg-slate-50 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                      activeImgIdx === idx ? "border-accent shadow-md" : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={img} alt="thumbnail" className="w-full h-full object-contain p-1.5 mix-blend-multiply" />
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* RIGHT: Product Details */}
-          <div className="w-full lg:w-1/2 p-6 md:p-12 xl:p-16 flex flex-col h-full bg-white">
+          <div className="w-full lg:w-1/2 p-6 md:p-8 xl:p-12 flex flex-col h-full bg-white">
             
             <div className="space-y-6 flex-grow">
               
               <div className="fade-up">
-                <Link href={`/shop?brand=${product.brand}`} className="text-sm font-bold uppercase tracking-wider text-accent mb-2 inline-block hover:underline">
+                <Link href={`/shop?brand=${product.brand}`} className="text-sm font-bold uppercase tracking-wider text-accent mb-1.5 inline-block hover:underline">
                   {product.brand}
                 </Link>
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-primary leading-tight mb-4">
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-primary leading-tight mb-3">
                   {product.name}
                 </h1>
                 
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
-                    <span className="text-sm font-bold">{product.rating}</span>
-                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                  <div className="flex items-center gap-1 bg-[#388e3c] text-white px-2.5 py-0.5 rounded text-xs font-bold">
+                    <span>{product.rating || "4.5"}</span>
+                    <Star className="w-3 h-3 fill-current text-white" />
                   </div>
-                  <span className="text-sm font-medium text-slate-500 underline cursor-pointer">{product.reviewsCount} Ratings & Reviews</span>
+                  <span className="text-xs font-bold text-slate-400 underline cursor-pointer">{product.reviewsCount || "142"} Ratings & Reviews</span>
+                  <span className="text-xs font-black text-emerald-600 tracking-wider">IN STOCK</span>
                 </div>
 
                 <div className="flex items-end gap-3 mb-2">
-                  <span className="text-4xl font-black text-primary">₹{product.price.toLocaleString('en-IN')}</span>
+                  <span className="text-3xl font-black text-primary">₹{product.price.toLocaleString('en-IN')}</span>
                   {product.mrp > product.price && (
                     <>
-                      <span className="text-xl line-through text-slate-400 mb-1">₹{product.mrp.toLocaleString('en-IN')}</span>
-                      <span className="text-lg font-bold text-green-600 mb-1">({discount}% OFF)</span>
+                      <span className="text-lg line-through text-slate-400 mb-0.5">₹{product.mrp.toLocaleString('en-IN')}</span>
+                      <span className="text-sm font-bold text-green-600 mb-0.5">({discount}% OFF)</span>
                     </>
                   )}
                 </div>
-                <p className="text-xs text-slate-500 font-medium">Inclusive of all taxes</p>
+                <p className="text-[10px] text-slate-400 font-bold tracking-wide uppercase">Inclusive of all taxes</p>
               </div>
 
-              <div className="fade-up py-6 border-y border-slate-100">
-                <p className="text-base text-slate-600 leading-relaxed font-medium">
-                  {product.description}
-                </p>
+              {/* Delivery Address & Pincode Checker (Flipkart Style) */}
+              <div className="fade-up bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-3 shadow-sm">
+                <div className="flex items-start gap-2.5 text-xs font-semibold text-slate-700">
+                  <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-slate-400 text-[11px] block uppercase tracking-wider font-bold">Delivery Location</span>
+                    <span className="text-[#111] font-bold text-xs">Basirhat Road, Gandharbbapur, West Bengal - 700028</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2 text-slate-800 text-xs font-bold bg-white px-3 py-2 rounded-lg border border-slate-150">
+                  <Truck className="w-4 h-4 text-[#388e3c] shrink-0" />
+                  <span>Delivery Speed: <span className="text-[#388e3c] uppercase font-black tracking-wide">Express 2-3 Days</span></span>
+                </div>
+                
+                <div className="pt-1">
+                  <ShiprocketPincodeWidget />
+                </div>
+              </div>
+
+              {/* Shop with Peace of Mind (Accordion Drawer) */}
+              <div className="fade-up border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <button 
+                  type="button" 
+                  onClick={() => setPeaceOpen(!peaceOpen)} 
+                  className="w-full bg-slate-50 px-4 py-3 flex items-center justify-between border-b border-slate-200 text-left cursor-pointer"
+                >
+                  <span className="text-xs font-display font-black uppercase tracking-wider text-slate-800" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                    Shop with Peace of Mind
+                  </span>
+                  {peaceOpen ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                </button>
+                
+                {peaceOpen && (
+                  <div className="p-4 space-y-3.5 bg-white text-xs text-slate-600 transition-all duration-300">
+                    <div className="flex items-center gap-3 p-2.5 bg-emerald-50/50 border border-emerald-100 rounded-lg">
+                      <Award className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <span className="font-bold text-emerald-800 leading-tight">1 Year Brand Warranty & Free Knocking Support Included</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-2.5 pt-1 text-center">
+                      <div className="flex flex-col items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <RefreshCw className="w-5 h-5 text-[#CC0000]" />
+                        <span className="text-[10px] font-bold text-slate-700 leading-tight">7-day return support</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <IndianRupee className="w-5 h-5 text-emerald-600" />
+                        <span className="text-[10px] font-bold text-slate-700 leading-tight">Cash on Delivery</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                        <span className="text-[10px] font-bold text-slate-700 leading-tight">RP Assured</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Product Highlights (Accordion Drawer) */}
+              <div className="fade-up border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <button 
+                  type="button" 
+                  onClick={() => setHighlightsOpen(!highlightsOpen)} 
+                  className="w-full bg-slate-50 px-4 py-3 flex items-center justify-between border-b border-slate-200 text-left cursor-pointer"
+                >
+                  <span className="text-xs font-display font-black uppercase tracking-wider text-slate-800" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                    Product Highlights
+                  </span>
+                  {highlightsOpen ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                </button>
+                
+                {highlightsOpen && (
+                  <div className="p-4 bg-white space-y-3 transition-all duration-300">
+                    <ul className="space-y-2.5 text-xs">
+                      {productHighlights.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-slate-700">
+                          <span className="text-[#CC0000] font-black text-sm leading-none">•</span>
+                          <div>
+                            <span className="font-bold text-slate-900 mr-1.5">{item.label}:</span>
+                            <span className="text-slate-600 font-medium">{item.text}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* Configurator */}
-              <div className="space-y-6 fade-up">
+              <div className="space-y-5 fade-up pt-2">
                 
                 {product.colors && product.colors.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-bold text-primary mb-3">Select Color</h4>
-                    <div className="flex flex-wrap gap-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Select Color</h4>
+                    <div className="flex flex-wrap gap-2.5">
                       {product.colors.map((c) => (
                         <button type="button"
                           key={c}
                           onClick={() => setSelectedColor(c)}
-                          className={`px-5 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider border-2 transition-colors cursor-pointer ${
+                          className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider border-2 transition-colors cursor-pointer ${
                             selectedColor === c 
                               ? "bg-primary text-white border-primary" 
                               : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
@@ -254,18 +388,18 @@ export default function ProductDetailPage() {
 
                 {product.sizes && product.sizes.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-bold text-primary mb-3 flex justify-between items-center">
-                      <span>Select Size</span>
-                      <button type="button" className="text-accent underline text-xs cursor-pointer">Size Guide</button>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 flex justify-between items-center">
+                      <span>Select Size / Weight</span>
+                      <button type="button" className="text-accent underline text-[11px] cursor-pointer font-bold">Size Guide</button>
                     </h4>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-2.5">
                       {product.sizes.map((s) => (
                         <button type="button"
                           key={s}
                           onClick={() => setSelectedSize(s)}
-                          className={`w-14 h-14 rounded-full flex items-center justify-center text-sm font-bold uppercase tracking-wider border-2 transition-colors cursor-pointer ${
+                          className={`w-12 h-12 rounded-full flex items-center justify-center text-xs font-bold uppercase tracking-wider border-2 transition-all cursor-pointer ${
                             selectedSize === s 
-                              ? "bg-primary text-white border-primary" 
+                              ? "bg-primary text-white border-primary shadow" 
                               : "bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:text-primary"
                           }`}
                         >
@@ -277,26 +411,26 @@ export default function ProductDetailPage() {
                 )}
 
                 <div>
-                  <h4 className="text-sm font-bold text-primary mb-3">Quantity</h4>
-                  <div className="flex items-center gap-6 border-2 border-slate-200 rounded-lg px-4 py-2 w-32 bg-white">
-                    <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-slate-500 hover:text-primary cursor-pointer"><Minus className="w-4 h-4" /></button>
-                    <span className="text-base font-bold flex-grow text-center">{quantity}</span>
-                    <button type="button" onClick={() => setQuantity(quantity + 1)} className="text-slate-500 hover:text-primary cursor-pointer"><Plus className="w-4 h-4" /></button>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Quantity</h4>
+                  <div className="flex items-center gap-4 border-2 border-slate-200 rounded-lg px-3 py-1.5 w-28 bg-white shadow-sm">
+                    <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="text-slate-500 hover:text-[#CC0000] cursor-pointer"><Minus className="w-3.5 h-3.5" /></button>
+                    <span className="text-sm font-bold flex-grow text-center">{quantity}</span>
+                    <button type="button" onClick={() => setQuantity(quantity + 1)} className="text-slate-500 hover:text-[#CC0000] cursor-pointer"><Plus className="w-3.5 h-3.5" /></button>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons: Add to Cart & Buy Now */}
-              <div className="pt-6 fade-up grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Action Buttons: Add to Cart & Buy Now (Flipkart Style Colors) */}
+              <div className="pt-6 fade-up grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100">
                 <button 
                   ref={addToCartRef}
                   type="button"
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
-                  className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-xl font-display font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-md disabled:opacity-50 cursor-pointer transition-colors"
+                  className="w-full py-4 bg-white border border-slate-300 hover:bg-slate-50 text-[#111] rounded-xl font-display font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer transition-colors"
                   style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <ShoppingCart className="w-4 h-4" />
                   <span>{product.stock === 0 ? "Out of Stock" : "Add to Cart"}</span>
                 </button>
 
@@ -304,34 +438,23 @@ export default function ProductDetailPage() {
                   type="button"
                   onClick={handleBuyNow}
                   disabled={product.stock === 0}
-                  className="w-full py-4 bg-[#CC0000] hover:bg-[#990000] text-white rounded-xl font-display font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#CC0000]/30 disabled:opacity-50 cursor-pointer transition-colors"
+                  className="w-full py-4 bg-[#ffc107] hover:bg-[#ffb300] text-[#111] rounded-xl font-display font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow shadow-amber-200/50 disabled:opacity-50 cursor-pointer transition-colors"
                   style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
                 >
-                  <Zap className="w-5 h-5 fill-current" />
-                  <span>{product.stock === 0 ? "Out of Stock" : "Buy Now"}</span>
+                  <Zap className="w-4 h-4 fill-current text-[#111]" />
+                  <span>{product.stock === 0 ? "Out of Stock" : `Buy Now at ₹${product.price.toLocaleString("en-IN")}`}</span>
                 </button>
               </div>
 
-              {/* Shiprocket Delivery Pincode Checker */}
-              <div className="pt-6 fade-up">
-                <ShiprocketPincodeWidget />
+              <div className="pt-4 fade-up">
+                <p className="text-[11px] text-slate-500 font-medium">
+                  {product.description}
+                </p>
               </div>
-
-              <div className="pt-6 fade-up space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                  <ShieldCheck className="w-6 h-6 text-accent shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-sm text-primary mb-1">100% Original Guarantee</h4>
-                    <p className="text-slate-500 text-xs font-medium font-mono">Handcrafted Grade-1 willow directly from Dumdum, Kolkata store.</p>
-                  </div>
-                </div>
-              </div>
-
-
             </div>
           </div>
         </div>
-
+        
         {/* EXPANDABLE SPECIFICATIONS ACCORDION SECTION */}
         <ProductAccordionSection product={product} />
 
