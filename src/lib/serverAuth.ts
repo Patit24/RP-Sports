@@ -3,46 +3,35 @@ import { getFirestore } from "firebase-admin/firestore";
 import crypto from "crypto";
 
 export function formatPrivateKey(rawKey: string): string {
-  let key = rawKey.trim();
-
-  // Remove wrapping quotes if any
-  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
-    key = key.slice(1, -1).trim();
-  }
-
-  // Handle all types of escaped newlines and line endings
-  key = key.replace(/\\\\n/g, "\n").replace(/\\n/g, "\n");
-  key = key.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-
   try {
-    crypto.createPrivateKey(key);
-    return key;
-  } catch {
-    // If direct parse fails, reconstruct a clean PEM structure
-    const header = "-----BEGIN PRIVATE KEY-----";
-    const footer = "-----END PRIVATE KEY-----";
-
-    let body = key
-      .replace(/-----BEGIN PRIVATE KEY-----/g, "")
-      .replace(/-----END PRIVATE KEY-----/g, "")
-      .replace(/-----BEGIN RSA PRIVATE KEY-----/g, "")
-      .replace(/-----END RSA PRIVATE KEY-----/g, "")
+    // 1. Strip all PEM boundaries, quotes, escaped characters, and whitespace to isolate raw base64
+    const base64Body = rawKey
+      .replace(/-----BEGIN[^-]+-----/g, "")
+      .replace(/-----END[^-]+-----/g, "")
       .replace(/\\n/g, "")
+      .replace(/\\r/g, "")
       .replace(/\\/g, "")
+      .replace(/['"]/g, "")
       .replace(/\s+/g, "");
 
-    const chunks: string[] = [];
-    for (let i = 0; i < body.length; i += 64) {
-      chunks.push(body.slice(i, i + 64));
-    }
+    // 2. Decode raw base64 into a binary PKCS#8 DER buffer
+    const derBuffer = Buffer.from(base64Body, "base64");
+    const keyObj = crypto.createPrivateKey({
+      key: derBuffer,
+      format: "der",
+      type: "pkcs8",
+    });
 
-    const reconstructedPEM = `${header}\n${chunks.join("\n")}\n${footer}\n`;
-    try {
-      crypto.createPrivateKey(reconstructedPEM);
-      return reconstructedPEM;
-    } catch {
-      return key;
+    // 3. Export a 100% valid, canonical PEM string for Firebase Admin cert()
+    return keyObj.export({ type: "pkcs8", format: "pem" }) as string;
+  } catch {
+    // Fallback: simple text cleanup
+    let clean = rawKey.trim();
+    if ((clean.startsWith('"') && clean.endsWith('"')) || (clean.startsWith("'") && clean.endsWith("'"))) {
+      clean = clean.slice(1, -1).trim();
     }
+    clean = clean.replace(/\\n/g, "\n").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    return clean;
   }
 }
 
