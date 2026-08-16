@@ -102,20 +102,20 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     specs: {
       "Willow Type": "Kashmir Willow",
-      Weight: "1180 - 1220 grams",
+      Weight: "950 - 980 grams",
       Handle: "Singapore Cane",
       "Edge Profile": "40mm Edges",
       "Sweet Spot": "Mid Sweet Spot"
     },
     specifications: {
       "Willow Type": "Kashmir Willow",
-      Weight: "1180 - 1220 grams",
+      Weight: "950 - 980 grams",
       Handle: "Singapore Cane"
     },
     colors: ["Natural Wood Finish"],
     sizes: ["Short Handle (SH)", "Size 6"],
     sportsType: "Cricket",
-    weight: "1200g",
+    weight: "980g",
     dimensions: "85cm x 11cm x 6cm",
     badge: "Bestseller",
     featured: true,
@@ -158,20 +158,20 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     specs: {
       "Willow Type": "Grade A+ Kashmir Willow",
-      Weight: "1170 - 1200 grams",
+      Weight: "950 - 980 grams",
       Handle: "Singapore Cane",
       "Edge Profile": "42mm Edges",
       "Sweet Spot": "Mid-to-High Sweet Spot"
     },
     specifications: {
       "Willow Type": "Grade A+ Kashmir Willow",
-      Weight: "1170 - 1200 grams",
+      Weight: "950 - 980 grams",
       Handle: "Singapore Cane"
     },
     colors: ["Natural Wood Finish"],
     sizes: ["Short Handle (SH)"],
     sportsType: "Cricket",
-    weight: "1180g",
+    weight: "980g",
     dimensions: "85cm x 11cm x 6cm",
     badge: "Limited Edition",
     featured: true,
@@ -207,20 +207,20 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     specs: {
       "Willow Type": "Selected Kashmir Willow",
-      Weight: "1190 - 1220 grams",
+      Weight: "950 - 980 grams",
       Handle: "Full Cane",
       "Edge Profile": "40mm Edges",
       "Sweet Spot": "Low Sweet Spot"
     },
     specifications: {
       "Willow Type": "Selected Kashmir Willow",
-      Weight: "1190 - 1220 grams",
+      Weight: "950 - 980 grams",
       Handle: "Full Cane"
     },
     colors: ["Natural Finish"],
     sizes: ["Short Handle (SH)", "Size 6"],
     sportsType: "Cricket",
-    weight: "1200g",
+    weight: "980g",
     dimensions: "85cm x 11cm x 6cm",
     badge: "Trending",
     featured: true,
@@ -256,20 +256,20 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     specs: {
       "Willow Type": "Premium Kashmir Willow",
-      Weight: "1200 - 1240 grams",
+      Weight: "950 - 980 grams",
       Handle: "Cane Handle",
       "Edge Profile": "40mm Edges",
       "Sweet Spot": "Low-to-Mid"
     },
     specifications: {
       "Willow Type": "Premium Kashmir Willow",
-      Weight: "1200 - 1240 grams",
+      Weight: "950 - 980 grams",
       Handle: "Cane Handle"
     },
     colors: ["Natural Finish"],
     sizes: ["Short Handle (SH)"],
     sportsType: "Cricket",
-    weight: "1220g",
+    weight: "980g",
     dimensions: "85cm x 11cm x 6cm",
     badge: "New Arrival",
     featured: true,
@@ -306,20 +306,20 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     specs: {
       "Willow Type": "Grade A Kashmir Willow",
-      Weight: "1170 - 1200 grams",
+      Weight: "950 - 980 grams",
       Handle: "Singapore Cane",
       "Edge Profile": "41mm Edges",
       "Sweet Spot": "Mid Sweet Spot"
     },
     specifications: {
       "Willow Type": "Grade A Kashmir Willow",
-      Weight: "1170 - 1200 grams",
+      Weight: "950 - 980 grams",
       Handle: "Singapore Cane"
     },
     colors: ["Natural Finish"],
     sizes: ["Short Handle (SH)"],
     sportsType: "Cricket",
-    weight: "1180g",
+    weight: "980g",
     dimensions: "85cm x 11cm x 6cm",
     badge: "Pro Edition",
     featured: true,
@@ -368,7 +368,7 @@ export const MOCK_PRODUCTS: Product[] = [
     colors: ["Natural English Finish"],
     sizes: ["Short Handle (SH)"],
     sportsType: "Cricket",
-    weight: "1170g",
+    weight: "980g",
     dimensions: "85cm x 11cm x 6cm",
     badge: "Bestseller",
     featured: true,
@@ -405,20 +405,20 @@ export const MOCK_PRODUCTS: Product[] = [
     ],
     specs: {
       "Willow Type": "Grade A Kashmir Willow",
-      Weight: "1180 - 1210 grams",
+      Weight: "950 - 980 grams",
       Handle: "Singapore Cane",
       "Edge Profile": "39mm Edges",
       "Sweet Spot": "Mid Sweet Spot"
     },
     specifications: {
       "Willow Type": "Grade A Kashmir Willow",
-      Weight: "1180 - 1210 grams",
+      Weight: "950 - 980 grams",
       Handle: "Singapore Cane"
     },
     colors: ["Natural Wood Finish"],
     sizes: ["Short Handle (SH)"],
     sportsType: "Cricket",
-    weight: "1190g",
+    weight: "980g",
     dimensions: "85cm x 11cm x 6cm",
     badge: "Limited Edition",
     featured: true,
