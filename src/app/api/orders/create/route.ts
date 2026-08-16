@@ -132,6 +132,29 @@ export async function POST(request: Request) {
         });
       }
 
+      // ── READ COUPON (if provided) ──
+      let couponRef: FirebaseFirestore.DocumentReference | null = null;
+      let couponDoc: FirebaseFirestore.DocumentSnapshot | null = null;
+      let couponData: any = null;
+
+      if (couponCode) {
+        const normalizedCode = couponCode.trim().toUpperCase();
+        couponRef = db.collection("coupons").doc(normalizedCode);
+        couponDoc = await transaction.get(couponRef);
+
+        if (couponDoc.exists) {
+          couponData = couponDoc.data();
+        } else {
+          // Hardcoded seed fallback
+          const HARDCODED_SEEDS: Record<string, any> = {
+            KOLKATA10: { code: "KOLKATA10", discountType: "percentage", discountValue: 10, appliesTo: "all", active: true },
+            RPBAT20: { code: "RPBAT20", discountType: "percentage", discountValue: 20, appliesTo: "specific", productIds: ["rp-001", "rp-002", "rp-7070", "rp-premium-bat", "rp-kashmir-350", "rp-english-pro"], minimumOrderValue: 1500, maximumDiscount: 2000, active: true },
+            WELCOME500: { code: "WELCOME500", discountType: "fixed", discountValue: 500, appliesTo: "all", minimumOrderValue: 2000, active: true },
+          };
+          couponData = HARDCODED_SEEDS[normalizedCode];
+        }
+      }
+
       // Calculate checkout totals server-side
       // BUSINESS RULE: Free delivery for orders of ₹999 or more
       // Subtotal is based on the merchandise subtotal after valid product-level discounts but before delivery charges.
@@ -141,15 +164,41 @@ export async function POST(request: Request) {
       gstTax = calculatedSubtotal - subtotalExcludingGst;
       shipping = calculatedSubtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DEFAULT_SHIPPING_CHARGE;
       
-      let discountPercent = 0;
-      if (couponCode) {
-        const matchedCoupon = VALID_COUPONS.find(c => c.code.toUpperCase() === couponCode.trim().toUpperCase());
-        if (matchedCoupon) {
-          discountPercent = matchedCoupon.discountPercent;
+      // Calculate server-authoritative coupon discount
+      if (couponData && couponData.active !== false) {
+        const now = new Date();
+        const isStarted = !couponData.startDate || now >= new Date(couponData.startDate);
+        const isNotExpired = !couponData.expiryDate || now <= new Date(couponData.expiryDate);
+        const withinUsageLimit = !couponData.usageLimit || (couponData.usageCount || 0) < couponData.usageLimit;
+
+        if (isStarted && isNotExpired && withinUsageLimit) {
+          let eligibleSubtotal = 0;
+          const specificIds: string[] = couponData.appliesTo === "specific" && Array.isArray(couponData.productIds) ? couponData.productIds : [];
+
+          for (const item of validatedCartItems) {
+            const itemPrice = item.product.price;
+            const itemTotal = itemPrice * item.quantity;
+            if (couponData.appliesTo === "all" || specificIds.includes(item.product.id)) {
+              eligibleSubtotal += itemTotal;
+            }
+          }
+
+          const minOrder = Number(couponData.minimumOrderValue) || 0;
+          if (calculatedSubtotal >= minOrder && eligibleSubtotal > 0) {
+            const val = Number(couponData.discountValue) || 0;
+            if (couponData.discountType === "fixed") {
+              couponDiscount = Math.min(val, eligibleSubtotal);
+            } else {
+              couponDiscount = Math.round((eligibleSubtotal * val) / 100);
+              if (couponData.maximumDiscount && typeof couponData.maximumDiscount === "number" && couponData.maximumDiscount > 0) {
+                couponDiscount = Math.min(couponDiscount, couponData.maximumDiscount);
+              }
+            }
+            couponDiscount = Math.max(0, Math.min(couponDiscount, eligibleSubtotal));
+          }
         }
       }
-      
-      couponDiscount = Math.round((calculatedSubtotal * discountPercent) / 100);
+
       grandTotal = calculatedSubtotal + shipping - couponDiscount;
 
       // Delivery partner routing details
@@ -186,6 +235,7 @@ export async function POST(request: Request) {
         status: "Confirmed",
         subtotal: subtotalExcludingGst,
         discount: couponDiscount,
+        couponCode: couponCode ? couponCode.trim().toUpperCase() : null,
         deliveryFee: shipping,
         tax: gstTax,
         freeDelivery: calculatedSubtotal >= FREE_DELIVERY_THRESHOLD,
@@ -200,6 +250,13 @@ export async function POST(request: Request) {
       // ── PHASE 2: EXECUTE ALL WRITES AFTER ALL READS ──
       for (const update of stockUpdates) {
         transaction.update(update.ref, { stock: update.newStock });
+      }
+
+      if (couponRef && couponDoc && couponDoc.exists) {
+        transaction.update(couponRef, {
+          usageCount: FieldValue.increment(1),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
       }
 
       // Write verified order directly from server

@@ -119,15 +119,53 @@ interface ToastMessage {
 }
 
 export interface Coupon {
+  id?: string;
   code: string;
-  discountPercent: number;
   description: string;
+  discountType?: "percentage" | "fixed";
+  discountValue?: number;
+  discountPercent: number;
+  appliesTo?: "all" | "specific";
+  productIds?: string[];
+  minimumOrderValue?: number;
+  maximumDiscount?: number;
+  startDate?: string;
+  expiryDate?: string;
+  usageLimit?: number;
+  usageCount?: number;
+  usagePerCustomer?: number;
+  active?: boolean;
 }
 
 export const VALID_COUPONS: Coupon[] = [
-  { code: "KOLKATA10", discountPercent: 10, description: "10% OFF on all sports gear" },
-  { code: "RPBAT20", discountPercent: 20, description: "20% OFF on Kashmir & English Willow Cricket Bats" },
-  { code: "WELCOME500", discountPercent: 15, description: "15% OFF for new store members" },
+  {
+    code: "KOLKATA10",
+    discountPercent: 10,
+    discountType: "percentage",
+    discountValue: 10,
+    appliesTo: "all",
+    description: "10% OFF on all sports gear",
+  },
+  {
+    code: "RPBAT20",
+    discountPercent: 20,
+    discountType: "percentage",
+    discountValue: 20,
+    appliesTo: "specific",
+    productIds: ["rp-001", "rp-002", "rp-7070", "rp-premium-bat", "rp-kashmir-350", "rp-english-pro"],
+    minimumOrderValue: 1500,
+    maximumDiscount: 2000,
+    description: "20% OFF on Kashmir & English Willow Cricket Bats",
+  },
+  {
+    code: "WELCOME500",
+    discountPercent: 15,
+    discountType: "fixed",
+    discountValue: 500,
+    appliesTo: "all",
+    minimumOrderValue: 2000,
+    description: "₹500 Flat OFF for new club members",
+  },
 ];
 
 interface SportsStoreState {
@@ -160,7 +198,7 @@ interface SportsStoreState {
   showToast: (message: string, type?: "success" | "info" | "error") => void;
   clearToast: () => void;
   
-  applyCoupon: (code: string) => { success: boolean; message: string };
+  applyCoupon: (code: string, couponData?: Partial<Coupon>) => { success: boolean; message: string };
   removeCoupon: () => void;
   
   placeOrder: (
@@ -204,7 +242,34 @@ export const useStore = create<SportsStoreState>()(
 
       setQuickView: (product) => set({ quickViewProduct: product }),
 
-      applyCoupon: (code) => {
+      applyCoupon: (code, couponData) => {
+        if (couponData) {
+          const discountPercent = couponData.discountType === "percentage"
+            ? (couponData.discountValue || 0)
+            : (couponData.discountPercent || 0);
+
+          const fullCoupon: Coupon = {
+            code: couponData.code || code.trim().toUpperCase(),
+            description: couponData.description || `${couponData.discountValue}${couponData.discountType === "fixed" ? "₹" : "%"} OFF`,
+            discountType: couponData.discountType || "percentage",
+            discountValue: couponData.discountValue || discountPercent,
+            discountPercent,
+            appliesTo: couponData.appliesTo || "all",
+            productIds: couponData.productIds,
+            minimumOrderValue: couponData.minimumOrderValue,
+            maximumDiscount: couponData.maximumDiscount,
+            startDate: couponData.startDate,
+            expiryDate: couponData.expiryDate,
+            usageLimit: couponData.usageLimit,
+            usageCount: couponData.usageCount,
+            usagePerCustomer: couponData.usagePerCustomer,
+            active: couponData.active !== false,
+          };
+          set({ activeCoupon: fullCoupon });
+          get().showToast(`Coupon '${fullCoupon.code}' applied!`, "success");
+          return { success: true, message: `Applied coupon ${fullCoupon.code}` };
+        }
+
         const found = VALID_COUPONS.find(
           (c) => c.code.toUpperCase() === code.trim().toUpperCase()
         );
@@ -213,7 +278,7 @@ export const useStore = create<SportsStoreState>()(
           get().showToast(`Coupon '${found.code}' applied! (${found.discountPercent}% OFF)`, "success");
           return { success: true, message: `Applied ${found.discountPercent}% discount.` };
         }
-        return { success: false, message: "Invalid coupon code. Try 'KOLKATA10' or 'RPBAT20'." };
+        return { success: false, message: "Invalid coupon code." };
       },
 
       removeCoupon: () => {

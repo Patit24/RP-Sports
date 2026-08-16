@@ -12,7 +12,7 @@ import { auth } from "@/lib/firebase";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, currentUser, activeCoupon, clearCart, removeCoupon, updateCartQuantity, removeFromCart } = useStore();
+  const { cart, currentUser, activeCoupon, applyCoupon, clearCart, removeCoupon, updateCartQuantity, removeFromCart } = useStore();
 
   // Step state
   const [isMounted, setIsMounted] = useState(false);
@@ -30,6 +30,11 @@ export default function CheckoutPage() {
   const [pincode, setPincode] = useState("700028");
   const [paymentMethod, setPaymentMethod] = useState<"UPI" | "Razorpay" | "Card" | "COD">("Razorpay");
   const [formError, setFormError] = useState("");
+
+  // Coupon state in checkout
+  const [checkoutCouponInput, setCheckoutCouponInput] = useState("");
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [checkoutCouponError, setCheckoutCouponError] = useState<string | null>(null);
 
   // 1. Sync & verify active Firebase Auth session on mount
   useEffect(() => {
@@ -97,10 +102,65 @@ export default function CheckoutPage() {
   const FREE_DELIVERY_THRESHOLD = 999;
   const shipping = totalInclusive >= FREE_DELIVERY_THRESHOLD || totalInclusive === 0 ? 0 : 250;
   
-  const discountPercent = activeCoupon ? activeCoupon.discountPercent : 0;
-  const couponDiscount = Math.round((totalInclusive * discountPercent) / 100);
+  // Calculate discount based on activeCoupon (store-wide or specific products)
+  let couponDiscount = 0;
+  if (activeCoupon) {
+    const isSpecific = activeCoupon.appliesTo === "specific" && Array.isArray(activeCoupon.productIds);
+    let eligibleSubtotal = 0;
+
+    for (const item of cart) {
+      if (!isSpecific || (activeCoupon.productIds && activeCoupon.productIds.includes(item.product.id))) {
+        eligibleSubtotal += item.product.price * item.quantity;
+      }
+    }
+
+    const val = activeCoupon.discountValue || activeCoupon.discountPercent || 0;
+    if (activeCoupon.discountType === "fixed") {
+      couponDiscount = Math.min(val, eligibleSubtotal);
+    } else {
+      couponDiscount = Math.round((eligibleSubtotal * val) / 100);
+      if (activeCoupon.maximumDiscount && activeCoupon.maximumDiscount > 0) {
+        couponDiscount = Math.min(couponDiscount, activeCoupon.maximumDiscount);
+      }
+    }
+    couponDiscount = Math.max(0, Math.min(couponDiscount, eligibleSubtotal));
+  }
+
   const totalDiscount = productDiscount + couponDiscount;
-  const grandTotal = totalInclusive + shipping - couponDiscount;
+  const grandTotal = Math.max(0, totalInclusive + shipping - couponDiscount);
+
+  const handleApplyCheckoutCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const codeToApply = checkoutCouponInput.trim().toUpperCase();
+    if (!codeToApply) return;
+
+    try {
+      setIsValidatingCoupon(true);
+      setCheckoutCouponError(null);
+
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: codeToApply,
+          items: cart,
+          userEmail: currentUser?.email,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        throw new Error(data.message || "Invalid coupon code.");
+      }
+
+      applyCoupon(codeToApply, data.coupon);
+      setCheckoutCouponInput("");
+    } catch (err: any) {
+      setCheckoutCouponError(err.message || "Failed to apply coupon.");
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
 
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -684,12 +744,61 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
-                  {activeCoupon && (
-                    <div className="flex justify-between text-[#388e3c] font-semibold bg-emerald-50/50 p-2 rounded border border-emerald-100/50">
-                      <span>Coupon ({activeCoupon.code})</span>
-                      <span>-₹{couponDiscount.toLocaleString("en-IN")}</span>
-                    </div>
-                  )}
+                  {/* Active Coupon or Apply Form */}
+                  <div className="pt-3 border-t border-slate-100">
+                    {activeCoupon ? (
+                      <div className="flex items-center justify-between text-[#388e3c] font-semibold bg-emerald-50 p-2.5 rounded-xl border border-emerald-200 text-xs">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Tag className="w-3.5 h-3.5 shrink-0" />
+                          <div className="truncate">
+                            <span className="font-mono font-black">{activeCoupon.code}</span>
+                            <span className="text-[10px] block text-emerald-700 font-normal truncate">{activeCoupon.description}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-black">-₹{couponDiscount.toLocaleString("en-IN")}</span>
+                          <button
+                            type="button"
+                            onClick={removeCoupon}
+                            className="text-[10px] text-red-600 font-bold hover:underline cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleApplyCheckoutCoupon} className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                          Have a coupon?
+                        </label>
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="Enter promo code"
+                            value={checkoutCouponInput}
+                            onChange={(e) => {
+                              setCheckoutCouponInput(e.target.value.toUpperCase());
+                              setCheckoutCouponError(null);
+                            }}
+                            disabled={isValidatingCoupon}
+                            className="flex-grow px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-900 uppercase placeholder:text-slate-400 focus:outline-none focus:border-[#CC0000]"
+                          />
+                          <button
+                            type="submit"
+                            disabled={isValidatingCoupon || !checkoutCouponInput.trim()}
+                            className="px-3 py-2 bg-[#111111] hover:bg-[#CC0000] disabled:bg-slate-200 text-white font-bold text-xs uppercase rounded-lg transition-colors cursor-pointer"
+                          >
+                            {isValidatingCoupon ? "..." : "Apply"}
+                          </button>
+                        </div>
+                        {checkoutCouponError && (
+                          <p className="text-[10px] font-bold text-red-600 bg-red-50 p-1.5 rounded border border-red-200">
+                            {checkoutCouponError}
+                          </p>
+                        )}
+                      </form>
+                    )}
+                  </div>
 
                   <div className="pt-3.5 border-t border-slate-100 flex justify-between font-display font-black text-base text-slate-900">
                     <span>Total Amount</span>

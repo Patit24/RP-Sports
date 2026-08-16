@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { 
   PlusCircle, Package, LayoutDashboard, Settings, ShoppingBag, 
-  Truck, Users, LogOut, ShieldCheck, Flame, Lock, ArrowRight, UserCheck, AlertCircle, KeyRound, Mail, Eye, EyeOff
+  Truck, Users, LogOut, ShieldCheck, Flame, Lock, ArrowRight, UserCheck, AlertCircle, KeyRound, Mail, Eye, EyeOff, Tag
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -197,6 +197,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/products", label: "Products Catalog", icon: Package },
     { href: "/admin/add-product", label: "Add Sports Product", icon: PlusCircle, highlight: true },
     { href: "/admin/orders", label: "Orders Management", icon: ShoppingBag },
+    { href: "/admin/coupons", label: "Coupons & Discounts", icon: Tag },
     { href: "/admin/shipping", label: "Shiprocket Logistics", icon: Truck },
     { href: "/admin/customers", label: "Customers", icon: Users },
     { href: "/admin/settings", label: "Store Settings", icon: Settings },

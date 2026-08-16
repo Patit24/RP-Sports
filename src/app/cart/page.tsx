@@ -8,6 +8,8 @@ import { Trash2, Plus, Minus, ShieldCheck, Ticket, ShoppingBag, ArrowRight, Truc
 export default function CartPage() {
   const { cart, updateCartQuantity, removeFromCart, activeCoupon, applyCoupon, removeCoupon } = useStore();
   const [couponCodeInput, setCouponCodeInput] = useState("");
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   const totalInclusive = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const subtotal = Math.round(totalInclusive / 1.18);
@@ -15,15 +17,61 @@ export default function CartPage() {
   const freeShippingThreshold = 999;
   const shipping = totalInclusive >= freeShippingThreshold || totalInclusive === 0 ? 0 : 250;
   
-  const discountPercent = activeCoupon ? activeCoupon.discountPercent : 0;
-  const couponDiscount = Math.round((totalInclusive * discountPercent) / 100);
-  const grandTotal = totalInclusive + shipping - couponDiscount;
+  // Calculate discount based on activeCoupon (store-wide or specific products)
+  let couponDiscount = 0;
+  if (activeCoupon) {
+    const isSpecific = activeCoupon.appliesTo === "specific" && Array.isArray(activeCoupon.productIds);
+    let eligibleSubtotal = 0;
 
-  const handleApplyCouponForm = (e: React.FormEvent) => {
+    for (const item of cart) {
+      if (!isSpecific || (activeCoupon.productIds && activeCoupon.productIds.includes(item.product.id))) {
+        eligibleSubtotal += item.product.price * item.quantity;
+      }
+    }
+
+    const val = activeCoupon.discountValue || activeCoupon.discountPercent || 0;
+    if (activeCoupon.discountType === "fixed") {
+      couponDiscount = Math.min(val, eligibleSubtotal);
+    } else {
+      couponDiscount = Math.round((eligibleSubtotal * val) / 100);
+      if (activeCoupon.maximumDiscount && activeCoupon.maximumDiscount > 0) {
+        couponDiscount = Math.min(couponDiscount, activeCoupon.maximumDiscount);
+      }
+    }
+    couponDiscount = Math.max(0, Math.min(couponDiscount, eligibleSubtotal));
+  }
+
+  const grandTotal = Math.max(0, totalInclusive + shipping - couponDiscount);
+
+  const handleApplyCouponForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (couponCodeInput.trim()) {
-      applyCoupon(couponCodeInput);
+    const codeToApply = couponCodeInput.trim().toUpperCase();
+    if (!codeToApply) return;
+
+    try {
+      setIsValidatingCoupon(true);
+      setCouponError(null);
+
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: codeToApply,
+          items: cart,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        throw new Error(data.message || "Invalid coupon code.");
+      }
+
+      applyCoupon(codeToApply, data.coupon);
       setCouponCodeInput("");
+    } catch (err: any) {
+      setCouponError(err.message || "Failed to apply coupon.");
+    } finally {
+      setIsValidatingCoupon(false);
     }
   };
 
@@ -272,16 +320,27 @@ export default function CartPage() {
                           type="text"
                           placeholder="e.g. RPBAT20"
                           value={couponCodeInput}
-                          onChange={(e) => setCouponCodeInput(e.target.value)}
-                          className="flex-grow bg-gray-50 border border-gray-200 text-xs px-3.5 py-2.5 rounded focus:outline-none focus:border-[#CC0000] text-[#111111] uppercase font-bold placeholder:text-gray-400"
+                          onChange={(e) => {
+                            setCouponCodeInput(e.target.value);
+                            setCouponError(null);
+                          }}
+                          disabled={isValidatingCoupon}
+                          className="flex-grow bg-gray-50 border border-gray-200 text-xs px-3.5 py-2.5 rounded focus:outline-none focus:border-[#CC0000] text-[#111111] uppercase font-bold placeholder:text-gray-400 font-mono"
                         />
                         <button
                           type="submit"
-                          className="px-5 py-2.5 bg-[#111111] hover:bg-[#CC0000] text-white text-xs font-display font-bold uppercase tracking-wider rounded transition-colors"
+                          disabled={isValidatingCoupon}
+                          className="px-5 py-2.5 bg-[#111111] hover:bg-[#CC0000] disabled:bg-gray-300 text-white text-xs font-display font-bold uppercase tracking-wider rounded transition-colors cursor-pointer"
                         >
-                          Apply
+                          {isValidatingCoupon ? "Checking..." : "Apply"}
                         </button>
                       </div>
+
+                      {couponError && (
+                        <p className="text-[11px] font-bold text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                          {couponError}
+                        </p>
+                      )}
 
                       {/* Sample Available Coupons */}
                       <div className="pt-2">

@@ -594,3 +594,101 @@ export async function deleteTestimonial(testId: string): Promise<void> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// COUPONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface DBCoupon {
+  id: string;
+  code: string;
+  description: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  appliesTo: "all" | "specific";
+  productIds?: string[];
+  minimumOrderValue?: number;
+  maximumDiscount?: number;
+  startDate?: string;
+  expiryDate?: string;
+  usageLimit?: number;
+  usageCount?: number;
+  usagePerCustomer?: number;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export function listenToCoupons(callback: (coupons: DBCoupon[]) => void): Unsubscribe {
+  try {
+    const q = collection(db, "coupons");
+    return onSnapshot(
+      q,
+      (snap) => {
+        const list: DBCoupon[] = [];
+        snap.forEach((d) => {
+          const data = d.data();
+          list.push({
+            ...data,
+            id: d.id,
+            code: data.code || d.id,
+            description: data.description || "",
+            discountType: data.discountType || "percentage",
+            discountValue: Number(data.discountValue) || 0,
+            appliesTo: data.appliesTo || "all",
+            productIds: Array.isArray(data.productIds) ? data.productIds : [],
+            minimumOrderValue: Number(data.minimumOrderValue) || 0,
+            maximumDiscount: data.maximumDiscount ? Number(data.maximumDiscount) : undefined,
+            startDate: data.startDate,
+            expiryDate: data.expiryDate,
+            usageLimit: data.usageLimit ? Number(data.usageLimit) : undefined,
+            usageCount: Number(data.usageCount) || 0,
+            usagePerCustomer: Number(data.usagePerCustomer) || 1,
+            active: data.active !== false,
+            createdAt: normalizeDate(data.createdAt),
+            updatedAt: normalizeDate(data.updatedAt),
+          });
+        });
+        callback(list);
+      },
+      (err) => {
+        console.warn("Firestore listenToCoupons warning:", err.message);
+      }
+    );
+  } catch (err: any) {
+    console.warn("Firestore listenToCoupons failed setup:", err.message);
+    return () => {};
+  }
+}
+
+export async function getCouponsFromDB(): Promise<DBCoupon[]> {
+  try {
+    const snap = await getDocs(collection(db, "coupons"));
+    return snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        ...data,
+        id: d.id,
+        code: data.code || d.id,
+        description: data.description || "",
+        discountType: data.discountType || "percentage",
+        discountValue: Number(data.discountValue) || 0,
+        appliesTo: data.appliesTo || "all",
+        productIds: Array.isArray(data.productIds) ? data.productIds : [],
+        minimumOrderValue: Number(data.minimumOrderValue) || 0,
+        maximumDiscount: data.maximumDiscount ? Number(data.maximumDiscount) : undefined,
+        startDate: data.startDate,
+        expiryDate: data.expiryDate,
+        usageLimit: data.usageLimit ? Number(data.usageLimit) : undefined,
+        usageCount: Number(data.usageCount) || 0,
+        usagePerCustomer: Number(data.usagePerCustomer) || 1,
+        active: data.active !== false,
+        createdAt: normalizeDate(data.createdAt),
+        updatedAt: normalizeDate(data.updatedAt),
+      };
+    });
+  } catch (err: any) {
+    console.warn("Firestore getCouponsFromDB warning:", err.message);
+    return [];
+  }
+}
+
