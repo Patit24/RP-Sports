@@ -14,19 +14,32 @@ function initAdminSDK() {
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const rawKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  if (!projectId || !clientEmail || !rawKey) {
-    throw new Error("Missing Firebase Admin credentials in environment variables.");
+  if (!projectId || !clientEmail || !rawKey || rawKey.includes("PLACEHOLDER")) {
+    console.warn("⚠️ Firebase Admin credentials are not fully configured (using placeholders). Falling back to mock database mode.");
+    isInitialized = true;
+    return;
   }
 
-  const privateKey = rawKey.includes("\\n") ? rawKey.replace(/\\n/g, "\n") : rawKey;
+  let cleanKey = rawKey.trim();
+  if (cleanKey.startsWith('"') && cleanKey.endsWith('"')) {
+    cleanKey = cleanKey.substring(1, cleanKey.length - 1);
+  }
+  if (cleanKey.startsWith("'") && cleanKey.endsWith("'")) {
+    cleanKey = cleanKey.substring(1, cleanKey.length - 1);
+  }
+  const privateKey = cleanKey.includes("\\n") ? cleanKey.replace(/\\n/g, "\n") : cleanKey;
 
-  initializeApp({
-    credential: cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
-  });
+  try {
+    initializeApp({
+      credential: cert({
+        projectId,
+        clientEmail,
+        privateKey,
+      }),
+    });
+  } catch (err: any) {
+    console.error("❌ Failed to initialize Firebase Admin SDK with private key:", err.message);
+  }
   isInitialized = true;
 }
 
@@ -176,7 +189,8 @@ export async function verifyAdmin(request: Request): Promise<{ uid: string; emai
 
     // Skip Firestore role checks if Firebase Admin credentials are not set up
     const projectId = process.env.FIREBASE_PROJECT_ID;
-    if (!projectId) {
+    const rawKey = process.env.FIREBASE_PRIVATE_KEY;
+    if (!projectId || !rawKey || rawKey.includes("PLACEHOLDER")) {
       return { uid: decoded.uid, email: decoded.email };
     }
 

@@ -597,6 +597,12 @@ export default function CheckoutPage() {
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Step 3 of 3</span>
                   </div>
 
+                  {formError && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 p-3.5 rounded text-xs text-red-600 font-bold animate-shake">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" /> {formError}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[
                       { id: "Razorpay", label: "Razorpay (Credit/Debit/Cards)", logo: "💳", desc: "Visa, Mastercard, RuPay Cards" },

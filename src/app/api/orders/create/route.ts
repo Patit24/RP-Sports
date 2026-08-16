@@ -52,6 +52,37 @@ export async function POST(request: Request) {
       userEmail = shippingAddress.phone;
     }
 
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const rawKey = process.env.FIREBASE_PRIVATE_KEY;
+
+    if (!projectId || !clientEmail || !rawKey || rawKey.includes("PLACEHOLDER")) {
+      const missing = [
+        !projectId && "FIREBASE_PROJECT_ID",
+        !clientEmail && "FIREBASE_CLIENT_EMAIL",
+        (!rawKey || rawKey.includes("PLACEHOLDER")) && "FIREBASE_PRIVATE_KEY"
+      ].filter(Boolean);
+      return NextResponse.json({
+        success: false,
+        message: `Firebase Admin credentials are not configured on Vercel. Missing variables: ${missing.join(", ")}. Please add them in Vercel project environment settings.`
+      }, { status: 500 });
+    }
+
+    let cleanKey = rawKey.trim();
+    if (cleanKey.startsWith('"') && cleanKey.endsWith('"')) {
+      cleanKey = cleanKey.substring(1, cleanKey.length - 1);
+    }
+    if (cleanKey.startsWith("'") && cleanKey.endsWith("'")) {
+      cleanKey = cleanKey.substring(1, cleanKey.length - 1);
+    }
+
+    if (!cleanKey.startsWith("-----BEGIN PRIVATE KEY-----")) {
+      return NextResponse.json({
+        success: false,
+        message: "FIREBASE_PRIVATE_KEY format is invalid. It must start with '-----BEGIN PRIVATE KEY-----'. Please re-copy the key from Firebase Service Account JSON (including header and footer) to Vercel."
+      }, { status: 500 });
+    }
+
     const db = getAdminDb();
     const orderId = "ORD-" + randomUUID().replace(/-/g, "").substring(0, 10).toUpperCase();
 
