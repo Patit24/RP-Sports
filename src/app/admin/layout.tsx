@@ -209,6 +209,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/add-product", label: "Add Sports Product", icon: PlusCircle, highlight: true },
     { href: "/admin/orders", label: "Orders Management", icon: ShoppingBag },
     { href: "/admin/custom-jerseys", label: "Custom Jerseys", icon: Shirt },
+    { href: "/admin/bulk-enquiries", label: "Bulk Enquiries", icon: Users },
     { href: "/admin/coupons", label: "Coupons & Discounts", icon: Tag },
     { href: "/admin/shipping", label: "Shiprocket Logistics", icon: Truck },
     { href: "/admin/customers", label: "Customers", icon: Users },
