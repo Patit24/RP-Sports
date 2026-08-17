@@ -86,7 +86,13 @@ export function getAdminDb() {
   if (getApps().length === 0) {
     throw new Error("Firebase Admin app is not initialized. Please verify your environment credentials.");
   }
-  return getFirestore();
+  const db = getFirestore();
+  try {
+    db.settings({ ignoreUndefinedProperties: true });
+  } catch {
+    // Settings already applied
+  }
+  return db;
 }
 
 interface DecodedToken {

@@ -173,11 +173,17 @@ export async function POST(request: Request) {
           stock: newStock,
         };
 
-        validatedCartItems.push({
+        const cartItemObj: any = {
           ...item,
           product: validatedProduct,
-          customization: validatedCustomization || undefined,
-        });
+        };
+        if (validatedCustomization) {
+          cartItemObj.customization = validatedCustomization;
+        } else {
+          delete cartItemObj.customization;
+        }
+
+        validatedCartItems.push(cartItemObj);
       }
 
       // ── READ COUPON (if provided) ──
@@ -274,7 +280,7 @@ export async function POST(request: Request) {
         dispatchMessage: `Delivery partner '${carrierName}' notified for order pickup. AWB: ${awbNumber}`,
       };
 
-      const orderData = {
+      const orderData: any = {
         id: orderId,
         items: validatedCartItems,
         shippingAddress,
@@ -292,9 +298,28 @@ export async function POST(request: Request) {
         createdAt: FieldValue.serverTimestamp(),
         trackingNumber: awbNumber,
         deliveryPartnerInfo,
-        userEmail,
+        userEmail: userEmail || null,
         hasCustomJersey: validatedCartItems.some(i => Boolean(i.customization || i.customJersey)),
       };
+
+      // Helper to recursively remove all undefined properties
+      function cleanUndefined(obj: any): any {
+        if (obj === undefined) return null;
+        if (obj === null || typeof obj !== "object") return obj;
+        if (obj instanceof Date || obj instanceof FieldValue) return obj;
+        if (Array.isArray(obj)) {
+          return obj.map(cleanUndefined);
+        }
+        const res: Record<string, any> = {};
+        for (const [k, v] of Object.entries(obj)) {
+          if (v !== undefined) {
+            res[k] = cleanUndefined(v);
+          }
+        }
+        return res;
+      }
+
+      const sanitizedOrderData = cleanUndefined(orderData);
 
       // ── PHASE 2: EXECUTE ALL WRITES AFTER ALL READS ──
       for (const update of stockUpdates) {
@@ -310,7 +335,7 @@ export async function POST(request: Request) {
 
       // Write verified order directly from server
       const newOrderRef = db.collection("orders").doc();
-      transaction.set(newOrderRef, orderData);
+      transaction.set(newOrderRef, sanitizedOrderData);
     });
 
     // Call Shiprocket sync on payment success or COD securely on the server
