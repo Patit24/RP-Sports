@@ -196,6 +196,25 @@ export default function CartPage() {
                         </span>
                       </div>
 
+                      {item.customization && item.customization.type === "jersey_name_number" && (
+                        <div className="mt-2.5 text-xs bg-slate-900 text-white border border-slate-700 p-2.5 rounded-xl flex items-center justify-between gap-3 shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">👕</span>
+                            <div>
+                              <div className="font-mono font-black text-amber-400 text-xs uppercase tracking-wider">
+                                PLAYER: {item.customization.name}
+                              </div>
+                              <div className="text-[10px] text-slate-300 font-bold">
+                                JERSEY #{item.customization.number} {item.selectedSize ? `• SIZE: ${item.selectedSize}` : ""}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[9px] font-black uppercase tracking-wider bg-[#CC0000] text-white px-2 py-0.5 rounded">
+                            CUSTOMIZED
+                          </span>
+                        </div>
+                      )}
+
                       {item.customJersey && (
                         <div className="mt-2 text-[11px] text-[#CC0000] bg-red-50 border border-red-100 p-2 rounded font-mono font-bold">
                           Team: {item.customJersey.teamName} | Player: {item.customJersey.playerName} (#{item.customJersey.playerNumber})

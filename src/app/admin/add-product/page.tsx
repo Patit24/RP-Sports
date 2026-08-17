@@ -54,6 +54,7 @@ export default function AddProductPage() {
     badge: "New Arrival",
     featured: false,
     customizable: false,
+    enableJerseyCustomization: false,
     colors: "",
     sizes: "",
   });
@@ -554,6 +555,7 @@ export default function AddProductPage() {
       badge: formData.badge ? formData.badge : undefined,
       featured: Boolean(formData.featured),
       customizable: Boolean(formData.customizable),
+      enableJerseyCustomization: Boolean(formData.enableJerseyCustomization),
       willowType: formData.willowType,
       willowGrade: formData.willowGrade,
       handleSize: formData.handleSize,
@@ -974,6 +976,30 @@ export default function AddProductPage() {
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
               />
             </div>
+          </div>
+
+          <div className="pt-2 border-t border-gray-100 flex flex-wrap gap-6 items-center">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-800">
+              <input
+                type="checkbox"
+                name="customizable"
+                checked={formData.customizable}
+                onChange={(e) => setFormData({ ...formData, customizable: e.target.checked })}
+                className="w-4 h-4 rounded text-[#CC0000] focus:ring-[#CC0000]"
+              />
+              <span>Allow General Customization / Knocking</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[#CC0000] bg-red-50 px-3.5 py-2 rounded-xl border border-red-200">
+              <input
+                type="checkbox"
+                name="enableJerseyCustomization"
+                checked={formData.enableJerseyCustomization}
+                onChange={(e) => setFormData({ ...formData, enableJerseyCustomization: e.target.checked })}
+                className="w-4 h-4 rounded text-[#CC0000] focus:ring-[#CC0000]"
+              />
+              <span>Enable Jersey Name & Number Customization</span>
+            </label>
           </div>
         </div>
 

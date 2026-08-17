@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { 
   PlusCircle, Package, LayoutDashboard, Settings, ShoppingBag, 
-  Truck, Users, LogOut, ShieldCheck, Flame, Lock, ArrowRight, UserCheck, AlertCircle, KeyRound, Mail, Eye, EyeOff, Tag
+  Truck, Users, LogOut, ShieldCheck, Flame, Lock, ArrowRight, UserCheck, AlertCircle, KeyRound, Mail, Eye, EyeOff, Tag, Shirt
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -98,60 +98,57 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="w-16 h-16 bg-[#CC0000]/10 border border-[#CC0000]/30 text-[#CC0000] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
               <ShieldCheck className="w-8 h-8" />
             </div>
-            <span className="text-[#CC0000] text-xs font-display font-bold uppercase tracking-widest block mb-1">
-              Protected Area
-            </span>
-            <h1 className="text-3xl font-display font-black uppercase text-white tracking-tight" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              RP Admin Authentication
+            <h1 className="text-2xl font-display font-black uppercase text-white tracking-wide" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+              RP Admin Center
             </h1>
-            <p className="text-gray-400 text-xs mt-1 font-medium">
-              Administrator privileges required to access catalog, orders, and Shiprocket dispatches.
+            <p className="text-xs text-gray-400 mt-1">
+              Restricted management zone for RP Sports Dumdum Store.
             </p>
           </div>
 
           {loginError && (
-            <div className="flex items-center gap-3 bg-red-950/50 border border-red-500/30 px-4 py-3 mb-6 rounded-xl text-left">
-              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-              <p className="text-xs text-red-400 font-bold">{loginError}</p>
+            <div className="mb-6 p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400 text-xs">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{loginError}</span>
             </div>
           )}
 
           <form onSubmit={handleInlineLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-gray-300 mb-2">
+              <label className="block text-[11px] font-display font-bold uppercase tracking-wider text-gray-300 mb-1">
                 Admin Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
                   type="email"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
+                  className="w-full h-11 pl-10 pr-4 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-white placeholder-gray-500 focus:outline-none focus:border-[#CC0000] focus:ring-1 focus:ring-[#CC0000]"
                   placeholder="admin@rpsports.com"
-                  className="w-full h-12 pl-10 pr-4 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white placeholder:text-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors"
                   required
                 />
+                <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-gray-300 mb-2">
+              <label className="block text-[11px] font-display font-bold uppercase tracking-wider text-gray-300 mb-1">
                 Password
               </label>
               <div className="relative">
-                <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full h-11 pl-10 pr-10 bg-white/5 border border-white/10 rounded-xl text-sm font-medium text-white placeholder-gray-500 focus:outline-none focus:border-[#CC0000] focus:ring-1 focus:ring-[#CC0000]"
                   placeholder="••••••••"
-                  className="w-full h-12 pl-10 pr-12 bg-white/5 border border-white/10 rounded-xl text-sm font-bold text-white placeholder:text-gray-600 focus:outline-none focus:border-[#CC0000] transition-colors"
                   required
                 />
+                <KeyRound className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                  className="absolute right-3.5 top-3.5 text-gray-400 hover:text-white"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -161,21 +158,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#CC0000] hover:bg-[#990000] text-white font-display font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-2 h-12 rounded-xl transition-all shadow-lg shadow-[#CC0000]/30 cursor-pointer"
+              className="w-full h-12 bg-[#CC0000] hover:bg-[#990000] text-white font-display font-bold uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#CC0000]/30 disabled:opacity-50 cursor-pointer"
               style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
             >
-              {loading ? "Authenticating Admin..." : "Unlock Admin Dashboard"}
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" /> Unlock Admin Center
+                </>
+              )}
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <span className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 text-center mb-3">
-              One-Click Admin Login:
+          {/* Quick Access Dev Presets for Instant Verification */}
+          <div className="mt-8 pt-6 border-t border-white/10 space-y-2">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block text-center mb-3">
+              Fast Authorization Access (One-Click)
             </span>
             <button
               type="button"
-              onClick={() => handleQuickAdminLogin("admin@rpsports.com", "Master Chief (Admin)", "super_admin")}
-              className="w-full py-3 px-4 bg-[#CC0000]/20 hover:bg-[#CC0000]/30 border border-[#CC0000]/40 rounded-xl text-xs font-bold text-white uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              onClick={() => handleQuickAdminLogin("admin@rpsports.com", "RP Store Manager", "admin")}
+              className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-200 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <UserCheck className="w-4 h-4 text-emerald-400" /> Access as Store Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickAdminLogin("super_admin@rpsports.com", "Master Chief (Admin)", "super_admin")}
+              className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-200 transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <UserCheck className="w-4 h-4 text-[#CC0000]" /> Access as Super Admin (Master Chief)
             </button>
@@ -197,6 +208,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/products", label: "Products Catalog", icon: Package },
     { href: "/admin/add-product", label: "Add Sports Product", icon: PlusCircle, highlight: true },
     { href: "/admin/orders", label: "Orders Management", icon: ShoppingBag },
+    { href: "/admin/custom-jerseys", label: "Custom Jerseys", icon: Shirt },
     { href: "/admin/coupons", label: "Coupons & Discounts", icon: Tag },
     { href: "/admin/shipping", label: "Shiprocket Logistics", icon: Truck },
     { href: "/admin/customers", label: "Customers", icon: Users },

@@ -266,6 +266,12 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
                     <p className="text-xs text-gray-500">
                       Qty: {item.quantity} {item.selectedSize ? `• Size: ${item.selectedSize}` : ""}
                     </p>
+                    {item.customization && item.customization.type === "jersey_name_number" && (
+                      <div className="mt-1 text-[11px] bg-slate-900 text-white px-2.5 py-1 rounded-lg inline-flex items-center gap-2">
+                        <span className="text-amber-400 font-mono font-bold">👕 {item.customization.name}</span>
+                        <span className="text-slate-300">#{item.customization.number}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="text-right">
                     <span className="font-display font-bold text-[#CC0000] text-base" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>

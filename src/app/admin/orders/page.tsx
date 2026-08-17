@@ -349,6 +349,20 @@ export default function AdminOrdersPage() {
                         <p className="text-[11px] text-gray-500 font-mono">
                           {item.selectedSize ? `Size: ${item.selectedSize} | ` : ''}Qty: {item.quantity} x ₹{item.product.price.toLocaleString("en-IN")}
                         </p>
+                        {item.customization && item.customization.type === "jersey_name_number" && (
+                          <div className="mt-2 bg-slate-900 text-white p-2.5 rounded-lg border border-slate-700 flex items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">👕</span>
+                              <div>
+                                <span className="text-[9px] uppercase font-bold text-slate-400 block">Custom Jersey Print:</span>
+                                <span className="font-mono font-black text-amber-400 uppercase tracking-widest">{item.customization.name}</span>
+                              </div>
+                            </div>
+                            <span className="font-black bg-amber-400 text-slate-900 px-2 py-0.5 rounded text-xs font-mono">
+                              #{item.customization.number}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <span className="font-black text-sm text-[#CC0000]">
                         ₹{(item.product.price * item.quantity).toLocaleString("en-IN")}

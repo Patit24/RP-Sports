@@ -24,6 +24,12 @@ export interface CustomFieldOption {
   price: number;
 }
 
+export interface JerseyCustomization {
+  type: "jersey_name_number";
+  name: string;
+  number: number;
+}
+
 export interface CustomJerseyDesign {
   jerseyNumber: string;
   playerName: string;
@@ -42,6 +48,7 @@ export interface CartItem {
   quantity: number;
   selectedColor?: string;
   selectedSize?: string;
+  customization?: JerseyCustomization;
   customJersey?: CustomJerseyDesign;
   customTrophy?: {
     material: string;
@@ -331,6 +338,7 @@ export const useStore = create<SportsStoreState>()(
           newItem.product.id,
           newItem.selectedColor || "",
           newItem.selectedSize || "",
+          newItem.customization ? `custom-${newItem.customization.name}-${newItem.customization.number}` : "",
           newItem.customJersey ? JSON.stringify(newItem.customJersey) : "",
           newItem.customTrophy ? JSON.stringify(newItem.customTrophy) : "",
         ].join("-");

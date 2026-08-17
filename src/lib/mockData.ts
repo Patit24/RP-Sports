@@ -32,6 +32,8 @@ export interface Product {
   isNew?: boolean;
   isBestSeller?: boolean;
   customizable?: boolean;
+  enableJerseyCustomization?: boolean;
+  customizationFee?: number;
   willowType?: string;
   willowGrade?: string;
   handleSize?: string;
@@ -468,6 +470,7 @@ export const MOCK_PRODUCTS: Product[] = [
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Multi-Sport",
     customizable: true,
+    enableJerseyCustomization: true,
     countryOfOrigin: "India"
   },
   {

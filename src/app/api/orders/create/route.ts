@@ -118,6 +118,47 @@ export async function POST(request: Request) {
 
         calculatedSubtotal += actualPrice * item.quantity;
 
+        // Strict Customization Validation
+        let validatedCustomization: any = null;
+        if (item.customization) {
+          const isCustomizable = Boolean(
+            productData.enableJerseyCustomization ||
+            productData.customizable ||
+            productData.category === "jerseys" ||
+            productData.subcategory === "custom-jersey" ||
+            productData.category === "custom-kits"
+          );
+
+          if (!isCustomizable) {
+            throw new Error(`Product '${productData.name}' does not support jersey name/number customization.`);
+          }
+
+          const { name, number } = item.customization;
+          if (!name || typeof name !== "string" || name.trim() === "") {
+            throw new Error("Custom jersey player name is required.");
+          }
+
+          const trimmedName = name.trim().toUpperCase();
+          if (trimmedName.length > 15) {
+            throw new Error("Custom jersey player name cannot exceed 15 characters.");
+          }
+
+          if (!/^[A-Z0-9\s.]+$/.test(trimmedName)) {
+            throw new Error("Custom player name contains invalid characters. Use letters, numbers, and spaces only.");
+          }
+
+          const parsedNum = Number(number);
+          if (isNaN(parsedNum) || !Number.isInteger(parsedNum) || parsedNum < 1 || parsedNum > 99) {
+            throw new Error("Jersey number must be a valid integer between 1 and 99.");
+          }
+
+          validatedCustomization = {
+            type: "jersey_name_number",
+            name: trimmedName,
+            number: parsedNum,
+          };
+        }
+
         // Build item with verified price from DB
         const validatedProduct = {
           ...item.product,
@@ -129,6 +170,7 @@ export async function POST(request: Request) {
         validatedCartItems.push({
           ...item,
           product: validatedProduct,
+          customization: validatedCustomization || undefined,
         });
       }
 
@@ -245,6 +287,7 @@ export async function POST(request: Request) {
         trackingNumber: awbNumber,
         deliveryPartnerInfo,
         userEmail,
+        hasCustomJersey: validatedCartItems.some(i => Boolean(i.customization || i.customJersey)),
       };
 
       // ── PHASE 2: EXECUTE ALL WRITES AFTER ALL READS ──

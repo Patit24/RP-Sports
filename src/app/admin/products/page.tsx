@@ -48,6 +48,7 @@ export default function ManageProductsPage() {
     badge: "None",
     featured: false,
     customizable: false,
+    enableJerseyCustomization: false,
     image: "",
     shortDescription: "",
     description: "",
@@ -187,6 +188,7 @@ export default function ManageProductsPage() {
       badge: product.badge || "None",
       featured: Boolean(product.featured),
       customizable: Boolean(product.customizable),
+      enableJerseyCustomization: Boolean(product.enableJerseyCustomization || (product.category === "jerseys" && product.customizable)),
       image: product.image || (product.images?.[0] ?? ""),
       shortDescription: product.shortDescription || "",
       description: product.description || "",
@@ -373,6 +375,7 @@ export default function ManageProductsPage() {
         badge: formData.badge === "None" ? "" : formData.badge,
         featured: formData.featured,
         customizable: formData.customizable,
+        enableJerseyCustomization: formData.enableJerseyCustomization,
         colors: colorsArr,
         sizes: sizesArr,
         specifications: specsMap,
@@ -800,6 +803,16 @@ export default function ManageProductsPage() {
                             className="w-4 h-4 rounded text-[#CC0000] focus:ring-[#CC0000]"
                           />
                           <span>Allow Knocking / Customization</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[#CC0000] bg-red-50 px-3 py-1.5 rounded-lg border border-red-200">
+                          <input
+                            type="checkbox"
+                            checked={formData.enableJerseyCustomization}
+                            onChange={(e) => setFormData({ ...formData, enableJerseyCustomization: e.target.checked })}
+                            className="w-4 h-4 rounded text-[#CC0000] focus:ring-[#CC0000]"
+                          />
+                          <span>Enable Jersey Name & Number Customization</span>
                         </label>
                       </div>
                     </div>

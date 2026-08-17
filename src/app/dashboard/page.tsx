@@ -284,6 +284,12 @@ export default function CustomerDashboardPage() {
                                   <p className="text-[10px] text-neutral-400 mt-1 font-mono">
                                     Qty: {item.quantity} {item.selectedSize ? `| Size: ${item.selectedSize}` : ""}
                                   </p>
+                                  {item.customization && item.customization.type === "jersey_name_number" && (
+                                    <div className="mt-1.5 text-[10px] bg-black/60 border border-neutral-700/80 text-neutral-200 px-2.5 py-1 rounded-lg inline-flex items-center gap-2">
+                                      <span className="text-amber-400 font-mono font-black">👕 {item.customization.name}</span>
+                                      <span className="text-neutral-300 font-bold">#{item.customization.number}</span>
+                                    </div>
+                                  )}
                                 </div>
                                 <span className="font-bold text-xs md:text-sm text-white">
                                   ₹{(item.product.price * item.quantity).toLocaleString()}

@@ -550,6 +550,17 @@ export default function CheckoutPage() {
                               <p className="text-[10px] text-slate-400 font-bold uppercase">Size/Weight: <span className="text-slate-700">{item.selectedSize}</span></p>
                             )}
 
+                            {item.customization && item.customization.type === "jersey_name_number" && (
+                              <div className="bg-slate-900 text-white border border-slate-700 px-2.5 py-1.5 rounded-lg text-[10px] space-y-0.5 my-1">
+                                <div className="font-mono font-black text-amber-400 uppercase tracking-wider">
+                                  👕 PLAYER: {item.customization.name}
+                                </div>
+                                <div className="text-slate-300 font-bold">
+                                  JERSEY #{item.customization.number} {item.selectedSize ? `• SIZE: ${item.selectedSize}` : ""}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold">
                               <span>Brand: {prod.brand || "RP Sports"}</span>
                               <span>•</span>
