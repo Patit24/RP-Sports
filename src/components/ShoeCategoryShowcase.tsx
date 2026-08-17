@@ -100,7 +100,7 @@ export default function ShoeCategoryShowcase() {
             <p className="text-xs text-gray-400 mt-1">Admin can add new products in this category from the Admin Panel!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
             {displayedProducts.map((product) => {
               const discount = product.mrp > product.price 
                 ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
@@ -114,11 +114,11 @@ export default function ShoeCategoryShowcase() {
                   className="group bg-white rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden"
                 >
                   {/* Top Image Frame */}
-                  <div className="relative aspect-square bg-[#F6F6F6] rounded-xl overflow-hidden p-6 flex items-center justify-center">
+                  <div className="relative aspect-square bg-[#F6F6F6] rounded-xl overflow-hidden p-3 md:p-6 flex items-center justify-center">
                     
                     {/* Discount Badge */}
                     {discount > 0 && (
-                      <span className="absolute top-3 left-3 bg-[#CC0000] text-white text-[10px] font-display font-bold uppercase px-2.5 py-1 rounded shadow-sm z-10">
+                      <span className="absolute top-2 left-2 md:top-3 md:left-3 bg-[#CC0000] text-white text-[9px] md:text-[10px] font-display font-bold uppercase px-1.5 md:px-2.5 py-0.5 md:py-1 rounded shadow-sm z-10">
                         -{discount}%
                       </span>
                     )}
@@ -126,10 +126,10 @@ export default function ShoeCategoryShowcase() {
                     {/* Wishlist Button */}
                     <button
                       onClick={() => toggleWishlist(product.id)}
-                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-[#CC0000] hover:border-[#CC0000] transition-colors z-10 cursor-pointer shadow-sm"
+                      className="absolute top-2 right-2 md:top-3 md:right-3 w-7 h-7 md:w-8 md:h-8 rounded-full bg-white/90 md:bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-[#CC0000] hover:border-[#CC0000] transition-colors z-10 cursor-pointer shadow-sm"
                       aria-label="Wishlist"
                     >
-                      <Heart className={`w-4 h-4 ${isWishlisted ? "fill-[#CC0000] text-[#CC0000]" : ""}`} />
+                      <Heart className={`w-3.5 h-3.5 md:w-4 md:h-4 ${isWishlisted ? "fill-[#CC0000] text-[#CC0000]" : ""}`} />
                     </button>
 
                     {/* Shoe Image */}
@@ -139,8 +139,8 @@ export default function ShoeCategoryShowcase() {
                       className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 mix-blend-multiply"
                     />
 
-                    {/* Hover Quick View Overlay */}
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    {/* Hover Quick View Overlay (Desktop) */}
+                    <div className="hidden md:flex absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity items-center justify-center gap-3">
                       <button
                         onClick={() => setQuickView(product)}
                         className="w-10 h-10 rounded-full bg-white text-[#111111] hover:bg-[#CC0000] hover:text-white flex items-center justify-center transition-colors shadow-lg cursor-pointer"
@@ -158,12 +158,12 @@ export default function ShoeCategoryShowcase() {
                   </div>
 
                   {/* Card Content Footer */}
-                  <div className="p-4 pt-4 text-center flex-grow flex flex-col justify-between">
+                  <div className="p-2.5 md:p-4 text-center flex-grow flex flex-col justify-between">
                     <div>
-                      <span className="text-[10px] font-display font-bold uppercase tracking-widest text-gray-400 block mb-1">
+                      <span className="text-[9px] md:text-[10px] font-display font-bold uppercase tracking-widest text-gray-400 block mb-0.5 md:mb-1">
                         {product.brand}
                       </span>
-                      <h3 className="font-display font-bold text-sm md:text-base text-[#111111] leading-snug line-clamp-2 hover:text-[#CC0000] transition-colors" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                      <h3 className="font-display font-bold text-xs md:text-base text-[#111111] leading-snug line-clamp-2 hover:text-[#CC0000] transition-colors" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
                         <Link href={`/product/${product.id}`}>
                           {product.name}
                         </Link>

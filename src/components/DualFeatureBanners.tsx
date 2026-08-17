@@ -6,7 +6,7 @@ import { ArrowRight, Tag, X, MessageCircle } from "lucide-react";
 
 export default function DualFeatureBanners() {
   const [showOffersDrawer, setShowOffersDrawer] = useState(false);
-  const [showWhatsAppTooltip, setShowWhatsAppTooltip] = useState(true);
+  const [showWhatsAppTooltip, setShowWhatsAppTooltip] = useState(false);
 
   return (
     <section className="bg-[#0B0B0B] py-8 md:py-16 px-4 md:px-8 relative overflow-hidden">
@@ -16,7 +16,7 @@ export default function DualFeatureBanners() {
         
         {/* LEFT BANNER: PRO CRICKET SUNGLASSES */}
         <Link
-          href="/shop?category=Cricket"
+          href="/shop?category=cricket"
           className="group relative rounded-2xl md:rounded-3xl overflow-hidden aspect-[4/3] bg-black border border-white/10 hover:border-[#CC0000]/50 transition-all duration-500 shadow-2xl block"
         >
           {/* Image */}
@@ -49,7 +49,7 @@ export default function DualFeatureBanners() {
 
         {/* RIGHT BANNER: LIMITED EDITION CAPS */}
         <Link
-          href="/shop?category=Badminton"
+          href="/shop?category=badminton"
           className="group relative rounded-2xl md:rounded-3xl overflow-hidden aspect-[4/3] bg-black border border-white/10 hover:border-[#CC0000]/50 transition-all duration-500 shadow-2xl block"
         >
           {/* Image */}
@@ -81,8 +81,8 @@ export default function DualFeatureBanners() {
 
       </div>
 
-      {/* FLOATING RIGHT SIDE TAB: SPECIAL OFFERS */}
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex items-center">
+      {/* FLOATING RIGHT SIDE TAB: SPECIAL OFFERS (Hidden on small mobile to avoid obstructing content, visible on md+) */}
+      <div className="hidden md:flex fixed right-0 top-1/2 -translate-y-1/2 z-40 items-center">
         <button
           onClick={() => setShowOffersDrawer(!showOffersDrawer)}
           className="bg-[#CC0000] text-white font-display font-bold text-xs uppercase tracking-widest px-3 py-4 rounded-l-xl flex items-center gap-2 shadow-2xl hover:bg-red-700 transition-colors cursor-pointer"
@@ -99,7 +99,7 @@ export default function DualFeatureBanners() {
           <div className="bg-[#111111] text-white border-l-2 border-[#CC0000] p-6 shadow-2xl w-80 fixed right-12 top-1/2 -translate-y-1/2 rounded-xl animate-in slide-in-from-right">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
               <h4 className="font-display font-black uppercase text-sm text-[#CC0000]">Kolkata Store Deals</h4>
-              <button onClick={() => setShowOffersDrawer(false)} className="text-gray-400 hover:text-white">
+              <button onClick={() => setShowOffersDrawer(false)} className="text-gray-400 hover:text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -117,10 +117,10 @@ export default function DualFeatureBanners() {
         )}
       </div>
 
-      {/* FLOATING BOTTOM RIGHT: WHATSAPP ASSISTANT */}
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+      {/* FLOATING WHATSAPP ASSISTANT (Positioned above mobile bottom nav: bottom-20 on mobile, bottom-8 on desktop) */}
+      <div className="fixed bottom-20 right-4 md:bottom-8 md:right-8 z-40 flex items-center gap-3">
         {showWhatsAppTooltip && (
-          <div className="bg-white text-[#111111] px-4 py-2 rounded-lg shadow-xl text-xs font-bold flex items-center gap-2 border border-gray-200 animate-bounce">
+          <div className="bg-white text-[#111111] px-3.5 py-1.5 rounded-xl shadow-xl text-xs font-bold flex items-center gap-2 border border-slate-200 animate-bounce">
             <span>Need Help? Chat with us</span>
             <button onClick={() => setShowWhatsAppTooltip(false)} className="text-gray-400 hover:text-black">
               <X className="w-3 h-3" />
@@ -129,13 +129,13 @@ export default function DualFeatureBanners() {
         )}
 
         <a
-          href="https://wa.me/919876543210?text=Hi%20RP%20Sports%20Kolkata!%20I%20have%20a%20query%20about%20your%20cricket%20bats."
+          href="https://wa.me/919876543210?text=Hi%20RP%20Sports%20Kolkata!%20I%20have%20a%20query%20about%20your%20products."
           target="_blank"
           rel="noopener noreferrer"
-          className="w-14 h-14 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110"
+          className="w-12 h-12 md:w-14 md:h-14 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 active:scale-95"
           aria-label="Chat on WhatsApp"
         >
-          <MessageCircle className="w-7 h-7 fill-white text-[#25D366]" />
+          <MessageCircle className="w-6 h-6 md:w-7 md:h-7 fill-white text-[#25D366]" />
         </a>
       </div>
 

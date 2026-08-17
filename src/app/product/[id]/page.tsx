@@ -645,7 +645,7 @@ export default function ProductDetailPage() {
 
       {/* STICKY BUY BAR */}
       <div 
-        className={`fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50 transition-transform duration-500 ease-in-out flex justify-center ${
+        className={`fixed bottom-14 md:bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-40 transition-transform duration-500 ease-in-out flex justify-center ${
           showStickyBar ? "translate-y-0" : "translate-y-full"
         }`}
       >
