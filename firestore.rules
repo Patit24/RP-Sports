@@ -62,6 +62,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ── COUPONS ────────────────────────────────────────────────────────────
+    match /coupons/{couponId} {
+      // Anyone can view coupons
+      allow read: if true;
+      // Only admins can write coupons
+      allow write: if isAdmin();
+    }
+
     // ── WISHLISTS ──────────────────────────────────────────────────────────
     match /wishlists/{userId} {
       // User owns their wishlist, or admin
