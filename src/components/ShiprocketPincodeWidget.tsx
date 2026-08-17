@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Truck, MapPin, CheckCircle2, AlertCircle, Loader2, Navigation } from "lucide-react";
+import { Truck, MapPin, CheckCircle2, AlertCircle, Loader2, Navigation, Clock, ShieldCheck } from "lucide-react";
 import type { PincodeServiceabilityResult } from "@/lib/shiprocketService";
 
 interface ShiprocketPincodeWidgetProps {
@@ -52,10 +52,6 @@ export default function ShiprocketPincodeWidget({
       setResult({
         serviceable: true,
         estimatedDays: isKolkata ? 1 : 3,
-        couriers: [
-          { name: "BlueDart Express", rate: 0, etd: isKolkata ? "Tomorrow" : "2-3 Days" },
-          { name: "Delhivery Surface", rate: 0, etd: isKolkata ? "1-2 Days" : "3-4 Days" },
-        ],
       });
     } finally {
       setLoading(false);
@@ -82,9 +78,9 @@ export default function ShiprocketPincodeWidget({
           </div>
           <div>
             <h4 className="font-display font-bold uppercase text-xs tracking-wider text-[#111111]" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              Delivery Speed & Courier ETD Checker
+              Delivery & Shipping Availability
             </h4>
-            <p className="text-[11px] text-slate-500">Live Shiprocket courier serviceability</p>
+            <p className="text-[11px] text-slate-500">Fast doorstep delivery across India</p>
           </div>
         </div>
 
@@ -135,29 +131,27 @@ export default function ShiprocketPincodeWidget({
       {result && (
         <div className="pt-2 border-t border-slate-100 text-xs animate-in fade-in">
           {result.serviceable ? (
-            <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-900 space-y-2">
+            <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-emerald-900 space-y-1.5">
               <div className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span>Pincode {pincode} is Serviceable!</span>
+                <span>Pincode {pincode} is Serviceable</span>
               </div>
-              <p className="text-[11px] text-emerald-800">
-                Estimated Delivery: <strong className="text-emerald-900 font-bold">{result.estimatedDays === 1 ? "Tomorrow (24-Hour Express)" : `${result.estimatedDays} Business Days`}</strong>
+              <p className="text-[12px] text-emerald-800 flex items-center gap-1.5 font-medium">
+                <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Estimated Delivery: <strong className="text-emerald-950 font-bold">{result.estimatedDays === 1 ? "Tomorrow (24-Hour Express)" : `${result.estimatedDays} Business Days`}</strong></span>
               </p>
-
-              {result.couriers && result.couriers.length > 0 && (
-                <div className="pt-1 flex flex-wrap gap-1.5">
-                  {result.couriers.map((c, idx) => (
-                    <span key={idx} className="bg-white text-emerald-900 border border-emerald-200 text-[10px] font-mono px-2 py-0.5 rounded">
-                      ⚡ {c.name} ({c.etd})
-                    </span>
-                  ))}
-                </div>
-              )}
+              <p className="text-[11px] text-emerald-700 flex items-center gap-1.5 pt-0.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Free Express Shipping on orders above ₹999</span>
+              </p>
             </div>
           ) : (
-            <div className="bg-red-50 border border-red-200 p-3 rounded-xl text-red-900 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-              <span>{result.message || "Pincode not currently serviceable."}</span>
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-900 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Pincode {pincode} is currently unserviceable via standard courier.</p>
+                <p className="text-[11px] text-amber-700 mt-0.5">Please WhatsApp us for direct counter dispatch from our Dumdum store.</p>
+              </div>
             </div>
           )}
         </div>

@@ -4,8 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { generateLogisticsMessage } from "@/lib/deliveryPartnerService";
-import { CheckCircle2, Package, Truck, ArrowRight, Printer, MapPin, Phone, ShieldCheck, Share2, Copy, Check, AlertCircle } from "lucide-react";
+import { CheckCircle2, Package, Truck, ArrowRight, Printer, MapPin, Phone, ShieldCheck, AlertCircle } from "lucide-react";
 import TaxInvoiceModal from "@/components/TaxInvoiceModal";
 
 function OrderSuccessContent() {
@@ -16,7 +15,6 @@ function OrderSuccessContent() {
   const [order, setOrder] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [copiedPayload, setCopiedPayload] = useState(false);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
   useEffect(() => {
@@ -49,10 +47,10 @@ function OrderSuccessContent() {
         if (data.success && data.order) {
           setOrder(data.order);
         } else {
-          setError(data.message || "Order not found in our database");
+          setError(data.message || "Failed to load order.");
         }
       } catch (err: any) {
-        setError(err.message || "Failed to load order details from database");
+        setError(err.message || "Error fetching order details.");
       } finally {
         setLoading(false);
       }
@@ -65,26 +63,6 @@ function OrderSuccessContent() {
     setIsInvoiceOpen(true);
   };
 
-  const handleCopyLogisticsDispatch = () => {
-    if (!order) return;
-    const awb = order.deliveryPartnerInfo?.awbNumber || order.awb_code || order.trackingNumber || "N/A";
-    const carrier = order.deliveryPartnerInfo?.carrier || order.courier_name || "Delhivery Express";
-    const hub = order.deliveryPartnerInfo?.hub || "Kolkata Central Hub, Dumdum";
-    
-    const dispatchMessage = `📦 RP SPORTS LOGISTICS PICKUP ALERT
-Order ID: ${order.id}
-AWB No: ${awb}
-Carrier: ${carrier}
-Hub: ${hub}
-Customer: ${order.shippingAddress.fullName} (${order.shippingAddress.phone})
-Address: ${order.shippingAddress.addressLine}, ${order.shippingAddress.city} - ${order.shippingAddress.pincode}
-Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")})`;
-
-    navigator.clipboard.writeText(dispatchMessage);
-    setCopiedPayload(true);
-    setTimeout(() => setCopiedPayload(false), 2500);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F9F9F9] flex items-center justify-center p-8">
@@ -93,7 +71,7 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
           <h3 className="text-lg font-display font-black uppercase text-[#111] tracking-wider" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
             Loading Order Details...
           </h3>
-          <p className="text-xs text-gray-400 font-medium">Retrieving verified invoice and logistics information from Dumdum server.</p>
+          <p className="text-xs text-gray-400 font-medium">Retrieving verified invoice and logistics information from Kolkata server.</p>
         </div>
       </div>
     );
@@ -129,13 +107,13 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
         </div>
 
         <span className="text-[#FF3333] font-display font-bold uppercase tracking-widest text-xs mb-2 block" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-          Order Successfully Placed & Dispatched
+          Order Confirmed & Placed Successfully
         </span>
         <h1 className="text-3xl md:text-5xl font-display font-black uppercase text-white mb-3" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
           Thank You For Your Order!
         </h1>
         <p className="text-white/70 text-base max-w-lg mx-auto leading-relaxed">
-          Your order has been recorded and automatically dispatched to our delivery logistics partner.
+          Your order has been recorded and is being prepared for fast express dispatch.
         </p>
 
         {/* Order Details Badge */}
@@ -146,8 +124,8 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
               <strong className="text-white font-mono text-base">{order.id}</strong>
             </div>
             <div>
-              <span className="text-white/40 block text-xs uppercase tracking-widest font-mono">AWB Tracking No.</span>
-              <strong className="text-[#FF3333] font-mono text-base">{order.deliveryPartnerInfo?.awbNumber || order.trackingNumber || "TRK-9847294"}</strong>
+              <span className="text-white/40 block text-xs uppercase tracking-widest font-mono">Tracking No.</span>
+              <strong className="text-[#FF3333] font-mono text-base">{order.deliveryPartnerInfo?.awbNumber || order.trackingNumber || order.id}</strong>
             </div>
             <div>
               <span className="text-white/40 block text-xs uppercase tracking-widest font-mono">Est. Delivery</span>
@@ -168,7 +146,7 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
               className="btn-primary text-xs flex items-center gap-2 font-display font-bold uppercase tracking-widest px-5 py-3 rounded-xl shadow-md shadow-[#CC0000]/30"
               style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
             >
-              <Truck className="w-4 h-4" /> Live Delivery Partner Tracking
+              <Truck className="w-4 h-4" /> Track Order Status
             </Link>
 
             <div className="flex items-center gap-3">
@@ -186,64 +164,6 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
               </Link>
             </div>
           </div>
-
-          {/* 🚚 DELIVERY PARTNER DISPATCH NOTIFICATION CARD */}
-          {order.deliveryPartnerInfo && (
-            <div className="bg-gradient-to-r from-red-950 via-gray-900 to-black text-white p-6 rounded-2xl border border-red-800/40 shadow-xl space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 bg-[#CC0000] text-white rounded-xl flex items-center justify-center font-bold shadow-md shadow-[#CC0000]/40">
-                    <Truck className="w-6 h-6 animate-pulse" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-red-400 block font-bold">
-                      Delivery Partner Notification Status
-                    </span>
-                    <h4 className="font-display font-black uppercase text-lg text-white" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                      {order.deliveryPartnerInfo.carrier}
-                    </h4>
-                  </div>
-                </div>
-
-                <div className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-mono font-bold px-3.5 py-1.5 rounded-full flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span>{order.deliveryPartnerInfo.status}</span>
-                </div>
-              </div>
-
-              {/* Logistics Dispatch Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-white/5 p-4 rounded-xl border border-white/10 font-mono">
-                <div>
-                  <span className="text-gray-400 block text-[10px]">AWB TRACKING NUMBER</span>
-                  <span className="font-bold text-[#FF3333] text-sm">{order.deliveryPartnerInfo.awbNumber}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">SORTING HUB & DEPOT</span>
-                  <span className="text-gray-200">{order.deliveryPartnerInfo.hub}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">DELIVERY AGENT HOTLINE</span>
-                  <span className="text-emerald-400 font-bold">{order.deliveryPartnerInfo.agentPhone || "+91 98300 12345"}</span>
-                </div>
-              </div>
-
-              {/* Notification Message & Dispatch Copy Action */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <p className="text-xs text-gray-300 flex items-center gap-2 font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <span>{order.deliveryPartnerInfo.dispatchMessage}</span>
-                </p>
-
-                <button
-                  onClick={handleCopyLogisticsDispatch}
-                  className="bg-white/10 hover:bg-white/20 text-white text-xs font-mono font-bold px-3 py-1.5 rounded-lg border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
-                >
-                  {copiedPayload ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copiedPayload ? "Dispatch Copied!" : "Copy Delivery Partner Payload"}
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Purchased Items List */}
           <div>
@@ -266,12 +186,6 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
                     <p className="text-xs text-gray-500">
                       Qty: {item.quantity} {item.selectedSize ? `• Size: ${item.selectedSize}` : ""}
                     </p>
-                    {item.customization && item.customization.type === "jersey_name_number" && (
-                      <div className="mt-1 text-[11px] bg-slate-900 text-white px-2.5 py-1 rounded-lg inline-flex items-center gap-2">
-                        <span className="text-amber-400 font-mono font-bold">👕 {item.customization.name}</span>
-                        <span className="text-slate-300">#{item.customization.number}</span>
-                      </div>
-                    )}
                   </div>
                   <div className="text-right">
                     <span className="font-display font-bold text-[#CC0000] text-base" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>

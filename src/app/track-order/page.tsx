@@ -141,26 +141,7 @@ function TrackOrderContent() {
             </div>
           </div>
 
-          {/* 🚚 DELIVERY PARTNER DETAILS CARD */}
-          {currentOrder.deliveryPartnerInfo && (
-            <div className="bg-gradient-to-r from-red-950 via-gray-900 to-black text-white p-5 rounded-2xl border border-red-800/40 shadow-lg space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-[#FF3333]" />
-                  <span className="text-gray-300">Hub Location:</span>
-                  <strong className="text-white">{currentOrder.deliveryPartnerInfo.hub}</strong>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-emerald-400" />
-                  <span className="text-gray-300">Agent Hotline:</span>
-                  <strong className="text-emerald-400">{currentOrder.deliveryPartnerInfo.agentPhone || "+91 98300 12345"}</strong>
-                </div>
-              </div>
-              <p className="text-xs text-gray-300 font-medium pt-1 border-t border-white/10">
-                ⚡ {currentOrder.deliveryPartnerInfo.dispatchMessage}
-              </p>
-            </div>
-          )}
+
 
           {/* 5-Step Visual Timeline */}
           <div className="relative py-4">
