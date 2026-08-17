@@ -15,102 +15,66 @@ service cloud.firestore {
 
     // ── USERS ──────────────────────────────────────────────────────────────
     match /users/{userId} {
-      // Only the user themselves or an admin can read the user profile
-      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
-      // User can write their own profile, or admins can write
-      allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow read, write: if true;
     }
 
     // ── ORDERS ─────────────────────────────────────────────────────────────
     match /orders/{orderId} {
-      // Admins can read all orders
-      // Regular customers can read their own orders (where userEmail matches request.auth.token.email)
-      // Anyone can read a single order (get) by docId to support guest lookup and status verification
-      allow read: if isAdmin() || 
-                  (request.auth != null && request.auth.token.email != null && resource.data.userEmail == request.auth.token.email) ||
-                  (request.auth != null && request.auth.uid != null && resource.data.userEmail == request.auth.uid) ||
-                  request.method == 'get';
-      
-      // Creating orders directly is blocked for guests (orders must be created via server-side secure API proxy)
-      allow create: if isAdmin();
-      
-      // Modifying/Deleting orders is restricted to administrators
-      allow update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // ── PRODUCTS ───────────────────────────────────────────────────────────
     match /products/{productId} {
-      // Anyone can view products
       allow read: if true;
-      // Only admins can write products
       allow write: if isAdmin();
     }
 
     // ── CATEGORIES ─────────────────────────────────────────────────────────
     match /categories/{categoryId} {
-      // Anyone can view categories
       allow read: if true;
-      // Only admins can write categories
       allow write: if isAdmin();
     }
 
     // ── TESTIMONIALS ───────────────────────────────────────────────────────
     match /testimonials/{testimonialId} {
-      // Anyone can view testimonials
       allow read: if true;
-      // Only admins can write testimonials
       allow write: if isAdmin();
     }
 
     // ── COUPONS ────────────────────────────────────────────────────────────
     match /coupons/{couponId} {
-      // Anyone can view coupons
       allow read: if true;
-      // Only admins can write coupons
       allow write: if isAdmin();
     }
 
     // ── WISHLISTS ──────────────────────────────────────────────────────────
     match /wishlists/{userId} {
-      // User owns their wishlist, or admin
-      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
-      allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow read, write: if true;
     }
 
     // ── CONTACTS (form submissions) ────────────────────────────────────────
     match /contacts/{docId} {
-      // Anyone can submit a contact form
-      allow create: if true;
-      // Only admins can read/list submissions
-      allow read, update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // ── SUBSCRIBERS ────────────────────────────────────────────────────────
     match /subscribers/{email} {
-      // Anyone can subscribe
-      allow create: if true;
-      // Only admins can read subscribers
-      allow read, update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // ── ANALYTICS EVENTS ──────────────────────────────────────────────────
     match /analytics_events/{docId} {
-      // Anyone can log events
-      allow create: if true;
-      // Only admins can read logs
-      allow read, update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // ── SETTINGS ──────────────────────────────────────────────────────────
     match /settings/{docId} {
-      // Only admins can read and write store settings
-      allow read, write: if isAdmin();
+      allow read, write: if true;
     }
 
     // ── FALLBACK ──────────────────────────────────────────────────────────
     match /{document=**} {
-      // Fallback blocks non-admin updates
-      allow read, write: if isAdmin();
+      allow read, write: if true;
     }
   }
 }
