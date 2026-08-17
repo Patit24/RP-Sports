@@ -61,7 +61,11 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       {/* Badges */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
-        {product.badge && (
+        {product.stock === 0 ? (
+          <span className="text-[10px] font-display font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-md bg-[#111111] text-rose-400 border border-rose-500/30">
+            OUT OF STOCK
+          </span>
+        ) : product.badge ? (
           <span
             className={`text-[10px] font-display font-bold uppercase tracking-widest px-2.5 py-1 rounded shadow-sm ${
               product.badge === "Sale"
@@ -73,8 +77,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           >
             {product.badge}
           </span>
-        )}
-        {discount > 0 && (
+        ) : null}
+        {discount > 0 && product.stock > 0 && (
           <span className="text-[10px] font-display font-bold bg-green-700 text-white px-2.5 py-1 rounded shadow-sm self-start">
             {discount}% OFF
           </span>
@@ -178,16 +182,21 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={product.stock === 0}
-            className="h-9 px-3 rounded bg-[#CC0000] hover:bg-[#990000] text-white font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors duration-300 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed cursor-pointer shadow-sm"
-            aria-label="Add to cart"
-          >
-            <ShoppingCart className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Add</span>
-          </button>
+          {product.stock === 0 ? (
+            <span className="text-[11px] font-display font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1.5 rounded border border-rose-200">
+              Out of Stock
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className="h-9 px-3 rounded bg-[#CC0000] hover:bg-[#990000] text-white font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors duration-300 cursor-pointer shadow-sm"
+              aria-label="Add to cart"
+            >
+              <ShoppingCart className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Add</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

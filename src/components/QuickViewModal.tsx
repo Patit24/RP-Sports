@@ -136,21 +136,28 @@ export default function QuickViewModal() {
 
           {/* Action CTAs: Add to Cart & Buy Now */}
           <div className="space-y-3 pt-4 border-t border-white/10">
+            {quickViewProduct.stock === 0 && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-300 text-xs font-bold text-center">
+                OUT OF STOCK — Currently Unavailable
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleAddToCart}
-                className="h-12 bg-white/10 hover:bg-white/20 text-white font-display font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer rounded-lg"
+                disabled={quickViewProduct.stock === 0}
+                className="h-12 bg-white/10 hover:bg-white/20 text-white font-display font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
               >
-                <ShoppingCart className="w-4 h-4" /> Add to Cart
+                <ShoppingCart className="w-4 h-4" /> {quickViewProduct.stock === 0 ? "Out of Stock" : "Add to Cart"}
               </button>
 
               <button
                 onClick={handleBuyNow}
-                className="h-12 bg-[#CC0000] hover:bg-[#990000] text-white font-display font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer rounded-lg shadow-lg shadow-[#CC0000]/30"
+                disabled={quickViewProduct.stock === 0}
+                className="h-12 bg-[#CC0000] hover:bg-[#990000] text-white font-display font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer rounded-lg shadow-lg shadow-[#CC0000]/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-neutral-800"
                 style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
               >
-                <Zap className="w-4 h-4 fill-current" /> Buy Now
+                <Zap className="w-4 h-4 fill-current" /> {quickViewProduct.stock === 0 ? "Out of Stock" : "Buy Now"}
               </button>
             </div>
 

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { 
   Star, ShieldCheck, Heart, Truck, Plus, Minus, ArrowRight, ShoppingCart, Share2, Zap,
-  MapPin, ChevronDown, ChevronUp, RefreshCw, IndianRupee, CheckCircle2, Award, Users, Navigation 
+  MapPin, ChevronDown, ChevronUp, RefreshCw, IndianRupee, CheckCircle2, Award, Users, Navigation, AlertCircle 
 } from "lucide-react";
 import Link from "next/link";
 import gsap from "gsap";
@@ -288,7 +288,13 @@ export default function ProductDetailPage() {
                     <Star className="w-3 h-3 fill-current text-white" />
                   </div>
                   <span className="text-xs font-bold text-slate-400 underline cursor-pointer">{product.reviewsCount || "142"} Ratings & Reviews</span>
-                  <span className="text-xs font-black text-emerald-600 tracking-wider">IN STOCK</span>
+                  {product.stock > 0 ? (
+                    <span className="text-xs font-black text-emerald-600 tracking-wider">IN STOCK</span>
+                  ) : (
+                    <span className="text-xs font-black text-rose-600 tracking-wider bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                      OUT OF STOCK
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-end gap-3 mb-2">
@@ -553,13 +559,25 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Action Buttons: Add to Cart & Buy Now (Flipkart Style Colors) */}
+              {product.stock === 0 && (
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium space-y-1 fade-up">
+                  <p className="font-bold flex items-center gap-1.5 text-rose-700 uppercase tracking-wide">
+                    <AlertCircle className="w-4 h-4" />
+                    Currently Unavailable
+                  </p>
+                  <p className="text-rose-600">
+                    This catalog item is currently out of stock. Please check back later or contact our team for restock updates.
+                  </p>
+                </div>
+              )}
+
               <div className="pt-6 fade-up grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100">
                 <button 
                   ref={addToCartRef}
                   type="button"
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
-                  className="w-full py-4 bg-white border border-slate-300 hover:bg-slate-50 text-[#111] rounded-xl font-display font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer transition-colors"
+                  className="w-full py-4 bg-white border border-slate-300 hover:bg-slate-50 text-[#111] rounded-xl font-display font-black uppercase tracking-wider text-sm flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:bg-slate-100 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
                 >
                   <ShoppingCart className="w-4 h-4" />
@@ -570,7 +588,7 @@ export default function ProductDetailPage() {
                   type="button"
                   onClick={handleBuyNow}
                   disabled={product.stock === 0}
-                  className="w-full py-4 bg-[#ffc107] hover:bg-[#ffb300] text-[#111] rounded-xl font-display font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow shadow-amber-200/50 disabled:opacity-50 cursor-pointer transition-colors"
+                  className="w-full py-4 bg-[#ffc107] hover:bg-[#ffb300] text-[#111] rounded-xl font-display font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow shadow-amber-200/50 disabled:opacity-50 disabled:bg-slate-200 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
                 >
                   <Zap className="w-4 h-4 fill-current text-[#111]" />
@@ -666,10 +684,10 @@ export default function ProductDetailPage() {
             <button 
               onClick={handleAddToCart}
               disabled={product.stock === 0}
-              className="bg-primary text-white px-8 py-3 rounded-lg font-bold hover:bg-accent transition-colors flex items-center gap-2 shadow-md"
+              className="bg-primary text-white px-8 py-3 rounded-lg font-bold hover:bg-accent transition-colors flex items-center gap-2 shadow-md disabled:bg-slate-300 disabled:cursor-not-allowed"
             >
               <ShoppingCart className="w-5 h-5" />
-              <span>Add to Cart</span>
+              <span>{product.stock === 0 ? "Out of Stock" : "Add to Cart"}</span>
             </button>
           </div>
         </div>
