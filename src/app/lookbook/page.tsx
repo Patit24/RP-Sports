@@ -49,10 +49,10 @@ export default function LookbookPage() {
   }, { scope: container });
 
   return (
-    <div ref={container} className="bg-primary text-white min-h-screen overflow-hidden">
+    <div ref={container} className="bg-primary text-white min-h-screen overflow-hidden pb-24 md:pb-0">
       
       {/* Header */}
-      <section className="pt-40 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto text-center fade-up">
+      <section className="pt-24 md:pt-40 pb-20 px-6 md:px-12 max-w-[1600px] mx-auto text-center fade-up">
         <h1 className="text-massive uppercase tracking-tighter">
           THE <span className="font-editorial italic text-warm-gray font-normal normal-case">Lookbook.</span>
         </h1>

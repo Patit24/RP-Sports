@@ -286,7 +286,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] text-[#111111] pt-28 md:pt-32 pb-20">
+    <div className="min-h-screen bg-[#F9F9F9] text-[#111111] pt-20 md:pt-32 pb-28 md:pb-12">
 
       {/* AUTHENTICATION GATE FOR UNLOGGED USERS */}
       {!currentUser && <CheckoutAuthGate />}

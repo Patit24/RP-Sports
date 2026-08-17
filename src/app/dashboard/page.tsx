@@ -97,7 +97,7 @@ export default function CustomerDashboardPage() {
   const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white py-12 lg:py-20">
+    <div className="min-h-screen bg-[#0A0A0A] text-white pt-20 md:pt-28 pb-28 md:pb-12">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         
         {/* Welcome Dashboard Banner */}

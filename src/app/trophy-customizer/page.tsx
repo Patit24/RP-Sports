@@ -79,7 +79,7 @@ export default function TrophyCustomizerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] py-12 px-4 sm:px-8 max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#F9F9F9] pt-20 md:pt-28 pb-28 md:pb-10 px-4 px-4 sm:px-8 max-w-6xl mx-auto">
       
       {/* Header */}
       <div className="mb-10 text-center">

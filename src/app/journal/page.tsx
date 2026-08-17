@@ -30,7 +30,7 @@ export default function JournalPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-32 pb-24">
+    <div className="min-h-screen bg-background text-foreground pt-20 md:pt-32 pb-28 md:pb-12">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 border-b border-foreground/10 pb-8 gap-6">

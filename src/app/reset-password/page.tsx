@@ -37,7 +37,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F9F9F9] flex flex-col justify-center pt-20 md:pt-24 pb-28 md:pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full mx-auto bg-white border border-gray-200 p-8 sm:p-10 rounded-xl shadow-lg">
         
         {/* Header */}

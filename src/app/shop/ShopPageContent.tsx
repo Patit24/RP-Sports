@@ -97,7 +97,7 @@ export default function ShopPageContent() {
   }, [products, searchQuery, selectedSport, selectedSubcategory, selectedBrand, priceRange, selectedRating, onlyInStock, sortBy]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-foreground pb-20 pt-28">
+    <div className="min-h-screen bg-slate-50 text-foreground pb-28 md:pb-10 pt-20 md:pt-32">
       
       {/* Banner / Header */}
       <div className="bg-white border-b border-slate-200">

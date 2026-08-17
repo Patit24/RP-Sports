@@ -8,7 +8,7 @@ import {
 
 export default function RefundPolicyPage() {
   return (
-    <div className="min-h-screen bg-[#F9F9F9] py-16 px-4 sm:px-8 max-w-5xl mx-auto pt-24 sm:pt-32 text-[#111111]">
+    <div className="min-h-screen bg-[#F9F9F9] py-8 px-4 sm:px-8 max-w-5xl mx-auto pt-20 sm:pt-28 pb-28 md:pb-12 text-[#111111]">
       
       <Link 
         href="/" 

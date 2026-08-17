@@ -98,7 +98,7 @@ function OrderSuccessContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] py-12 px-4 sm:px-8 max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#F9F9F9] pt-20 md:pt-28 pb-28 md:pb-10 px-4 px-4 sm:px-8 max-w-4xl mx-auto">
       
       {/* Top Banner Card */}
       <div className="bg-[#111111] text-white p-8 md:p-12 rounded-t-2xl text-center relative overflow-hidden shadow-2xl">

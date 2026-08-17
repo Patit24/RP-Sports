@@ -10,7 +10,7 @@ export default function ComparePage() {
   const comparedProducts = products.filter((p) => compareList.includes(p.id));
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9] py-12 px-4 sm:px-8 max-w-[1600px] mx-auto">
+    <div className="min-h-screen bg-[#F9F9F9] pt-20 md:pt-28 pb-28 md:pb-10 px-4 px-4 sm:px-8 max-w-[1600px] mx-auto">
       
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-200">

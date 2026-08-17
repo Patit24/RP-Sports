@@ -6,7 +6,7 @@ import { Calendar, User, Clock, ArrowRight, BookOpen } from "lucide-react";
 
 export default function BlogPage() {
   return (
-    <div className="min-h-screen bg-[#F9F9F9] py-12 px-4 sm:px-8 max-w-[1600px] mx-auto">
+    <div className="min-h-screen bg-[#F9F9F9] pt-20 md:pt-28 pb-28 md:pb-10 px-4 px-4 sm:px-8 max-w-[1600px] mx-auto">
       
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto mb-16">

@@ -89,7 +89,7 @@ export default function GalleryPage() {
   const filteredItems = galleryItems.filter(item => filter === "all" || item.type === filter);
 
   return (
-    <div className="min-h-screen bg-[#060608] text-white py-16">
+    <div className="min-h-screen bg-[#060608] text-white pt-20 md:pt-28 pb-28 md:pb-12">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         
         <div className="mb-12 text-center max-w-xl mx-auto">

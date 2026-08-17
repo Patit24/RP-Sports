@@ -5,7 +5,7 @@ import { ArrowRight, MapPin, Phone, Mail, Clock, Share2, PlayCircle } from "luci
 
 export default function Footer() {
   return (
-    <footer className="bg-[#111111] text-white border-t-4 border-primary relative overflow-hidden">
+    <footer className="bg-[#111111] text-white border-t-4 border-primary relative overflow-hidden pb-24 md:pb-0">
 
       {/* Top: Brand Callout */}
       <div className="border-b border-white/5 py-12 px-6 md:px-12">

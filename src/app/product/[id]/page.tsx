@@ -175,7 +175,7 @@ export default function ProductDetailPage() {
   const categoryName = CATEGORIES.find(c => c.id === product.category)?.name || product.category;
 
   return (
-    <div ref={container} className="min-h-screen bg-slate-50 text-primary pb-20 pt-24 md:pt-32">
+    <div ref={container} className="min-h-screen bg-slate-50 text-primary pb-28 md:pb-8 pt-20 md:pt-32">
       
       {/* Breadcrumbs */}
       <div className="max-w-[1600px] mx-auto px-4 md:px-8 mb-6 hidden md:block">
@@ -645,7 +645,7 @@ export default function ProductDetailPage() {
 
       {/* STICKY BUY BAR */}
       <div 
-        className={`fixed bottom-14 md:bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-40 transition-transform duration-500 ease-in-out flex justify-center ${
+        className={`fixed bottom-16 md:bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-40 transition-transform duration-500 ease-in-out flex justify-center ${
           showStickyBar ? "translate-y-0" : "translate-y-full"
         }`}
       >

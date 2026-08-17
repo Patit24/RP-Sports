@@ -165,7 +165,7 @@ function SignInPageInner() {
       </div>
 
       {/* ── Right Panel: Auth Form ── */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 pt-28 md:pt-32">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 pt-20 md:pt-12 pb-28 md:pb-8">
         <div className="w-full max-w-md space-y-8">
           {/* Header */}
           <div>
