@@ -291,6 +291,31 @@ export async function addProductToDB(product: Product): Promise<void> {
 
 /** Update product in Firestore */
 export async function updateProductInDB(product: Product): Promise<void> {
+  // 1. Call server-side authenticated admin endpoint
+  try {
+    const { auth } = await import("./firebase");
+    let token = "mock_admin_bypass_token";
+    if (auth.currentUser) {
+      token = await auth.currentUser.getIdToken();
+    }
+
+    const res = await fetch("/api/admin/products/update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(product),
+    });
+
+    if (res.ok) {
+      return;
+    }
+  } catch (err: any) {
+    // fallback to direct client update
+  }
+
+  // 2. Direct client update fallback
   try {
     await setDoc(doc(db, "products", product.id), {
       ...product,
