@@ -756,6 +756,13 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
+                  <div className="flex justify-between">
+                    <span>GST (18% Tax Included)</span>
+                    <span className="font-semibold text-slate-800">
+                      ₹{gstTax.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
                   {/* Active Coupon or Apply Form */}
                   <div className="pt-3 border-t border-slate-100">
                     {activeCoupon ? (
