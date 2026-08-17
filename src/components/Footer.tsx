@@ -20,8 +20,8 @@ export default function Footer() {
             <Link href="/shop" className="btn-primary text-sm">
               Shop Now <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link href="/shop?category=jerseys" className="border border-white/20 text-white font-display font-bold uppercase text-sm tracking-wider px-6 py-3.5 hover:border-primary hover:text-primary transition-colors">
-              Custom Jerseys
+            <Link href="/shop" className="border border-white/20 text-white font-display font-bold uppercase text-sm tracking-wider px-6 py-3.5 hover:border-primary hover:text-primary transition-colors">
+              Explore Catalog
             </Link>
           </div>
         </div>
@@ -57,7 +57,7 @@ export default function Footer() {
         <div>
           <h4 className="font-display font-extrabold uppercase text-sm tracking-widest text-primary mb-6">Shop</h4>
           <ul className="space-y-3">
-            {["Cricket Equipment", "Football Gear", "Badminton", "Custom Jerseys", "Sports Shoes", "Trophies & Awards"].map((item) => (
+            {["Cricket Equipment", "Football Gear", "Badminton", "Sports Apparel", "Sports Shoes", "Trophies & Awards"].map((item) => (
               <li key={item}>
                 <Link href="/shop" className="text-white/60 hover:text-white hover:translate-x-1 transition-all inline-flex items-center gap-2 text-sm font-medium">
                   <span className="w-1 h-1 bg-primary rounded-full"></span> {item}

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { 
   Star, ShieldCheck, Heart, Truck, Plus, Minus, ArrowRight, ShoppingCart, Share2, Zap,
-  MapPin, ChevronDown, ChevronUp, RefreshCw, IndianRupee, CheckCircle2, Award, Users 
+  MapPin, ChevronDown, ChevronUp, RefreshCw, IndianRupee, CheckCircle2, Award 
 } from "lucide-react";
 import Link from "next/link";
 import gsap from "gsap";
@@ -14,7 +14,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CATEGORIES } from "@/lib/mockData";
 import ShiprocketPincodeWidget from "@/components/ShiprocketPincodeWidget";
 import ProductAccordionSection from "@/components/ProductAccordionSection";
-import BulkJerseyOrderModal from "@/components/BulkJerseyOrderModal";
 
 
 
@@ -48,23 +47,8 @@ export default function ProductDetailPage() {
   const [peaceOpen, setPeaceOpen] = useState(true);
   const [highlightsOpen, setHighlightsOpen] = useState(true);
 
-  // Custom Jersey Name & Number State
-  const isJerseyCustomizable = Boolean(
-    product.enableJerseyCustomization || 
-    (product.category === "jerseys" && product.customizable) ||
-    product.subcategory === "custom-jersey"
-  );
-
-  const printFee = product.customizationFee !== undefined ? product.customizationFee : 150;
-  const [customizationMode, setCustomizationMode] = useState<"plain" | "custom">("plain");
-  const [customPlayerName, setCustomPlayerName] = useState("");
-  const [customJerseyNumber, setCustomJerseyNumber] = useState("");
-  const [customizationError, setCustomizationError] = useState<string | null>(null);
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-
-  const isCustomSelected = isJerseyCustomizable && customizationMode === "custom";
-  const activePrice = product.price + (isCustomSelected ? printFee : 0);
-  const activeMrp = (product.mrp || product.originalPrice || product.price) + (isCustomSelected ? printFee : 0);
+  const activePrice = product.price;
+  const activeMrp = product.mrp || product.originalPrice || product.price;
   const activeDiscount = Math.round(((activeMrp - activePrice) / activeMrp) * 100);
 
   // Zoom state
@@ -78,92 +62,22 @@ export default function ProductDetailPage() {
     setZoomPos({ x, y });
   };
 
-  const validateCustomization = (): boolean => {
-    if (!isJerseyCustomizable || customizationMode === "plain") return true;
-
-    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      setCustomizationError("Please select a jersey size before customizing your jersey.");
-      return false;
-    }
-
-    const trimmedName = customPlayerName.trim().toUpperCase();
-    if (!trimmedName) {
-      setCustomizationError("Please enter a player name for your jersey.");
-      return false;
-    }
-
-    if (trimmedName.length > 15) {
-      setCustomizationError("Player name cannot exceed 15 characters.");
-      return false;
-    }
-
-    if (!/^[A-Z0-9\s.]+$/.test(trimmedName)) {
-      setCustomizationError("Player name must contain only letters, numbers, and spaces.");
-      return false;
-    }
-
-    const num = Number(customJerseyNumber);
-    if (!customJerseyNumber || isNaN(num) || !Number.isInteger(num) || num < 1 || num > 99) {
-      setCustomizationError("Jersey number must be a valid integer between 1 and 99.");
-      return false;
-    }
-
-    setCustomizationError(null);
-    return true;
-  };
-
   const handleAddToCart = () => {
-    if (!validateCustomization()) return;
-
-    const finalProduct = isCustomSelected
-      ? {
-          ...product,
-          price: activePrice,
-          originalPrice: activeMrp,
-        }
-      : product;
-
     addToCart({
-      product: finalProduct,
+      product,
       quantity,
-      selectedColor,
+      selectedColor: selectedColor || product.colors?.[0],
       selectedSize: selectedSize || product.sizes?.[0],
-      customization: isCustomSelected
-        ? {
-            type: "jersey_name_number",
-            name: customPlayerName.trim().toUpperCase(),
-            number: Number(customJerseyNumber),
-            fee: printFee,
-          }
-        : undefined,
     });
   };
 
   const handleBuyNow = () => {
     if (product.stock === 0) return;
-    if (!validateCustomization()) return;
-
-    const finalProduct = isCustomSelected
-      ? {
-          ...product,
-          price: activePrice,
-          originalPrice: activeMrp,
-        }
-      : product;
-
     addToCart({
-      product: finalProduct,
+      product,
       quantity,
       selectedColor: selectedColor || product.colors?.[0],
       selectedSize: selectedSize || product.sizes?.[0],
-      customization: isCustomSelected
-        ? {
-            type: "jersey_name_number",
-            name: customPlayerName.trim().toUpperCase(),
-            number: Number(customJerseyNumber),
-            fee: printFee,
-          }
-        : undefined,
     });
     router.push("/checkout");
   };
@@ -361,11 +275,6 @@ export default function ProductDetailPage() {
                     </>
                   )}
                 </div>
-                {isCustomSelected && printFee > 0 && (
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-md text-[11px] font-bold text-amber-900 mb-2">
-                    <span>✨ Includes ₹{printFee} Custom Name & Number Sublimation Fee</span>
-                  </div>
-                )}
                 <p className="text-[10px] text-slate-400 font-bold tracking-wide uppercase">Inclusive of all taxes</p>
               </div>
 
@@ -491,10 +400,7 @@ export default function ProductDetailPage() {
                       {product.sizes.map((s) => (
                         <button type="button"
                           key={s}
-                          onClick={() => {
-                            setSelectedSize(s);
-                            setCustomizationError(null);
-                          }}
+                          onClick={() => setSelectedSize(s)}
                           className={`w-12 h-12 rounded-full flex items-center justify-center text-xs font-bold uppercase tracking-wider border-2 transition-all cursor-pointer ${
                             selectedSize === s 
                               ? "bg-[#CC0000] text-white border-[#CC0000] shadow-md shadow-[#CC0000]/30" 
@@ -505,174 +411,6 @@ export default function ProductDetailPage() {
                         </button>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* ── CUSTOM JERSEY NAME & NUMBER CUSTOMIZER ── */}
-                {isJerseyCustomizable && (
-                  <div className="bg-slate-900 text-white p-5 rounded-2xl border border-slate-700/80 shadow-lg space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-[#CC0000] flex items-center justify-center shadow">
-                          <span className="text-xs">👕</span>
-                        </div>
-                        <div>
-                          <h4 className="font-display font-black text-sm uppercase tracking-wider text-white" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                            Jersey Printing Option
-                          </h4>
-                          <span className="text-[10px] text-slate-400">Buy plain or customize with your name & number</span>
-                        </div>
-                      </div>
-                      {isCustomSelected ? (
-                        <span className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40">
-                          {printFee > 0 ? `+₹${printFee} Print Fee` : "Free Customization"}
-                        </span>
-                      ) : (
-                        <span className="text-[10px] uppercase font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/40">
-                          Standard Price
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Mode Selector Radio Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Option 1: Standard Plain Jersey */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCustomizationMode("plain");
-                          setCustomizationError(null);
-                        }}
-                        className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                          customizationMode === "plain"
-                            ? "bg-white/15 border-emerald-400 shadow-md ring-1 ring-emerald-400"
-                            : "bg-white/5 border-white/15 hover:bg-white/10 opacity-75"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                            <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                              customizationMode === "plain" ? "border-emerald-400 bg-emerald-400" : "border-slate-400"
-                            }`}>
-                              {customizationMode === "plain" && <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />}
-                            </span>
-                            Plain Jersey (No Print)
-                          </span>
-                        </div>
-                        <span className="text-sm text-slate-200 font-mono font-bold">
-                          ₹{product.price.toLocaleString("en-IN")}
-                        </span>
-                        <span className="text-[10px] text-slate-400 mt-1">Standard official match jersey without back print.</span>
-                      </button>
-
-                      {/* Option 2: Custom Name & Number */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCustomizationMode("custom");
-                        }}
-                        className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                          customizationMode === "custom"
-                            ? "bg-white/15 border-amber-400 shadow-md ring-1 ring-amber-400"
-                            : "bg-white/5 border-white/15 hover:bg-white/10 opacity-75"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                            <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                              customizationMode === "custom" ? "border-amber-400 bg-amber-400" : "border-slate-400"
-                            }`}>
-                              {customizationMode === "custom" && <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />}
-                            </span>
-                            Add Custom Name & Number
-                          </span>
-                        </div>
-                        <span className="text-sm text-amber-300 font-mono font-bold">
-                          ₹{(product.price + printFee).toLocaleString("en-IN")} {printFee > 0 ? `(+₹${printFee})` : "(Free)"}
-                        </span>
-                        <span className="text-[10px] text-slate-400 mt-1">Laser sublimation player name & number on back.</span>
-                      </button>
-                    </div>
-
-                    {/* EXPANDABLE CUSTOMIZER (When "custom" mode is active) */}
-                    {customizationMode === "custom" && (
-                      <div className="space-y-4 pt-2 border-t border-white/10">
-                        {/* LIVE ATHLETIC JERSEY BACK VISUAL PREVIEW */}
-                        <div className="relative bg-gradient-to-b from-blue-900 via-slate-900 to-black rounded-xl p-6 border border-blue-500/30 flex flex-col items-center justify-center overflow-hidden text-center shadow-inner">
-                          {/* Jersey Collar Cutout */}
-                          <div className="w-16 h-4 bg-slate-950 rounded-b-full border-b-2 border-white/20 mb-3" />
-                          
-                          {/* Player Name */}
-                          <div className="font-display font-black text-lg md:text-xl tracking-widest text-amber-400 uppercase drop-shadow-md transition-all duration-300 font-mono" style={{ letterSpacing: '0.18em' }}>
-                            {customPlayerName.trim() ? customPlayerName.trim().toUpperCase() : "YOUR NAME"}
-                          </div>
-
-                          {/* Jersey Number */}
-                          <div className="font-display font-black text-4xl md:text-5xl text-white tracking-tight my-1 drop-shadow-lg" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                            {customJerseyNumber ? customJerseyNumber : "00"}
-                          </div>
-
-                          {/* Team / Brand watermark */}
-                          <div className="text-[9px] font-bold tracking-widest text-slate-400 uppercase mt-1">
-                            RP SPORTS • OFFICIAL MATCH EDITION
-                          </div>
-                        </div>
-
-                        {/* Customization Inputs */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                          <div>
-                            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                              Player Name * <span className="text-slate-400 font-normal">(Max 15 Chars)</span>
-                            </label>
-                            <input
-                              type="text"
-                              maxLength={15}
-                              value={customPlayerName}
-                              onChange={(e) => {
-                                setCustomPlayerName(e.target.value.toUpperCase());
-                                setCustomizationError(null);
-                              }}
-                              placeholder="e.g. PATIT ROY"
-                              className="w-full px-3.5 py-2.5 bg-white/10 border border-white/20 rounded-xl text-xs font-mono font-bold text-white uppercase placeholder:text-slate-500 focus:outline-none focus:border-[#CC0000] focus:bg-white/15"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                              Jersey Number * <span className="text-slate-400 font-normal">(1 - 99)</span>
-                            </label>
-                            <input
-                              type="number"
-                              min={1}
-                              max={99}
-                              value={customJerseyNumber}
-                              onChange={(e) => {
-                                setCustomJerseyNumber(e.target.value);
-                                setCustomizationError(null);
-                              }}
-                              placeholder="e.g. 97"
-                              className="w-full px-3.5 py-2.5 bg-white/10 border border-white/20 rounded-xl text-xs font-mono font-bold text-white uppercase placeholder:text-slate-500 focus:outline-none focus:border-[#CC0000] focus:bg-white/15"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Validation Error Alert */}
-                        {customizationError && (
-                          <div className="p-2.5 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-xs font-bold flex items-center gap-2">
-                            <span className="text-red-400 text-sm">⚠️</span>
-                            <span>{customizationError}</span>
-                          </div>
-                        )}
-
-                        {/* Return Policy Notice */}
-                        <div className="text-[10px] text-slate-400 bg-white/5 p-2.5 rounded-lg border border-white/10 flex items-start gap-1.5 leading-relaxed">
-                          <span className="text-amber-400">⚠️</span>
-                          <span>
-                            <strong className="text-slate-300">Important:</strong> Personalized jerseys are custom-printed for you and are non-returnable. Please verify your player name, number, and selected size ({selectedSize || "None"}) before ordering.
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -711,35 +449,6 @@ export default function ProductDetailPage() {
                   <span>{product.stock === 0 ? "Out of Stock" : `Buy Now at ₹${activePrice.toLocaleString("en-IN")}`}</span>
                 </button>
               </div>
-
-              {/* Bulk / Team Order Direct WhatsApp Option */}
-              {isJerseyCustomizable && (
-                <div className="pt-4 fade-up">
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-[#111111] text-white border border-slate-700/80 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">🏏</span>
-                        <span className="font-display font-black text-sm uppercase tracking-wider text-amber-400" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                          Ordering for a Team, Club or Academy?
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-300">
-                        Get bulk wholesale discounts, custom sponsor logos, and instant WhatsApp quotation. (Min 10 jerseys)
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsBulkModalOpen(true)}
-                      className="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-display font-bold uppercase text-xs tracking-wider rounded-xl transition-all shadow shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer"
-                      style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
-                    >
-                      <Users className="w-4 h-4" />
-                      <span>Bulk / Team Order on WhatsApp</span>
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <div className="pt-4 fade-up">
                 <p className="text-[11px] text-slate-500 font-medium">
@@ -808,13 +517,6 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* BULK JERSEY ORDER MODAL */}
-      <BulkJerseyOrderModal
-        product={product}
-        isOpen={isBulkModalOpen}
-        onClose={() => setIsBulkModalOpen(false)}
-      />
 
     </div>
   );

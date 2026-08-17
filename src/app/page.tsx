@@ -382,27 +382,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── PROMO BANNER – CUSTOM JERSEYS ─── */}
+      {/* ─── PROMO BANNER – PRO MATCH GEAR ─── */}
       <section className="py-16 px-6 md:px-12 max-w-[1600px] mx-auto">
         <div className="relative overflow-hidden bg-secondary rounded-none" style={{minHeight: '420px'}}>
           <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/40 z-10" />
-          <img src="/products/cat_jerseys.jpg" alt="Custom Jerseys" className="absolute inset-0 w-full h-full object-cover" />
+          <img src="/hero-banner.jpg" alt="RP Sports Match Gear" className="absolute inset-0 w-full h-full object-cover" />
           <div className="relative z-20 p-10 md:p-16 lg:p-20 max-w-2xl">
             <span className="inline-flex items-center gap-2 text-primary font-display font-bold uppercase tracking-widest text-xs mb-6">
-              <span className="w-6 h-0.5 bg-primary"></span> Personalized Gear
+              <span className="w-6 h-0.5 bg-primary"></span> Professional Gear
             </span>
             <h2 className="font-display font-black text-white uppercase text-5xl md:text-7xl leading-none mb-6">
-              CUSTOM MATCH JERSEYS
+              PRO MATCH EQUIPMENT
             </h2>
             <p className="text-white/75 text-base md:text-lg mb-10 leading-relaxed">
-              Personalize official match jerseys with your custom Player Name & Number. High-definition laser sublimation printing directly from our Kolkata workshop.
+              Explore hand-crafted Grade-1 English Willow cricket bats, professional tournament balls, spike shoes and genuine athletic gear directly from Kolkata&apos;s trusted sports hub.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link href="/shop?category=jerseys" className="btn-primary">
-                Shop Custom Jerseys <ArrowRight className="w-4 h-4" />
+              <Link href="/shop?category=cricket" className="btn-primary">
+                Shop Cricket Bats <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="/contact" className="btn-outline border-white/40 text-white hover:border-primary hover:bg-primary">
-                Bulk Team Orders
+              <Link href="/shop" className="btn-outline border-white/40 text-white hover:border-primary hover:bg-primary">
+                Explore All Products
               </Link>
             </div>
           </div>

@@ -304,10 +304,8 @@ export default function Navbar() {
             </div>
 
             <div className="flex items-center gap-6">
-              <Link href="/shop?category=jerseys" className="text-[#CC0000] hover:text-red-400 font-black tracking-widest flex items-center gap-1 transition-colors">
-                Custom Jerseys <span className="text-[9px] bg-[#CC0000] text-white px-1.5 py-0.5 rounded-sm font-bold uppercase ml-1">New</span>
-              </Link>
-              <Link href="/lookbook" className="hover:text-white transition-colors">Lookbook</Link>
+              <Link href="/shop" className="hover:text-white transition-colors font-bold uppercase tracking-wider text-xs">All Products</Link>
+              <Link href="/lookbook" className="hover:text-white transition-colors font-bold uppercase tracking-wider text-xs">Lookbook</Link>
             </div>
           </nav>
 
@@ -434,7 +432,7 @@ export default function Navbar() {
                   <ArrowRight className="w-5 h-5 text-accent" />
                 </Link>
               ))}
-              <Link href="/shop?category=jerseys" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold tracking-wide text-accent mt-4">Custom Jerseys</Link>
+              <Link href="/shop" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold tracking-wide text-accent mt-4">All Products</Link>
               
               <div className="mt-auto pt-8 flex flex-col gap-4">
                 {currentUser ? (
