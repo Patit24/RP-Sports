@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { 
   Star, ShieldCheck, Heart, Truck, Plus, Minus, ArrowRight, ShoppingCart, Share2, Zap,
-  MapPin, ChevronDown, ChevronUp, RefreshCw, IndianRupee, CheckCircle2, Award, Users 
+  MapPin, ChevronDown, ChevronUp, RefreshCw, IndianRupee, CheckCircle2, Award, Users, Navigation 
 } from "lucide-react";
 import Link from "next/link";
 import gsap from "gsap";
@@ -15,6 +15,7 @@ import { CATEGORIES } from "@/lib/mockData";
 import ShiprocketPincodeWidget from "@/components/ShiprocketPincodeWidget";
 import ProductAccordionSection from "@/components/ProductAccordionSection";
 import BulkJerseyOrderModal from "@/components/BulkJerseyOrderModal";
+import { useCustomerLocation } from "@/lib/useCustomerLocation";
 
 
 
@@ -47,6 +48,17 @@ export default function ProductDetailPage() {
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [peaceOpen, setPeaceOpen] = useState(true);
   const [highlightsOpen, setHighlightsOpen] = useState(true);
+
+  // Customer Current Location (Auto-detected via IP/GPS)
+  const {
+    pincode: customerPincode,
+    formattedAddress: customerAddress,
+    city: customerCity,
+    isLoading: isLocLoading,
+    isGpsAccurate,
+    detectGpsLocation,
+    setPincodeManual,
+  } = useCustomerLocation();
 
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const isJerseyOrApparel = Boolean(
@@ -288,23 +300,56 @@ export default function ProductDetailPage() {
                 <p className="text-[10px] text-slate-400 font-bold tracking-wide uppercase">Inclusive of all taxes</p>
               </div>
 
-              {/* Delivery Address & Pincode Checker (Flipkart Style) */}
+              {/* Delivery Address & Pincode Checker (Customer Live Location) */}
               <div className="fade-up bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-3 shadow-sm">
-                <div className="flex items-start gap-2.5 text-xs font-semibold text-slate-700">
-                  <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                  <div>
-                    <span className="text-slate-400 text-[11px] block uppercase tracking-wider font-bold">Delivery Location</span>
-                    <span className="text-[#111] font-bold text-xs">Basirhat Road, Gandharbbapur, West Bengal - 700028</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 text-xs font-semibold text-slate-700 min-w-0">
+                    <MapPin className="w-4 h-4 text-[#CC0000] mt-0.5 shrink-0 animate-bounce" />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-slate-400 text-[11px] block uppercase tracking-wider font-bold">
+                          Deliver To (Your Location)
+                        </span>
+                        {isGpsAccurate && (
+                          <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">
+                            GPS Live
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[#111] font-bold text-xs leading-snug block break-words">
+                        {isLocLoading ? "Detecting your current location..." : customerAddress}
+                      </span>
+                    </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={detectGpsLocation}
+                    disabled={isLocLoading}
+                    className="shrink-0 text-[11px] font-bold text-[#CC0000] hover:text-[#990000] flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer border border-red-200/60"
+                  >
+                    <Navigation className={`w-3 h-3 ${isLocLoading ? "animate-spin" : ""}`} />
+                    <span>{isLocLoading ? "Detecting..." : "Detect GPS"}</span>
+                  </button>
                 </div>
                 
                 <div className="flex items-center gap-2 text-slate-800 text-xs font-bold bg-white px-3 py-2 rounded-lg border border-slate-150">
                   <Truck className="w-4 h-4 text-[#388e3c] shrink-0" />
-                  <span>Delivery Speed: <span className="text-[#388e3c] uppercase font-black tracking-wide">Express 2-3 Days</span></span>
+                  <span>
+                    Estimated Delivery to {customerCity}:{" "}
+                    <span className="text-[#388e3c] uppercase font-black tracking-wide">
+                      {customerPincode?.startsWith("700") ? "Next-Day Express (24 Hours)" : "Express 2-3 Days"}
+                    </span>
+                  </span>
                 </div>
                 
                 <div className="pt-1">
-                  <ShiprocketPincodeWidget />
+                  <ShiprocketPincodeWidget 
+                    defaultPincode={customerPincode}
+                    onPincodeChange={setPincodeManual}
+                    onDetectGps={detectGpsLocation}
+                    isDetectingGps={isLocLoading}
+                  />
                 </div>
               </div>
 
