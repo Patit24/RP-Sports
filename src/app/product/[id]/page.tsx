@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { 
   Star, ShieldCheck, Heart, Truck, Plus, Minus, ArrowRight, ShoppingCart, Share2, Zap,
-  MapPin, ChevronDown, ChevronUp, RefreshCw, IndianRupee, CheckCircle2, Award 
+  MapPin, ChevronDown, ChevronUp, RefreshCw, IndianRupee, CheckCircle2, Award, Users 
 } from "lucide-react";
 import Link from "next/link";
 import gsap from "gsap";
@@ -14,6 +14,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CATEGORIES } from "@/lib/mockData";
 import ShiprocketPincodeWidget from "@/components/ShiprocketPincodeWidget";
 import ProductAccordionSection from "@/components/ProductAccordionSection";
+import BulkJerseyOrderModal from "@/components/BulkJerseyOrderModal";
 
 
 
@@ -46,6 +47,15 @@ export default function ProductDetailPage() {
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [peaceOpen, setPeaceOpen] = useState(true);
   const [highlightsOpen, setHighlightsOpen] = useState(true);
+
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const isJerseyOrApparel = Boolean(
+    product.category === "jerseys" || 
+    product.category === "apparel" || 
+    product.subcategory?.includes("jersey") || 
+    product.name.toLowerCase().includes("jersey") ||
+    product.enableJerseyCustomization
+  );
 
   const activePrice = product.price;
   const activeMrp = product.mrp || product.originalPrice || product.price;
@@ -450,6 +460,35 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
+              {/* Bulk / Team Order Direct WhatsApp Option */}
+              {isJerseyOrApparel && (
+                <div className="pt-4 fade-up">
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-[#111111] text-white border border-slate-700/80 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">🏏</span>
+                        <span className="font-display font-black text-sm uppercase tracking-wider text-amber-400" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                          Ordering for a Team, Club or Academy?
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        Get bulk wholesale discounts, custom sponsor logos, and instant WhatsApp quotation. (Min 10 jerseys)
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsBulkModalOpen(true)}
+                      className="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-display font-bold uppercase text-xs tracking-wider rounded-xl transition-all shadow shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                      style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                    >
+                      <Users className="w-4 h-4" />
+                      <span>Bulk / Team Order on WhatsApp</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="pt-4 fade-up">
                 <p className="text-[11px] text-slate-500 font-medium">
                   {product.description}
@@ -517,6 +556,13 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* BULK JERSEY / TEAM ORDER MODAL */}
+      <BulkJerseyOrderModal
+        product={product}
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+      />
 
     </div>
   );

@@ -401,9 +401,14 @@ export default function Home() {
               <Link href="/shop?category=cricket" className="btn-primary">
                 Shop Cricket Bats <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link href="/shop" className="btn-outline border-white/40 text-white hover:border-primary hover:bg-primary">
-                Explore All Products
-              </Link>
+              <a 
+                href="https://wa.me/919876543210?text=Hi%20RP%20Sports%2C%20I%20want%20to%20enquire%20about%20Bulk%20Team%20Orders"
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn-outline border-white/40 text-white hover:border-primary hover:bg-primary"
+              >
+                Bulk Team Orders (WhatsApp)
+              </a>
             </div>
           </div>
         </div>
