@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Product } from "@/lib/mockData";
-import { X, Send, CheckCircle2, AlertCircle, Users, Shirt, MapPin, Phone, User, MessageSquare, ExternalLink, Sparkles } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { 
+  X, Send, CheckCircle2, AlertCircle, Users, Shirt, MapPin, Phone, User, MessageSquare, 
+  ChevronDown, Sparkles 
+} from "lucide-react";
 
 interface BulkJerseyOrderModalProps {
-  product: Product;
+  product?: Product;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -13,17 +17,46 @@ interface BulkJerseyOrderModalProps {
 const ADMIN_WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP || "919876543210";
 const MIN_BULK_QUANTITY = 10;
 
-export default function BulkJerseyOrderModal({ product, isOpen, onClose }: BulkJerseyOrderModalProps) {
+export default function BulkJerseyOrderModal({ product: initialProduct, isOpen, onClose }: BulkJerseyOrderModalProps) {
+  const storeProducts = useStore((state) => state.products);
+
+  // Available jersey products in the catalog
+  const availableJerseys = useMemo(() => {
+    const jerseys = storeProducts.filter(
+      (p) =>
+        p.category === "jerseys" ||
+        p.category === "apparel" ||
+        p.name.toLowerCase().includes("jersey") ||
+        p.subcategory?.includes("jersey") ||
+        p.enableJerseyCustomization
+    );
+    return jerseys.length > 0 ? jerseys : storeProducts;
+  }, [storeProducts]);
+
+  // Selected product state
+  const [selectedProductId, setSelectedProductId] = useState<string>(
+    initialProduct?.id || availableJerseys[0]?.id || "rp-jsy-india"
+  );
+
+  const activeProduct = useMemo(() => {
+    return (
+      storeProducts.find((p) => p.id === selectedProductId) ||
+      initialProduct ||
+      availableJerseys[0] ||
+      storeProducts[0]
+    );
+  }, [storeProducts, selectedProductId, initialProduct, availableJerseys]);
+
   const [quantity, setQuantity] = useState<number>(25);
-  const [printingOption, setPrintingOption] = useState<string>("Name + Number + Team Logo");
+  const [printingOption, setPrintingOption] = useState<string>("Player Name + Number + Team Logo");
   const [otherPrintingNotes, setOtherPrintingNotes] = useState<string>("");
 
   // Sizes breakdown
   const [sizes, setSizes] = useState<{ [key: string]: number }>({
     S: 5,
-    M: 8,
-    L: 8,
-    XL: 4,
+    M: 10,
+    L: 10,
+    XL: 0,
     XXL: 0,
   });
   const [noSizeBreakdownYet, setNoSizeBreakdownYet] = useState<boolean>(false);
@@ -72,12 +105,12 @@ export default function BulkJerseyOrderModal({ product, isOpen, onClose }: BulkJ
     }
 
     if (quantity < MIN_BULK_QUANTITY) {
-      setErrorMessage(`Bulk orders start from ${MIN_BULK_QUANTITY} jerseys. For smaller quantities, please use the normal custom jersey option.`);
+      setErrorMessage(`Bulk team orders start from a minimum of ${MIN_BULK_QUANTITY} jerseys.`);
       return;
     }
 
     if (!noSizeBreakdownYet && totalSizesEntered !== quantity) {
-      setErrorMessage(`Size quantities total ${totalSizesEntered}, but your order quantity is ${quantity}. Please adjust the breakdown or check 'I don't know the final size breakdown yet'.`);
+      setErrorMessage(`Size breakdown adds up to ${totalSizesEntered}, but your requested quantity is ${quantity}. Please adjust the sizes or check 'Decide sizes later'.`);
       return;
     }
 
@@ -94,9 +127,9 @@ export default function BulkJerseyOrderModal({ product, isOpen, onClose }: BulkJ
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          productId: product.id,
-          productName: product.name,
-          productSku: product.sku || product.id,
+          productId: activeProduct?.id || "jersey-general",
+          productName: activeProduct?.name || "Match Jersey",
+          productSku: activeProduct?.sku || activeProduct?.id || "RP-JSY",
           quantity,
           printingOption,
           customPrintingNotes: printingOption === "Other" ? otherPrintingNotes : "",
@@ -116,8 +149,8 @@ export default function BulkJerseyOrderModal({ product, isOpen, onClose }: BulkJ
       const refId = resData.enquiryId || `BQ-${Math.floor(1000 + Math.random() * 9000)}`;
       setEnquiryReference(refId);
 
-      // 2. Generate Structured WhatsApp Message
-      let sizeBreakdownText = "To be confirmed with team";
+      // 2. Generate Structured WhatsApp Message with Product Details
+      let sizeBreakdownText = "To be confirmed with team lineup";
       if (!noSizeBreakdownYet) {
         const sizeParts = Object.entries(sizes)
           .filter(([_, qty]) => qty > 0)
@@ -132,24 +165,22 @@ export default function BulkJerseyOrderModal({ product, isOpen, onClose }: BulkJ
         : printingOption;
 
       const rawMessage = 
-`🏏 *BULK JERSEY ORDER ENQUIRY* [${refId}]
+`🏏 *BULK TEAM JERSEY ORDER ENQUIRY* [${refId}]
 
-👕 *Product:* ${product.name}
-📦 *Product ID / SKU:* ${product.sku || product.id}
-🔢 *Requested Quantity:* ${quantity} Jerseys
+👕 *Selected Jersey / Product:* ${activeProduct?.name || "Match Jersey"}
+📦 *Product SKU / ID:* ${activeProduct?.sku || activeProduct?.id || "RP-JSY"}
+🔢 *Total Quantity:* ${quantity} Jerseys
 
+🏆 *Team / Club / Academy:* ${teamName.trim() || "Not specified"}
+🎨 *Customization / Printing:* ${finalPrinting}
 📐 *Size Breakdown:*
 ${sizeBreakdownText}
 
-🎨 *Customization / Printing:*
-${finalPrinting}
-
-🏆 *Team / Club:* ${teamName.trim() || "Not specified"}
-👤 *Customer Name:* ${customerName.trim()}
-📱 *WhatsApp:* ${cleanPhone}
+👤 *Contact Name:* ${customerName.trim()}
+📱 *WhatsApp Phone:* ${cleanPhone}
 ${email.trim() ? `✉️ *Email:* ${email.trim()}\n` : ""}📍 *Delivery City:* ${deliveryCity.trim()}
-${deliveryAddress.trim() ? `🏢 *Delivery Address:* ${deliveryAddress.trim()}\n` : ""}${additionalNotes.trim() ? `📝 *Additional Requirements:* ${additionalNotes.trim()}\n` : ""}
-_Please share bulk discounted pricing, design proofing & delivery schedule._`;
+${deliveryAddress.trim() ? `🏢 *Delivery Address:* ${deliveryAddress.trim()}\n` : ""}${additionalNotes.trim() ? `📝 *Special Notes / Deadline:* ${additionalNotes.trim()}\n` : ""}
+_Please share wholesale discounted quotation, jersey mockups & delivery timeline._`;
 
       const encodedText = encodeURIComponent(rawMessage);
       const cleanAdminPhone = ADMIN_WHATSAPP_NUMBER.replace(/[^0-9]/g, "");
@@ -158,7 +189,7 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
       setGeneratedWhatsAppUrl(waUrl);
       setIsSuccess(true);
 
-      // Open WhatsApp safely in a new window
+      // Open WhatsApp in a new tab
       window.open(waUrl, "_blank", "noopener,noreferrer");
     } catch (err: any) {
       console.error("Bulk enquiry error:", err);
@@ -181,11 +212,11 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-[#CC0000] bg-red-950/60 px-2 py-0.5 rounded border border-red-800/60">
-                  Direct WhatsApp Quotation
+                  Wholesale WhatsApp Enquiry
                 </span>
               </div>
               <h3 className="text-xl md:text-2xl font-display font-black uppercase text-white leading-tight mt-0.5" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                Bulk Jersey / Team Order
+                Bulk Team Jersey Order
               </h3>
             </div>
           </div>
@@ -213,28 +244,32 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
                   Enquiry ID: {enquiryReference}
                 </span>
                 <h4 className="text-2xl font-display font-black uppercase text-slate-900" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                  Bulk Order Request Prepared ✓
+                  Bulk Order Enquiry Ready ✓
                 </h4>
                 <p className="text-slate-600 text-sm max-w-md mx-auto mt-2 leading-relaxed">
-                  We've prepared your custom jersey enquiry message for WhatsApp. Please send it to our production team to discuss bulk pricing, player name/number lists, and final design proofs.
+                  We&apos;ve formatted your team order details for WhatsApp. Please send the message to our admin team to finalize bulk pricing, name/number list, and production proofs.
                 </p>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left text-xs space-y-1.5 max-w-md mx-auto text-slate-700">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left text-xs space-y-2 max-w-md mx-auto text-slate-700">
                 <div className="flex justify-between font-medium">
-                  <span className="text-slate-500">Jersey Model:</span>
-                  <strong className="text-slate-900">{product.name}</strong>
+                  <span className="text-slate-500">Selected Jersey:</span>
+                  <strong className="text-slate-900 text-right truncate max-w-[200px]">{activeProduct?.name}</strong>
                 </div>
                 <div className="flex justify-between font-medium">
                   <span className="text-slate-500">Total Quantity:</span>
                   <strong className="text-slate-900 font-mono">{quantity} Jerseys</strong>
                 </div>
                 <div className="flex justify-between font-medium">
-                  <span className="text-slate-500">Customization:</span>
+                  <span className="text-slate-500">Team / Club:</span>
+                  <strong className="text-slate-900">{teamName || "General Order"}</strong>
+                </div>
+                <div className="flex justify-between font-medium">
+                  <span className="text-slate-500">Printing:</span>
                   <strong className="text-slate-900">{printingOption}</strong>
                 </div>
                 <div className="flex justify-between font-medium">
-                  <span className="text-slate-500">Delivery Destination:</span>
+                  <span className="text-slate-500">Delivery City:</span>
                   <strong className="text-slate-900">{deliveryCity}</strong>
                 </div>
               </div>
@@ -246,14 +281,14 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
                   rel="noopener noreferrer"
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-bold uppercase text-sm px-6 py-3.5 rounded-xl transition-all shadow-md hover:shadow-emerald-600/30 flex items-center justify-center gap-2"
                 >
-                  <MessageSquare className="w-4 h-4" /> Open WhatsApp Again
+                  <MessageSquare className="w-4 h-4" /> Open WhatsApp Chat
                 </a>
                 <button
                   type="button"
                   onClick={onClose}
                   className="border border-slate-300 hover:bg-slate-100 text-slate-700 font-display font-bold uppercase text-sm px-6 py-3.5 rounded-xl transition-colors"
                 >
-                  Continue Shopping
+                  Close
                 </button>
               </div>
             </div>
@@ -261,29 +296,49 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
             /* Bulk Order Form */
             <form onSubmit={handleFormSubmit} className="space-y-6">
               
-              {/* Product Context Banner */}
-              <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 p-3.5 rounded-2xl">
-                <img
-                  src={product.images[0] || product.image || "/products/generated_jersey.jpg"}
-                  alt={product.name}
-                  className="w-14 h-14 object-cover rounded-xl bg-white border border-slate-200 p-1"
-                />
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-bold text-[#CC0000] uppercase tracking-wider block">
-                    {product.brand} • SKU: {product.sku || product.id}
-                  </span>
-                  <h4 className="font-bold text-slate-900 text-sm truncate">{product.name}</h4>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Minimum bulk quantity: <strong className="text-slate-800 font-bold">{MIN_BULK_QUANTITY} jerseys</strong>
-                  </p>
+              {/* Product Selection Dropdown / Selector */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-800">
+                  Select Jersey / Product Model *
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedProductId}
+                    onChange={(e) => setSelectedProductId(e.target.value)}
+                    className="w-full pl-4 pr-10 py-3 bg-slate-50 border-2 border-slate-300 rounded-xl text-xs md:text-sm font-bold text-slate-900 appearance-none focus:outline-none focus:border-[#CC0000] focus:bg-white cursor-pointer"
+                  >
+                    {availableJerseys.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        {j.name} ({j.sku || j.id}) — ₹{j.price.toLocaleString("en-IN")}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-slate-500 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
+
+                {/* Selected Product Preview Card */}
+                {activeProduct && (
+                  <div className="flex items-center gap-3.5 bg-slate-50 border border-slate-200 p-3 rounded-xl mt-2">
+                    <img
+                      src={activeProduct.images?.[0] || activeProduct.image || "/hero-banner.jpg"}
+                      alt={activeProduct.name}
+                      className="w-12 h-12 object-cover rounded-lg bg-white border border-slate-200 p-1"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[10px] font-bold text-[#CC0000] uppercase tracking-wider block">
+                        {activeProduct.brand || "RP Sports"} • SKU: {activeProduct.sku || activeProduct.id}
+                      </span>
+                      <h4 className="font-bold text-slate-900 text-xs truncate">{activeProduct.name}</h4>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Quantity & Printing Options */}
+              {/* Quantity & Team Name */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-1.5">
-                    Total Quantity * <span className="text-slate-400 font-normal">(Min {MIN_BULK_QUANTITY})</span>
+                    Total Quantity * <span className="text-slate-400 font-normal">(Min {MIN_BULK_QUANTITY} jerseys)</span>
                   </label>
                   <input
                     type="number"
@@ -297,7 +352,7 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
                   />
                   {quantity < MIN_BULK_QUANTITY && (
                     <span className="text-[11px] text-[#CC0000] font-medium block mt-1">
-                      Bulk orders start from {MIN_BULK_QUANTITY} jerseys.
+                      Bulk team pricing applies for {MIN_BULK_QUANTITY}+ jerseys.
                     </span>
                   )}
                 </div>
@@ -311,7 +366,7 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
-                    placeholder="e.g. Kolkata Cricket Club"
+                    placeholder="e.g. Dumdum Titans CC"
                   />
                 </div>
               </div>
@@ -319,14 +374,15 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
               {/* Printing Options */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                  Printing & Customization Required?
+                  Printing & Customization Requirement
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
                     "Player Name + Number",
                     "Player Name + Number + Team Logo",
                     "Team / Club Logo Only",
-                    "No Printing (Plain Team Jerseys)",
+                    "Full Sublimation (Front & Back Sponsor Print)",
+                    "No Printing (Plain Match Jerseys)",
                     "Other",
                   ].map((opt) => (
                     <label
@@ -350,107 +406,105 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
                 </div>
 
                 {printingOption === "Other" && (
-                  <div className="mt-2.5">
+                  <div className="mt-3">
                     <input
                       type="text"
                       value={otherPrintingNotes}
                       onChange={(e) => setOtherPrintingNotes(e.target.value)}
-                      placeholder="Describe custom printing requirements (e.g. sponsor patch, chest text)..."
-                      className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#CC0000]"
+                      placeholder="Specify your custom printing requirements..."
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#CC0000]"
                     />
                   </div>
                 )}
               </div>
 
-              {/* Size Breakdown */}
-              <div className="bg-slate-50 border border-slate-200 p-4 md:p-5 rounded-2xl space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <h5 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                      Approximate Size Breakdown
-                    </h5>
-                    <span className="text-[11px] text-slate-500">
-                      Specify jersey count per size (exact player list can be shared later)
-                    </span>
-                  </div>
-
-                  {!noSizeBreakdownYet && (
-                    <div className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${
-                      isSizeSumMatched
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : "bg-amber-50 text-amber-800 border-amber-200"
-                    }`}>
-                      Sizes: {totalSizesEntered} / {quantity} {isSizeSumMatched ? "✓" : "⚠️"}
-                    </div>
-                  )}
+              {/* Size Breakdown Breakdown */}
+              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                    Size Distribution Breakdown
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={noSizeBreakdownYet}
+                      onChange={(e) => setNoSizeBreakdownYet(e.target.checked)}
+                      className="rounded border-slate-300 text-[#CC0000] focus:ring-[#CC0000]"
+                    />
+                    <span>Decide sizes later</span>
+                  </label>
                 </div>
 
                 {!noSizeBreakdownYet && (
-                  <div className="grid grid-cols-5 gap-2 pt-1">
-                    {["S", "M", "L", "XL", "XXL"].map((sz) => (
-                      <div key={sz} className="text-center">
-                        <span className="text-[11px] font-bold text-slate-600 block mb-1">{sz}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          value={sizes[sz] !== undefined ? sizes[sz] : ""}
-                          onChange={(e) => handleSizeChange(sz, e.target.value)}
-                          className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-lg text-center text-xs font-bold text-slate-900 focus:outline-none focus:border-[#CC0000]"
-                          placeholder="0"
-                        />
-                      </div>
-                    ))}
+                  <div>
+                    <div className="grid grid-cols-5 gap-2">
+                      {["S", "M", "L", "XL", "XXL"].map((sz) => (
+                        <div key={sz} className="text-center">
+                          <span className="block text-[11px] font-bold text-slate-500 mb-1">{sz}</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={sizes[sz] || 0}
+                            onChange={(e) => handleSizeChange(sz, e.target.value)}
+                            className="w-full py-2 px-1 text-center bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#CC0000]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs mt-2.5 pt-2 border-t border-slate-200">
+                      <span className="text-slate-500">Sizes Total: <strong className="font-mono text-slate-800">{totalSizesEntered}</strong> / {quantity}</span>
+                      {totalSizesEntered !== quantity && (
+                        <span className="text-[#CC0000] font-bold">
+                          Difference: {quantity - totalSizesEntered > 0 ? `+${quantity - totalSizesEntered} left` : `${totalSizesEntered - quantity} extra`}
+                        </span>
+                      )}
+                      {totalSizesEntered === quantity && (
+                        <span className="text-emerald-600 font-bold">✓ Matches total</span>
+                      )}
+                    </div>
                   </div>
                 )}
-
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 pt-1">
-                  <input
-                    type="checkbox"
-                    checked={noSizeBreakdownYet}
-                    onChange={(e) => setNoSizeBreakdownYet(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#CC0000] focus:ring-[#CC0000]"
-                  />
-                  <span>I don't know the final size breakdown yet (discuss with team on WhatsApp)</span>
-                </label>
               </div>
 
-              {/* Customer Contact Information */}
-              <div className="space-y-3 pt-1">
-                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-                  <User className="w-4 h-4 text-[#CC0000]" /> Contact & Delivery Details
-                </h5>
+              {/* Customer Contact Details */}
+              <div className="space-y-4 pt-2 border-t border-slate-100">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-[#CC0000]" />
+                  <span>Contact & Delivery Information</span>
+                </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                      Full Name *
+                      Your Full Name *
                     </label>
                     <input
                       type="text"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
                       placeholder="e.g. Patit Roy"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
                       required
                     />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                      WhatsApp Number *
+                      WhatsApp Phone Number *
                     </label>
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
                       placeholder="e.g. +91 98300 12345"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
                       Delivery City *
@@ -459,8 +513,8 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
                       type="text"
                       value={deliveryCity}
                       onChange={(e) => setDeliveryCity(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
-                      placeholder="e.g. Kolkata, Dumdum, Howrah"
+                      placeholder="e.g. Kolkata, Dumdum"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
                       required
                     />
                   </div>
@@ -473,71 +527,53 @@ _Please share bulk discounted pricing, design proofing & delivery schedule._`;
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
-                      placeholder="e.g. club@example.com"
+                      placeholder="you@example.com"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                    Full Delivery Address <span className="text-slate-400 font-normal">(Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
-                    placeholder="e.g. 12/B Park Street, Kolkata, West Bengal"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-                    Additional Requirements / Deadline / Notes
+                    Special Requirements / Tournament Date <span className="text-slate-400 font-normal">(Optional)</span>
                   </label>
                   <textarea
                     rows={2}
                     value={additionalNotes}
                     onChange={(e) => setAdditionalNotes(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white"
-                    placeholder="e.g. Tournament date 25th September, need collar pattern, sponsor logos on sleeves..."
+                    placeholder="Mention custom sponsor logos, tournament deadline date, collar preferences, etc."
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#CC0000] focus:bg-white resize-none"
                   />
                 </div>
               </div>
 
               {/* Error Alert */}
               {errorMessage && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-bold flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-[#CC0000] rounded-xl text-xs font-bold animate-shake">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{errorMessage}</span>
                 </div>
               )}
 
-              {/* Pricing Notice */}
-              <div className="bg-amber-50/70 border border-amber-200 p-3 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
-                <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Bulk pricing & wholesale discount</strong> will be confirmed directly by our Kolkata workshop team via WhatsApp. No payment is charged at this step.
-                </span>
+              {/* Submit Button */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-4 bg-[#25D366] hover:bg-[#1EBE5D] active:scale-[0.99] text-white rounded-xl font-display font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50 transition-all"
+                  style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span>
+                    {isSubmitting ? "Generating WhatsApp Enquiry..." : `Send Team Order to Admin WhatsApp (${quantity} Jerseys)`}
+                  </span>
+                </button>
+
+                <p className="text-[10px] text-slate-400 text-center mt-2.5">
+                  Opens WhatsApp with pre-filled team order details directly to RP Sports Kolkata workshop admin.
+                </p>
               </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-display font-bold uppercase text-base tracking-wider rounded-2xl shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50"
-                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
-              >
-                {isSubmitting ? (
-                  <span>Preparing WhatsApp Enquiry...</span>
-                ) : (
-                  <>
-                    <MessageSquare className="w-5 h-5" />
-                    <span>Send Bulk Order on WhatsApp</span>
-                  </>
-                )}
-              </button>
             </form>
           )}
 

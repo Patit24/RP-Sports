@@ -12,6 +12,7 @@ import { mockProducts, CATEGORIES, BRANDS } from "@/lib/mockData";
 import DualFeatureBanners from "@/components/DualFeatureBanners";
 import ShoeCategoryShowcase from "@/components/ShoeCategoryShowcase";
 import CustomerTestimonialsVideo from "@/components/CustomerTestimonialsVideo";
+import BulkJerseyOrderModal from "@/components/BulkJerseyOrderModal";
 
 
 
@@ -42,6 +43,7 @@ const STATS = [
 export default function Home() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   
   const { products, categories } = useStore();
   const [activeProductTab, setActiveProductTab] = useState<"featured" | "bestseller" | "trending" | "new">("featured");
@@ -401,14 +403,14 @@ export default function Home() {
               <Link href="/shop?category=cricket" className="btn-primary">
                 Shop Cricket Bats <ArrowRight className="w-4 h-4" />
               </Link>
-              <a 
-                href="https://wa.me/919876543210?text=Hi%20RP%20Sports%2C%20I%20want%20to%20enquire%20about%20Bulk%20Team%20Orders"
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="btn-outline border-white/40 text-white hover:border-primary hover:bg-primary"
+              <button 
+                type="button"
+                onClick={() => setIsBulkModalOpen(true)}
+                className="btn-outline border-white/40 text-white hover:border-primary hover:bg-primary flex items-center gap-2 cursor-pointer"
               >
-                Bulk Team Orders (WhatsApp)
-              </a>
+                <Users className="w-4 h-4" />
+                <span>Bulk Team Orders</span>
+              </button>
             </div>
           </div>
         </div>
@@ -548,6 +550,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* BULK TEAM ORDER MODAL */}
+      <BulkJerseyOrderModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+      />
 
     </div>
   );
