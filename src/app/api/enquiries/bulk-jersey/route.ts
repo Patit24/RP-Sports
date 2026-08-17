@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/serverAuth";
+import { getAdminDb, verifyAdmin } from "@/lib/serverAuth";
 
 export interface BulkJerseyEnquiry {
   id: string;
@@ -50,7 +50,11 @@ let inMemoryEnquiries: BulkJerseyEnquiry[] = [
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body) {
+      return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
+    }
+
     const {
       productId,
       productName,
@@ -139,6 +143,14 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) {
+      return NextResponse.json(
+        { error: "Unauthorized. Administrator credentials required to view customer enquiries." },
+        { status: 401 }
+      );
+    }
+
     const db = getAdminDb();
     if (db) {
       try {

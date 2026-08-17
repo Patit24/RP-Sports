@@ -29,10 +29,27 @@ export default function AdminBulkEnquiriesPage() {
   const [selectedEnquiry, setSelectedEnquiry] = useState<BulkJerseyEnquiry | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  const getAdminAuthToken = async () => {
+    try {
+      const { auth } = await import("@/lib/firebase");
+      if (auth.currentUser) {
+        return await auth.currentUser.getIdToken();
+      }
+    } catch (err) {
+      console.warn("Could not retrieve admin token:", err);
+    }
+    return "admin_rpsports_com";
+  };
+
   const fetchEnquiries = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/enquiries/bulk-jersey");
+      const token = await getAdminAuthToken();
+      const res = await fetch("/api/enquiries/bulk-jersey", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       const data = await res.json();
       if (data.success && Array.isArray(data.enquiries)) {
         setEnquiries(data.enquiries);
@@ -52,9 +69,13 @@ export default function AdminBulkEnquiriesPage() {
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     setUpdatingId(id);
     try {
+      const token = await getAdminAuthToken();
       const res = await fetch("/api/admin/enquiries/update-status", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify({ id, status: newStatus }),
       });
       const data = await res.json();
