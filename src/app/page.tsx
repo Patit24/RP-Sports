@@ -1,373 +1,562 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import {
-  ArrowRight, Star, ShoppingCart, MapPin, Phone, Clock, ChevronRight,
-  ShieldCheck, Truck, RotateCcw, Award, Users, Package, Zap, Trophy
+  ArrowRight, Star, ShoppingCart, MapPin, ChevronRight, ChevronLeft,
+  ShieldCheck, Truck, RotateCcw, Award, Users, Zap, Trophy,
+  Flame, Sparkles, Eye, Glasses, Shirt, Navigation, X
 } from "lucide-react";
-import { mockProducts, CATEGORIES, BRANDS } from "@/lib/mockData";
+import { CATEGORIES } from "@/lib/mockData";
+import ProductCard from "@/components/ProductCard";
 import DualFeatureBanners from "@/components/DualFeatureBanners";
 import ShoeCategoryShowcase from "@/components/ShoeCategoryShowcase";
 import CustomerTestimonialsVideo from "@/components/CustomerTestimonialsVideo";
 import BulkJerseyOrderModal from "@/components/BulkJerseyOrderModal";
+import { useCustomerLocation } from "@/lib/useCustomerLocation";
 
-
-
-
-const FEATURED_CATEGORIES = [
-  { id: "cricket",   name: "Cricket",    image: "/products/cat_cricket.jpg",   desc: "Bats, Pads, Helmets, Gloves & More" },
-  { id: "football",  name: "Football",   image: "/products/cat_football.jpg",  desc: "Balls, Boots, Shin Guards & More" },
-  { id: "badminton", name: "Badminton",  image: "/products/cat_badminton.jpg", desc: "Rackets, Shuttlecocks & Accessories" },
-  { id: "jerseys",   name: "Jerseys",    image: "/products/cat_jerseys.jpg",   desc: "Custom Kits, Team Wear & Apparel" },
-  { id: "shoes",     name: "Sports Shoes", image: "/products/rp_screenshot_2.png", desc: "Cricket Spikes, Football Boots & More" },
-  { id: "awards",    name: "Trophies",   image: "/products/generated_trophy.jpg", desc: "Awards, Medals & Engraving" },
+// ── Flipkart Style Category Icon Navigation Data ──
+const STORY_CATEGORIES = [
+  { id: "for-you", name: "For You", icon: "⭐", href: "/shop", isHighlight: true },
+  { id: "cricket", name: "Cricket Bats", icon: "🏏", href: "/shop?category=cricket&subcategory=bats" },
+  { id: "football", name: "Football & Boots", icon: "⚽", href: "/shop?category=football" },
+  { id: "badminton", name: "Badminton Gear", icon: "🏸", href: "/shop?category=badminton" },
+  { id: "jerseys", name: "Custom Jerseys", icon: "👕", href: "/shop?category=jerseys" },
+  { id: "caps", name: "Sports Caps", icon: "🧢", href: "/shop?category=jerseys&subcategory=caps" },
+  { id: "sunglasses", name: "Sports Optics", icon: "🕶️", href: "/shop?category=cricket&subcategory=sunglasses" },
+  { id: "shoes", name: "Footwear & Turf", icon: "👟", href: "/shop?category=football&subcategory=boots" },
+  { id: "trophies", name: "Trophies & Awards", icon: "🏆", href: "/shop?category=trophies" },
+  { id: "wholesale", name: "Bulk Wholesale", icon: "👥", href: "#bulk-order", isModal: true },
 ];
 
 const TRUST_BADGES = [
-  { icon: ShieldCheck, label: "100% Authentic", sub: "Genuine Products Only" },
-  { icon: Truck,       label: "Quick Delivery", sub: "Pan India Shipping" },
-  { icon: RotateCcw,   label: "Easy Returns",   sub: "7-Day Return Policy" },
-  { icon: Award,       label: "Best Price",      sub: "Price Match Guarantee" },
-];
-
-const STATS = [
-  { value: "5000+", label: "Happy Customers" },
-  { value: "500+",  label: "Products In Stock" },
-  { value: "15+",   label: "Top Brands" },
-  { value: "10Yrs", label: "Serving Kolkata" },
+  { icon: ShieldCheck, label: "100% Authentic Gear", sub: "Handpicked Genuine Products" },
+  { icon: Truck, label: "24-Hour Express Shipping", sub: "Kolkata & Pan-India Dispatch" },
+  { icon: RotateCcw, label: "7-Day Easy Returns", sub: "Hassle-Free Replacement" },
+  { icon: Award, label: "Free Bat Knocking", sub: "Pre-Pressed & Machine Oiled" },
 ];
 
 export default function Home() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [manualPinInput, setManualPinInput] = useState("");
   
   const { products, categories } = useStore();
-  const [activeProductTab, setActiveProductTab] = useState<"featured" | "bestseller" | "trending" | "new">("featured");
+  const [activeProductTab, setActiveProductTab] = useState<string>("all");
+  const browsingCarouselRef = useRef<HTMLDivElement>(null);
 
-  const displayedProducts = useMemo(() => {
-    const list = products || [];
-    if (activeProductTab === "bestseller") {
-      const filtered = list.filter((p: any) => p.isBestSeller || p.badge === "Bestseller");
-      return filtered.length > 0 ? filtered.slice(0, 8) : list.slice(0, 4);
-    }
-    if (activeProductTab === "trending") {
-      const filtered = list.filter((p: any) => p.badge === "Trending" || p.rating >= 4.8 || p.badge === "Pro Edition");
-      return filtered.length > 0 ? filtered.slice(0, 8) : list.slice(0, 4);
-    }
-    if (activeProductTab === "new") {
-      const filtered = list.filter((p: any) => p.isNew || p.badge === "New Arrival" || p.badge === "New");
-      return filtered.length > 0 ? filtered.slice(0, 8) : list.slice(0, 4);
-    }
-    return list.filter((p: any) => p.featured).slice(0, 8);
-  }, [products, activeProductTab]);
+  // Customer Location Hook
+  const { 
+    city: customerCity, 
+    pincode: customerPincode, 
+    formattedAddress: customerAddress, 
+    setPincodeManual, 
+    detectGpsLocation, 
+    isLoading: isLocLoading 
+  } = useCustomerLocation();
 
-  const activeFeaturedCategories = categories && categories.length > 0
-    ? categories.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        image: c.banner || "/category_cricket_1783225297200.jpg",
-        desc: c.subcategories ? c.subcategories.map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(", ") : "Explore items"
-      }))
-    : FEATURED_CATEGORIES;
-
-  const SLIDES = [
+  // ── Hero Carousel Slides ──
+  const HERO_SLIDES = [
     {
       image: "/products/hero_slide_1.jpg",
-      eyebrow: "Kolkata's #1 Cricket Store • Dumdum",
-      title: "CRAFTED FOR\nMAXIMUM POWER.",
+      tag: "Kolkata Match Season 2026",
+      title: "CRAFTED FOR MAXIMUM\nSWEET-SPOT POWER.",
       sub: "Grade-1 English & Kashmir Willow Cricket Bats. Hand-selected, custom-pressed & pre-knocked for explosive boundaries.",
-      cta1: { label: "Shop Bats", href: "/shop?category=cricket" },
-      cta2: { label: "View Collection", href: "/shop" },
-      badge: "Grade-1 Willow"
+      ctaPrimary: { label: "Explore Cricket Bats", href: "/shop?category=cricket" },
+      ctaSecondary: { label: "Custom Jersey Builder", href: "/jersey-builder" },
+      badge: "Grade-1 Willow",
+      badgeColor: "bg-[#CC0000]"
     },
     {
-      image: "/products/hero_slide_2.jpg",
-      eyebrow: "Pro Series • Player Grade Willow",
-      title: "DOMINATE THE\nMATCH DAY.",
-      sub: "Used by first-class and league players across Bengal. Experience unmatched balance, sweet-spot ping, and lightweight pickup.",
-      cta1: { label: "Explore Pro Bats", href: "/shop?category=cricket" },
-      cta2: { label: "Custom Knocking", href: "/contact" },
-      badge: "Pro Player Series"
+      image: "/products/cricket_jersey_premium.jpg",
+      tag: "Custom Team Kits & Academy Orders",
+      title: "MATCH-READY CUSTOM\nTEAM JERSEYS.",
+      sub: "Sublimated full-color team jerseys with player names, sponsor logos, and breathable moisture-wicking poly.",
+      ctaPrimary: { label: "Order Team Kits", href: "/jersey-builder" },
+      ctaSecondary: { label: "Bulk WhatsApp Quote", href: "#", action: () => setIsBulkModalOpen(true) },
+      badge: "Min 10 Jerseys",
+      badgeColor: "bg-emerald-600"
     },
     {
-      image: "/products/hero_slide_3.jpg",
-      eyebrow: "Handcrafted Willow Selection",
-      title: "FIND YOUR\nPERFECT BAT.",
-      sub: "Explore our extensive range of RP Elite, 7070, AA & KD Cricket Bats. Tested for quality and built for run-machines.",
-      cta1: { label: "View All Bats", href: "/shop" },
-      cta2: { label: "Visit Dumdum Shop", href: "/contact" },
-      badge: "Handcrafted Range"
+      image: "/products/category_badminton.jpg",
+      tag: "Tournament Pro Series",
+      title: "EXPLOSIVE SMASHES &\nCOURT SPEED.",
+      sub: "RP SmashVolt 99 & NanoBlade 700 High-Modulus Carbon Rackets supporting up to 32 lbs high string tension.",
+      ctaPrimary: { label: "Shop Badminton", href: "/shop?category=badminton" },
+      ctaSecondary: { label: "View All Gear", href: "/shop" },
+      badge: "High-Modulus Carbon",
+      badgeColor: "bg-amber-600"
     },
+    {
+      image: "/products/shoe_turf.jpg",
+      tag: "Pro Football Footwear",
+      title: "PRECISION GRIP ON\nTURF & NATURAL GRASS.",
+      sub: "Engineered with micro-textured 3D strike skins and conical stud geometry for rapid acceleration on pitch.",
+      ctaPrimary: { label: "Shop Football Boots", href: "/shop?category=football" },
+      ctaSecondary: { label: "Explore Footwear", href: "/shop" },
+      badge: "FG & Turf Cleats",
+      badgeColor: "bg-blue-600"
+    }
   ];
 
+  // Auto-advance hero carousel
   useEffect(() => {
-    const t = setInterval(() => setCurrentSlide((p) => (p + 1) % SLIDES.length), 6000);
-    return () => clearInterval(t);
-  }, []);
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [HERO_SLIDES.length]);
+
+  // Filtered Products for Suggested Section
+  const filteredSuggestedProducts = useMemo(() => {
+    const list = products || [];
+    if (activeProductTab === "cricket") {
+      return list.filter((p) => p.category === "cricket").slice(0, 8);
+    }
+    if (activeProductTab === "football") {
+      return list.filter((p) => p.category === "football").slice(0, 8);
+    }
+    if (activeProductTab === "badminton") {
+      return list.filter((p) => p.category === "badminton").slice(0, 8);
+    }
+    if (activeProductTab === "jerseys") {
+      return list.filter((p) => p.category === "jerseys").slice(0, 8);
+    }
+    if (activeProductTab === "sunglasses") {
+      return list.filter((p) => p.subcategory === "sunglasses" || p.subcategory === "caps").slice(0, 8);
+    }
+    return list.slice(0, 12);
+  }, [products, activeProductTab]);
+
+  // Continue browsing products (curated spotlight items)
+  const continueBrowsingProducts = useMemo(() => {
+    const list = products || [];
+    return list.slice(0, 10);
+  }, [products]);
+
+  const scrollCarousel = (direction: "left" | "right") => {
+    if (browsingCarouselRef.current) {
+      const scrollAmount = direction === "left" ? -320 : 320;
+      browsingCarouselRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
 
   return (
-    <div className="bg-background text-foreground min-h-screen font-sans">
+    <div className="bg-[#F1F2F4] text-[#111111] min-h-screen font-sans">
 
-      {/* ─── HERO CAROUSEL ─── */}
-      <section className="relative w-full h-[88vh] min-h-[580px] max-h-[800px] overflow-hidden bg-[#0A0A0A]">
-        {SLIDES.map((slide, idx) => (
-          <div
-            key={idx}
-            className={`absolute inset-0 transition-all duration-1000 ease-out ${
-              idx === currentSlide ? "opacity-100 z-10 scale-100" : "opacity-0 z-0 scale-105 pointer-events-none"
-            }`}
-          >
-            {/* Dark studio vignette gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/75 to-black/40 z-10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/50 z-10" />
-            
-            <img
-              src={slide.image}
-              alt={slide.title}
-              className={`absolute inset-0 w-full h-full object-cover object-center transition-transform duration-10000 ease-out ${
-                idx === currentSlide ? "scale-105" : "scale-100"
-              }`}
-            />
+      {/* ─── 1. FLIPKART STYLE TOP SUB-BRAND & QUICK SERVICE PILLS BAR ─── */}
+      <section className="bg-white border-b border-slate-200">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-4 overflow-x-auto custom-scrollbar">
+          
+          {/* Sub-brand / Service Pills (Left) */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#CC0000] text-white font-display font-black text-xs uppercase tracking-wider shadow-sm transition-all hover:bg-red-700"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>RP Sports</span>
+            </Link>
 
-            {/* Slide content container */}
-            <div className="absolute inset-0 z-20 flex flex-col justify-center px-6 md:px-16 lg:px-24 max-w-[1400px] mx-auto">
-              <div className="max-w-2xl">
-                {/* Eyebrow badge */}
-                <div className="inline-flex items-center gap-2 bg-[#CC0000]/15 border border-[#CC0000]/40 px-3.5 py-1.5 rounded-full mb-6">
-                  <span className="w-2 h-2 rounded-full bg-[#CC0000] animate-pulse"></span>
-                  <span className="text-[#FF3333] font-display font-bold uppercase tracking-widest text-xs" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                    {slide.eyebrow}
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-display font-bold text-xs uppercase tracking-wider transition-colors"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              <Truck className="w-3.5 h-3.5 text-[#CC0000]" />
+              <span>24H Express Kolkata</span>
+            </Link>
+
+            <Link
+              href="/jersey-builder"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-display font-bold text-xs uppercase tracking-wider transition-colors"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              <Shirt className="w-3.5 h-3.5 text-blue-600" />
+              <span>Custom Kits</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setIsBulkModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-display font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              <Users className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Bulk / Academy</span>
+            </button>
+
+            <Link
+              href="/shop?category=cricket&subcategory=sunglasses"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-display font-bold text-xs uppercase tracking-wider transition-colors"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              <Glasses className="w-3.5 h-3.5 text-amber-600" />
+              <span>Pro Optics</span>
+            </Link>
+          </div>
+
+          {/* Location Delivery & RP Rewards Pill (Right) */}
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsLocationModalOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-neutral-700 hover:text-[#CC0000] font-semibold bg-neutral-50 hover:bg-red-50/50 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+            >
+              <MapPin className="w-3.5 h-3.5 text-[#CC0000] shrink-0" />
+              <span className="truncate max-w-[200px] sm:max-w-[280px]">
+                Deliver to: <span className="font-bold text-neutral-900">{customerCity} ({customerPincode})</span>
+              </span>
+              <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            </button>
+
+            <div className="hidden sm:flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200/80 px-2.5 py-1.5 rounded-lg">
+              <Sparkles className="w-3.5 h-3.5 fill-amber-400" />
+              <span>250 RP Coins</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      {/* ─── 2. FLIPKART STYLE HORIZONTAL CATEGORY ICON STRIP ─── */}
+      <section className="bg-white border-b border-slate-200/90 shadow-sm sticky top-20 z-30">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+          <div className="flex items-center justify-between gap-3 overflow-x-auto custom-scrollbar no-scrollbar">
+            {STORY_CATEGORIES.map((cat) => {
+              if (cat.isModal) {
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setIsBulkModalOpen(true)}
+                    className="flex flex-col items-center gap-1.5 group shrink-0 px-2.5 py-1 rounded-xl hover:bg-neutral-50 transition-colors cursor-pointer min-w-[72px]"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-neutral-100 group-hover:bg-[#CC0000] flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-105 shadow-sm group-hover:text-white border border-slate-200/80">
+                      {cat.icon}
+                    </div>
+                    <span className="text-[11px] font-bold text-neutral-700 group-hover:text-[#CC0000] text-center leading-tight whitespace-nowrap transition-colors">
+                      {cat.name}
+                    </span>
+                  </button>
+                );
+              }
+
+              return (
+                <Link
+                  key={cat.id}
+                  href={cat.href}
+                  className="flex flex-col items-center gap-1.5 group shrink-0 px-2.5 py-1 rounded-xl hover:bg-neutral-50 transition-colors min-w-[72px]"
+                >
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-105 shadow-sm border ${
+                    cat.isHighlight
+                      ? "bg-red-50 text-[#CC0000] border-red-200 group-hover:bg-[#CC0000] group-hover:text-white"
+                      : "bg-neutral-100 group-hover:bg-[#CC0000] text-neutral-800 group-hover:text-white border-slate-200/80"
+                  }`}>
+                    {cat.icon}
+                  </div>
+                  <span className={`text-[11px] font-bold text-center leading-tight whitespace-nowrap transition-colors ${
+                    cat.isHighlight ? "text-[#CC0000]" : "text-neutral-700 group-hover:text-[#CC0000]"
+                  }`}>
+                    {cat.name}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+
+      {/* ─── 3. FLIPKART STYLE 3-COLUMN HERO SECTION ─── */}
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+          
+          {/* LEFT COLUMN: Feature Promo Card (3 Cols) */}
+          <div className="lg:col-span-3">
+            <Link
+              href="/shop?category=cricket"
+              className="group relative h-full min-h-[300px] lg:min-h-[420px] rounded-2xl overflow-hidden bg-gradient-to-br from-[#CC0000] via-[#990000] to-[#111111] p-6 text-white flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-500 block border border-red-500/20"
+            >
+              {/* Background texture & accent circles */}
+              <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-40 h-40 bg-black/40 rounded-full blur-2xl pointer-events-none" />
+
+              <div>
+                <div className="inline-flex items-center gap-1.5 bg-black/40 backdrop-blur-md text-amber-300 text-[10px] font-display font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 border border-white/10">
+                  <Flame className="w-3.5 h-3.5 fill-current text-amber-400" />
+                  Kashmir Willow Power Days
+                </div>
+
+                <h2 
+                  className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight text-white leading-none mb-2"
+                  style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                >
+                  EXPLORE GRADE-1\nHANDCRAFTED BATS
+                </h2>
+
+                <p className="text-white/80 text-xs sm:text-sm font-medium line-clamp-3">
+                  Pre-knocked, oiled & balanced for explosive sweet-spot punch. Starting from ₹2,499.
+                </p>
+              </div>
+
+              {/* Product preview & bottom CTA */}
+              <div className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-white/70 block">Starting At</span>
+                    <span className="text-2xl font-display font-black text-white" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                      ₹2,499
+                    </span>
+                  </div>
+                  <span className="inline-flex items-center gap-1 bg-white text-[#CC0000] font-display font-black text-xs uppercase tracking-wider px-3.5 py-2 rounded-xl group-hover:bg-amber-300 group-hover:text-black transition-colors shadow-sm" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                    Shop Bats <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 </div>
-
-                {/* Main Headline */}
-                <h1
-                  className="text-white font-black uppercase tracking-tight mb-6 drop-shadow-2xl whitespace-pre-line"
-                  style={{
-                    fontFamily: 'Barlow Condensed, sans-serif',
-                    fontSize: 'clamp(3rem, 6.5vw, 5.5rem)',
-                    lineHeight: 0.94,
-                    fontWeight: 900,
-                  }}
-                >
-                  {slide.title}
-                </h1>
-
-                {/* Subtitle */}
-                <p className="text-white/80 text-base md:text-lg font-normal mb-8 max-w-xl leading-relaxed">
-                  {slide.sub}
-                </p>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-4">
-                  <Link href={slide.cta1.href} className="btn-primary text-sm shadow-lg shadow-[#CC0000]/30 hover:scale-105 transition-transform">
-                    {slide.cta1.label} <ArrowRight className="w-4 h-4" />
-                  </Link>
-                  <Link
-                    href={slide.cta2.href}
-                    className="btn-outline text-sm border-white/30 text-white hover:border-[#CC0000] hover:bg-[#CC0000] hover:text-white transition-all"
-                  >
-                    {slide.cta2.label}
-                  </Link>
-                </div>
               </div>
-            </div>
+            </Link>
           </div>
-        ))}
 
-        {/* Bottom Bar Controls & Info */}
-        <div className="absolute bottom-6 left-6 md:left-16 lg:left-24 right-6 md:right-16 z-30 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4">
-          
-          {/* Slide Navigation & Indicator */}
-          <div className="flex items-center gap-4">
-            <span className="text-white/40 font-display font-bold text-sm tracking-wider" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              0{currentSlide + 1} <span className="text-white/20">/</span> 0{SLIDES.length}
-            </span>
-            <div className="flex gap-2">
-              {SLIDES.map((_, idx) => (
-                <button
+
+          {/* CENTER COLUMN: Main Carousel Banner (6 Cols) */}
+          <div className="lg:col-span-6">
+            <div className="relative h-full min-h-[340px] lg:min-h-[420px] rounded-2xl overflow-hidden bg-neutral-950 shadow-md border border-slate-200">
+              {HERO_SLIDES.map((slide, idx) => (
+                <div
                   key={idx}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={`h-1.5 rounded-full transition-all duration-500 cursor-pointer ${
-                    idx === currentSlide ? "w-10 bg-[#CC0000]" : "w-4 bg-white/30 hover:bg-white/60"
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-out ${
+                    idx === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
                   }`}
-                  aria-label={`Go to slide ${idx + 1}`}
-                />
-              ))}
-            </div>
-          </div>
+                >
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    className="absolute inset-0 w-full h-full object-cover object-center scale-105 transition-transform duration-10000 ease-out"
+                  />
+                  {/* Studio Dark Vignette Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/75 to-black/30 z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/40 z-10" />
 
-          {/* Location & Store Info Badge */}
-          <div className="flex items-center gap-3 bg-black/70 backdrop-blur-md border border-white/15 px-4 py-2 text-white text-xs font-medium">
-            <MapPin className="w-4 h-4 text-[#CC0000] flex-shrink-0" />
-            <span>Dumdum, Kolkata — Visit Store Near Station</span>
-          </div>
-
-        </div>
-      </section>
-
-
-      {/* ─── TRUST STRIP ─── */}
-      <div className="bg-secondary text-white py-4 border-b border-white/5">
-        <div className="max-w-[1600px] mx-auto px-6 md:px-12 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-0 md:divide-x divide-white/10">
-          {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
-            <div key={label} className="flex items-center gap-3 px-0 md:px-8 first:pl-0 last:pr-0">
-              <Icon className="w-5 h-5 text-primary flex-shrink-0" />
-              <div>
-                <p className="text-sm font-display font-bold uppercase tracking-wide">{label}</p>
-                <p className="text-xs text-white/50">{sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ─── SHOP BY CATEGORY ─── */}
-      <section className="py-16 px-6 md:px-12 max-w-[1600px] mx-auto">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <p className="text-primary font-display font-bold uppercase tracking-widest text-sm mb-2">Explore</p>
-            <h2 className="section-heading text-4xl md:text-6xl text-secondary">Shop By<br/>Category</h2>
-          </div>
-          <Link href="/shop" className="hidden md:flex items-center gap-2 text-sm font-display font-bold uppercase tracking-wider text-secondary hover:text-primary transition-colors">
-            All Products <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-          {activeFeaturedCategories.map((cat: any) => (
-            <Link
-              key={cat.id}
-              href={`/shop?category=${cat.id}`}
-              className="group relative aspect-square overflow-hidden bg-muted"
-            >
-              <img src={cat.image} alt={cat.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 p-4 w-full">
-                <h3 className="text-white font-display font-extrabold uppercase text-lg leading-none">{cat.name}</h3>
-                <p className="text-white/60 text-[10px] mt-1 leading-snug hidden sm:block">{cat.desc}</p>
-              </div>
-              <div className="absolute top-3 right-3 w-7 h-7 bg-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <ArrowRight className="w-3.5 h-3.5 text-white" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── DUAL FEATURE BANNERS (PRO OPTICS & LEGACY HEADWEAR) ─── */}
-      <DualFeatureBanners />
-
-      {/* ─── DYNAMIC SHOES & FOOTWEAR SHOWCASE ─── */}
-      <ShoeCategoryShowcase />
-
-
-      {/* ─── FEATURED PRODUCTS ─── */}
-      <section className="py-16 px-6 md:px-12 bg-muted stripe-bg">
-
-        <div className="max-w-[1600px] mx-auto">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <p className="text-primary font-display font-bold uppercase tracking-widest text-sm mb-2">Hand-picked</p>
-              <h2 className="section-heading text-4xl md:text-6xl text-secondary">Featured<br/>Products</h2>
-            </div>
-            <Link href="/shop" className="hidden md:flex items-center gap-2 text-sm font-display font-bold uppercase tracking-wider text-secondary hover:text-primary transition-colors">
-              View All <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {/* Tab Selector buttons */}
-          <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-8 border-b border-slate-200/80 pb-4">
-            <button
-              onClick={() => setActiveProductTab("featured")}
-              className={`px-4 py-2 text-sm font-display font-bold uppercase tracking-wider transition-all duration-300 border-b-2 cursor-pointer ${
-                activeProductTab === "featured"
-                  ? "border-[#CC0000] text-[#CC0000]"
-                  : "border-transparent text-slate-500 hover:text-secondary"
-              }`}
-              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
-            >
-              Featured
-            </button>
-            <button
-              onClick={() => setActiveProductTab("bestseller")}
-              className={`px-4 py-2 text-sm font-display font-bold uppercase tracking-wider transition-all duration-300 border-b-2 cursor-pointer ${
-                activeProductTab === "bestseller"
-                  ? "border-[#CC0000] text-[#CC0000]"
-                  : "border-transparent text-slate-500 hover:text-secondary"
-              }`}
-              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
-            >
-              Best Selling
-            </button>
-            <button
-              onClick={() => setActiveProductTab("trending")}
-              className={`px-4 py-2 text-sm font-display font-bold uppercase tracking-wider transition-all duration-300 border-b-2 cursor-pointer ${
-                activeProductTab === "trending"
-                  ? "border-[#CC0000] text-[#CC0000]"
-                  : "border-transparent text-slate-500 hover:text-secondary"
-              }`}
-              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
-            >
-              Trending Products
-            </button>
-            <button
-              onClick={() => setActiveProductTab("new")}
-              className={`px-4 py-2 text-sm font-display font-bold uppercase tracking-wider transition-all duration-300 border-b-2 cursor-pointer ${
-                activeProductTab === "new"
-                  ? "border-[#CC0000] text-[#CC0000]"
-                  : "border-transparent text-slate-500 hover:text-secondary"
-              }`}
-              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
-            >
-              New Arrivals
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-            {displayedProducts.map((product: any) => (
-              <Link key={product.id} href={`/product/${product.id}`} className="product-card group">
-                {/* Image */}
-                <div className="relative aspect-square bg-white overflow-hidden hover-zoom-container">
-                  <img src={product.images[0]} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
-                  {product.badge && (
-                    <span className={`absolute top-2 left-2 text-[10px] font-display font-bold uppercase tracking-wider px-2.5 py-1 z-10 ${
-                      product.badge === "Sale" || product.badge === "Special Sale" ? "badge-sale" :
-                      product.badge === "New" || product.badge === "New Arrival" ? "badge-new" : "badge-limited"
-                    }`}>
-                      {product.badge}
+                  {/* Slide Content */}
+                  <div className="absolute inset-0 z-20 flex flex-col justify-center p-6 sm:p-10 max-w-xl">
+                    <span className={`inline-flex items-center self-start text-white text-[10px] font-display font-black uppercase tracking-widest px-3 py-1 rounded-full mb-3 shadow-md ${slide.badgeColor}`}>
+                      {slide.tag}
                     </span>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-                    <button className="w-full bg-[#CC0000] text-white font-display font-bold uppercase text-xs tracking-wider py-2.5 flex items-center justify-center gap-2">
-                      <ShoppingCart className="w-3.5 h-3.5" /> Quick Add
-                    </button>
-                  </div>
-                </div>
-                {/* Info */}
-                <div className="p-3 md:p-4">
-                  <p className="text-[10px] text-[#CC0000] font-display font-bold uppercase tracking-widest mb-1">{product.brand}</p>
-                  <h4 className="font-semibold text-secondary text-sm leading-tight mb-2 line-clamp-2">{product.name}</h4>
-                  <div className="flex items-center gap-1 mb-3">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating) ? "text-amber-400 fill-amber-400" : "text-gray-200 fill-gray-200"}`} />
-                    ))}
-                    <span className="text-xs text-gray-400 ml-1">({product.reviewsCount || product.reviewCount || 0})</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[#CC0000] font-display font-extrabold text-lg">₹{product.price.toLocaleString("en-IN")}</span>
-                      {product.mrp > product.price && (
-                        <span className="text-gray-400 text-xs line-through ml-2">₹{product.mrp.toLocaleString("en-IN")}</span>
+
+                    <h2 
+                      className="text-3xl sm:text-4xl lg:text-5xl font-display font-black uppercase text-white tracking-tight leading-[0.95] mb-3 whitespace-pre-line drop-shadow-md"
+                      style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                    >
+                      {slide.title}
+                    </h2>
+
+                    <p className="text-white/80 text-xs sm:text-sm mb-6 line-clamp-2 max-w-md">
+                      {slide.sub}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Link
+                        href={slide.ctaPrimary.href}
+                        className="bg-[#CC0000] hover:bg-red-700 text-white font-display font-black text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-lg shadow-red-600/30 flex items-center gap-2 transition-all hover:scale-105 cursor-pointer"
+                        style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                      >
+                        {slide.ctaPrimary.label} <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+
+                      {slide.ctaSecondary.action ? (
+                        <button
+                          type="button"
+                          onClick={slide.ctaSecondary.action}
+                          className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-display font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all cursor-pointer backdrop-blur-md"
+                          style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                        >
+                          {slide.ctaSecondary.label}
+                        </button>
+                      ) : (
+                        <Link
+                          href={slide.ctaSecondary.href}
+                          className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-display font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all backdrop-blur-md"
+                          style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                        >
+                          {slide.ctaSecondary.label}
+                        </Link>
                       )}
                     </div>
-                    {product.mrp > product.price && (
-                      <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5">
-                        {Math.round((1 - product.price / product.mrp) * 100)}% OFF
+                  </div>
+                </div>
+              ))}
+
+              {/* Slider Dots & Navigation Controls */}
+              <div className="absolute bottom-4 right-4 z-30 flex items-center gap-2">
+                {HERO_SLIDES.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                      idx === currentSlide ? "w-8 bg-[#CC0000]" : "w-2 bg-white/40 hover:bg-white/80"
+                    }`}
+                    aria-label={`Slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+
+          {/* RIGHT COLUMN: Spotlight Deals Card (3 Cols) */}
+          <div className="lg:col-span-3">
+            <Link
+              href="/shop?category=cricket&subcategory=sunglasses"
+              className="group relative h-full min-h-[300px] lg:min-h-[420px] rounded-2xl overflow-hidden bg-neutral-950 p-6 text-white flex flex-col justify-between shadow-md hover:shadow-xl transition-all duration-500 block border border-slate-800"
+            >
+              <img
+                src="/images/feature_sunglasses.jpg"
+                alt="Pro Sports Sunglasses"
+                className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10" />
+
+              <div className="relative z-20">
+                <div className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-[10px] font-display font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4 shadow-sm">
+                  Limited Season Drop
+                </div>
+
+                <h2 
+                  className="text-2xl sm:text-3xl font-display font-black uppercase tracking-tight text-white leading-none mb-2"
+                  style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                >
+                  PRO OPTICS &\nSUNGLASSES
+                </h2>
+
+                <p className="text-white/80 text-xs sm:text-sm font-medium line-clamp-3">
+                  UV400 polarized mirrored sunglasses for high-velocity ball tracking and outfield glare control.
+                </p>
+              </div>
+
+              <div className="relative z-20 pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-amber-400 block">Up To 40% Off</span>
+                    <span className="text-2xl font-display font-black text-white" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                      From ₹1,199
+                    </span>
+                  </div>
+                  <span className="inline-flex items-center gap-1 bg-[#CC0000] text-white font-display font-black text-xs uppercase tracking-wider px-3.5 py-2 rounded-xl group-hover:bg-red-700 transition-colors shadow-sm" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                    Shop Optics <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          </div>
+
+        </div>
+      </section>
+
+
+      {/* ─── 4. FLIPKART STYLE VIBRANT HORIZONTAL CAROUSEL: "STILL LOOKING FOR THESE?" ─── */}
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div className="bg-gradient-to-r from-[#CC0000] via-[#B30000] to-[#800000] rounded-2xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden">
+          
+          {/* Header Row */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                <Flame className="w-4 h-4 fill-current text-amber-300" />
+              </div>
+              <div>
+                <h3 
+                  className="text-xl sm:text-2xl font-display font-black uppercase tracking-tight text-white leading-none"
+                  style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                >
+                  Still looking for these?
+                </h3>
+                <p className="text-white/80 text-[11px] font-medium hidden sm:block">
+                  Trending matchday equipment & fan favorites across Kolkata
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Link 
+                href="/shop" 
+                className="text-xs font-display font-bold uppercase tracking-wider text-white hover:text-amber-300 transition-colors"
+                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+              >
+                View All →
+              </Link>
+              <div className="hidden sm:flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => scrollCarousel("left")}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white text-white hover:text-black flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Previous"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollCarousel("right")}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white text-white hover:text-black flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Next"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Horizontal Scrolling Product Tiles */}
+          <div 
+            ref={browsingCarouselRef}
+            className="flex items-stretch gap-3.5 overflow-x-auto custom-scrollbar no-scrollbar pb-1"
+          >
+            {continueBrowsingProducts.map((p) => (
+              <Link
+                key={p.id}
+                href={`/product/${p.id}`}
+                className="group flex-shrink-0 w-44 sm:w-52 bg-white rounded-xl p-3.5 text-neutral-900 flex flex-col justify-between hover:shadow-xl transition-all duration-300 hover:-translate-y-1 block"
+              >
+                <div className="aspect-square bg-gradient-to-b from-neutral-50 to-neutral-100/60 rounded-lg p-3 flex items-center justify-center overflow-hidden mb-2.5 relative border border-slate-100">
+                  <img
+                    src={p.images[0]}
+                    alt={p.name}
+                    className="w-full h-full object-contain mix-blend-multiply group-hover:scale-108 transition-transform duration-500"
+                  />
+                  {p.stock === 0 ? (
+                    <span className="absolute top-1.5 left-1.5 text-[8px] font-display font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-neutral-950 text-rose-300">
+                      Out of Stock
+                    </span>
+                  ) : p.badge ? (
+                    <span className="absolute top-1.5 left-1.5 text-[8px] font-display font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#CC0000] text-white">
+                      {p.badge}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div>
+                  <span className="text-[9px] font-mono font-bold text-neutral-400 uppercase tracking-widest block truncate">
+                    {p.brand}
+                  </span>
+                  <h4 
+                    className="font-display font-bold text-xs sm:text-sm text-neutral-900 line-clamp-1 group-hover:text-[#CC0000] transition-colors mb-1"
+                    style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                  >
+                    {p.name}
+                  </h4>
+                  <div className="flex items-baseline justify-between mt-1">
+                    <span className="font-display font-black text-sm text-neutral-950" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                      ₹{p.price.toLocaleString('en-IN')}
+                    </span>
+                    {p.mrp > p.price && (
+                      <span className="text-[10px] font-mono text-neutral-400 line-through">
+                        ₹{p.mrp.toLocaleString('en-IN')}
                       </span>
                     )}
                   </div>
@@ -376,182 +565,257 @@ export default function Home() {
             ))}
           </div>
 
-          <div className="text-center mt-10">
-            <Link href="/shop" className="btn-primary inline-flex">
-              Browse All Products <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* ─── PROMO BANNER – PRO MATCH GEAR ─── */}
-      <section className="py-16 px-6 md:px-12 max-w-[1600px] mx-auto">
-        <div className="relative overflow-hidden bg-secondary rounded-none" style={{minHeight: '420px'}}>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/80 to-black/40 z-10" />
-          <img src="/hero-banner.jpg" alt="RP Sports Match Gear" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="relative z-20 p-10 md:p-16 lg:p-20 max-w-2xl">
-            <span className="inline-flex items-center gap-2 text-primary font-display font-bold uppercase tracking-widest text-xs mb-6">
-              <span className="w-6 h-0.5 bg-primary"></span> Professional Gear
-            </span>
-            <h2 className="font-display font-black text-white uppercase text-5xl md:text-7xl leading-none mb-6">
-              PRO MATCH EQUIPMENT
+
+      {/* ─── 5. SUGGESTED FOR YOU / DEALS OF THE DAY WITH TAB FILTER ─── */}
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Section Header with Category Tabs */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <Sparkles className="w-4 h-4 text-[#CC0000]" />
+              <span className="text-[#CC0000] font-display font-bold uppercase tracking-widest text-xs" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                Hand-Picked Recommendations
+              </span>
+            </div>
+            <h2 
+              className="text-3xl sm:text-4xl font-display font-black uppercase text-neutral-950 tracking-tight leading-none"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              Suggested For You
             </h2>
-            <p className="text-white/75 text-base md:text-lg mb-10 leading-relaxed">
-              Explore hand-crafted Grade-1 English Willow cricket bats, professional tournament balls, spike shoes and genuine athletic gear directly from Kolkata&apos;s trusted sports hub.
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar no-scrollbar pb-1">
+            {[
+              { id: "all", label: "All Gear" },
+              { id: "cricket", label: "🏏 Cricket" },
+              { id: "football", label: "⚽ Football" },
+              { id: "badminton", label: "🏸 Badminton" },
+              { id: "jerseys", label: "👕 Jerseys & Caps" },
+              { id: "sunglasses", label: "🕶️ Sunglasses" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveProductTab(tab.id)}
+                className={`px-4 py-2 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-all duration-200 shrink-0 cursor-pointer ${
+                  activeProductTab === tab.id
+                    ? "bg-neutral-950 text-white shadow-sm"
+                    : "bg-white text-neutral-600 hover:bg-neutral-100 hover:text-black border border-slate-200"
+                }`}
+                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Product Cards Grid using Ultra-Premium ProductCard component */}
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+          {filteredSuggestedProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+
+        <div className="text-center mt-10">
+          <Link
+            href="/shop"
+            className="inline-flex items-center gap-2 bg-white hover:bg-neutral-950 hover:text-white text-neutral-900 border border-slate-300 px-8 py-3.5 rounded-xl font-display font-black text-sm uppercase tracking-wider transition-all shadow-sm"
+            style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+          >
+            Explore Complete Sports Catalog <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+
+
+      {/* ─── 6. DUAL FEATURE BANNERS (PRO OPTICS & LEGACY HEADWEAR) ─── */}
+      <DualFeatureBanners />
+
+
+      {/* ─── 7. SHOE & FOOTWEAR SHOWCASE ─── */}
+      <ShoeCategoryShowcase />
+
+
+      {/* ─── 8. TEAM ACADEMY & BULK WHATSAPP BANNER ─── */}
+      <section className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="relative overflow-hidden bg-gradient-to-r from-neutral-950 via-neutral-900 to-[#111111] rounded-2xl border border-neutral-800 p-8 sm:p-12 shadow-xl">
+          <div className="relative z-10 max-w-2xl">
+            <span className="inline-flex items-center gap-2 text-amber-400 font-display font-bold uppercase tracking-widest text-xs mb-3">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" /> Wholesale & Club Quotations
+            </span>
+            
+            <h2 
+              className="font-display font-black text-white uppercase text-3xl sm:text-5xl leading-none mb-4"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+            >
+              ORDERING FOR A TEAM, CLUB OR ACADEMY?
+            </h2>
+
+            <p className="text-neutral-300 text-sm sm:text-base mb-8 leading-relaxed">
+              Get tiered bulk discounts, custom player name & number sublimation, multi-sponsor badge embroidery, and direct WhatsApp quotations within minutes.
             </p>
-            <div className="flex flex-wrap gap-4">
-              <Link href="/shop?category=cricket" className="btn-primary">
-                Shop Cricket Bats <ArrowRight className="w-4 h-4" />
-              </Link>
-              <button 
+
+            <div className="flex flex-wrap items-center gap-4">
+              <button
                 type="button"
                 onClick={() => setIsBulkModalOpen(true)}
-                className="btn-outline border-white/40 text-white hover:border-primary hover:bg-primary flex items-center gap-2 cursor-pointer"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-2 cursor-pointer hover:scale-105"
+                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
               >
                 <Users className="w-4 h-4" />
-                <span>Bulk Team Orders</span>
+                <span>Bulk WhatsApp Quotation</span>
               </button>
+
+              <Link
+                href="/jersey-builder"
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-display font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all backdrop-blur-md"
+                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+              >
+                <span>3D Jersey Builder</span>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─── ABOUT / BRAND AMBASSADOR ─── */}
-      <section className="py-20 px-6 md:px-12 bg-secondary text-white">
-        <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Images */}
-          <div className="relative flex gap-4 md:gap-6">
-            <div className="absolute -inset-4 bg-primary/10 -z-10 skew-y-2"></div>
-            <div className="flex-1 overflow-hidden" style={{ clipPath: "polygon(0 0, 100% 0, 100% 92%, 0 100%)" }}>
-              <img src="/owner-1.jpg" alt="Raj Paswan — RP Sports" className="w-full h-full object-cover aspect-[3/4] hover:scale-105 transition-transform duration-700" />
-            </div>
-            <div className="flex-1 overflow-hidden mt-10" style={{ clipPath: "polygon(0 8%, 100% 0, 100% 100%, 0 92%)" }}>
-              <img src="/owner-2.jpg" alt="Raj Paswan — RP Sports" className="w-full h-full object-cover aspect-[3/4] hover:scale-105 transition-transform duration-700" />
-            </div>
-            {/* Red accent */}
-            <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-primary flex items-center justify-center">
-              <div className="text-center">
-                <div className="font-display font-black text-2xl leading-none">10+</div>
-                <div className="text-[10px] uppercase tracking-wider text-white/70">Years</div>
-              </div>
-            </div>
-          </div>
 
-          {/* Text */}
-          <div>
-            <span className="inline-flex items-center gap-2 text-primary font-display font-bold uppercase tracking-widest text-sm mb-6">
-              <span className="w-6 h-0.5 bg-primary"></span> Meet The Founder
-            </span>
-            <h2 className="font-display font-black text-white uppercase text-5xl md:text-6xl leading-none mb-6">
-              RAJ PASWAN<br/><span className="text-primary">RP SPORTS</span>
-            </h2>
-            <p className="text-white/70 text-base md:text-lg mb-4 leading-relaxed">
-              Born and raised in Dumdum, Kolkata, Raj Paswan started RP Sports with one mission — to give every aspiring athlete in North Kolkata access to professional-grade sports equipment at fair prices.
-            </p>
-            <p className="text-white/70 text-base mb-8 leading-relaxed">
-              From a small shop near Dumdum station to Kolkata's most trusted sports destination, the journey of RP Sports is a testament to the passion and pride of every sportsperson in the city of joy.
-            </p>
-
-            <div className="grid grid-cols-2 gap-6 mb-10 border-t border-white/10 pt-8">
-              {STATS.map(({ value, label }) => (
-                <div key={label} className="stat-box">
-                  <p className="font-display font-black text-3xl text-primary leading-none">{value}</p>
-                  <p className="text-white/60 text-xs uppercase tracking-widest mt-1">{label}</p>
+      {/* ─── 9. TRUST BADGES STRIP ─── */}
+      <section className="bg-white border-y border-slate-200 py-6 my-6">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:divide-x divide-slate-100">
+            {TRUST_BADGES.map(({ icon: Icon, label, sub }) => (
+              <div key={label} className="flex items-center gap-3.5 px-0 md:px-6 first:pl-0 last:pr-0">
+                <div className="w-11 h-11 rounded-xl bg-red-50 text-[#CC0000] flex items-center justify-center shrink-0">
+                  <Icon className="w-5 h-5" />
                 </div>
-              ))}
-            </div>
-
-            <Link href="/about" className="btn-primary inline-flex">
-              Our Story <ArrowRight className="w-4 h-4" />
-            </Link>
+                <div>
+                  <h4 
+                    className="text-sm font-display font-black uppercase text-neutral-900 tracking-wide"
+                    style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                  >
+                    {label}
+                  </h4>
+                  <p className="text-xs text-neutral-500">{sub}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ─── REAL CUSTOMER TESTIMONIAL VIDEOS ─── */}
+
+      {/* ─── 10. CUSTOMER TESTIMONIALS & REVIEWS ─── */}
       <CustomerTestimonialsVideo />
 
-      {/* ─── VISIT US / STORE INFO ─── */}
-      <section className="py-16 px-6 md:px-12 bg-white border-y border-gray-100">
 
-        <div className="max-w-[1600px] mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4 md:divide-x divide-gray-100">
-            <div className="flex items-start gap-5 md:pr-8">
-              <div className="w-12 h-12 bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-display font-extrabold uppercase text-lg text-secondary mb-1">Store Location</h4>
-                <p className="text-gray-500 text-sm leading-relaxed">Near Dumdum Metro Station,<br/>Dumdum, Kolkata – 700028<br/>West Bengal, India</p>
-              </div>
+      {/* ─── LOCATION CHANGER MODAL ─── */}
+      {isLocationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-display font-black text-lg uppercase text-neutral-900" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                Select Delivery Location
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsLocationModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <div className="flex items-start gap-5 md:px-8">
-              <div className="w-12 h-12 bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-display font-extrabold uppercase text-lg text-secondary mb-1">Store Hours</h4>
-                <p className="text-gray-500 text-sm leading-relaxed">Mon – Sat: 10:00 AM – 9:00 PM<br/>Sunday: 11:00 AM – 7:00 PM<br/>Public Holidays: Call ahead</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-5 md:pl-8">
-              <div className="w-12 h-12 bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Phone className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h4 className="font-display font-extrabold uppercase text-lg text-secondary mb-1">Contact Us</h4>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  <a href="tel:+919876543210" className="text-primary font-semibold hover:underline">+91 98765 43210</a><br/>
-                  <a href="mailto:info@rpsports.in" className="hover:text-primary transition-colors">info@rpsports.in</a><br/>
-                  WhatsApp orders welcome
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ─── BRAND MARQUEE ─── */}
-      <section className="py-8 bg-muted border-b border-gray-200 overflow-hidden">
-        <div className="flex overflow-x-hidden">
-          <div className="animate-marquee flex items-center gap-12 md:gap-20">
-            {[...BRANDS, "SS", "SG", "MRF", "Kookaburra", "Gray-Nicolls", "GM", "Nike", "Adidas", ...BRANDS, "SS", "SG", "MRF", "Kookaburra", "Gray-Nicolls", "GM", "Nike", "Adidas"].map((b, i) => (
-              <span key={i} className="text-sm font-display font-extrabold uppercase tracking-widest text-gray-400 whitespace-nowrap flex items-center gap-3">
-                <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-                {b}
+            <p className="text-xs text-neutral-600">
+              Enter your 6-digit delivery pincode to check exact express shipping timelines and stock availability.
+            </p>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                maxLength={6}
+                value={manualPinInput}
+                onChange={(e) => setManualPinInput(e.target.value.replace(/\D/g, ""))}
+                placeholder="Enter 6-digit pincode (e.g. 700028)..."
+                className="flex-1 px-3.5 py-2 bg-neutral-50 border border-slate-300 rounded-xl text-sm font-mono font-bold text-neutral-900 outline-none focus:border-[#CC0000] focus:bg-white"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (manualPinInput.length === 6) {
+                    setPincodeManual(manualPinInput);
+                    setIsLocationModalOpen(false);
+                    setManualPinInput("");
+                  }
+                }}
+                disabled={manualPinInput.length !== 6}
+                className="px-4 py-2 bg-[#CC0000] hover:bg-red-700 text-white font-display font-black text-xs uppercase rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
+                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+              >
+                Apply
+              </button>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  detectGpsLocation();
+                  setIsLocationModalOpen(false);
+                }}
+                disabled={isLocLoading}
+                className="w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-display font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+              >
+                <Navigation className={`w-3.5 h-3.5 text-[#CC0000] ${isLocLoading ? "animate-spin" : ""}`} />
+                <span>Use Current Live GPS Location</span>
+              </button>
+            </div>
+
+            {/* Popular Kolkata Pincodes */}
+            <div className="pt-2 border-t border-slate-100">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-2">
+                Popular Kolkata & Bengal Areas:
               </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── WHY CHOOSE RP SPORTS ─── */}
-      <section className="py-16 px-6 md:px-12 bg-white">
-        <div className="max-w-[1600px] mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-primary font-display font-bold uppercase tracking-widest text-sm mb-2">Why Us</p>
-            <h2 className="section-heading text-4xl md:text-5xl text-secondary">Why Kolkata Trusts<br/>RP Sports</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: Award,   title: "Genuine Products",      desc: "Every product is 100% original sourced directly from brands and authorized distributors." },
-              { icon: Users,   title: "Serving Since 2015",    desc: "Over 10 years of serving cricketers, footballers and athletes across North Kolkata." },
-              { icon: Package, title: "Huge Selection",        desc: "500+ products covering cricket, football, badminton, footwear, trophies and custom jerseys." },
-              { icon: Zap,     title: "Expert Guidance",       desc: "Our staff are athletes themselves — we help you choose the right gear for your level and game." },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="p-6 border border-gray-100 hover:border-primary transition-colors group">
-                <div className="w-12 h-12 bg-primary flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-display font-extrabold uppercase text-lg text-secondary mb-3">{title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { name: "Dum Dum", pin: "700028" },
+                  { name: "Belghoria", pin: "700056" },
+                  { name: "Salt Lake", pin: "700091" },
+                  { name: "New Town", pin: "700156" },
+                  { name: "Howrah", pin: "711101" },
+                  { name: "Barasat", pin: "700124" },
+                ].map((item) => (
+                  <button
+                    key={item.pin}
+                    type="button"
+                    onClick={() => {
+                      setPincodeManual(item.pin);
+                      setIsLocationModalOpen(false);
+                    }}
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                      customerPincode === item.pin
+                        ? "bg-red-50 text-[#CC0000] border-red-300"
+                        : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-slate-200"
+                    }`}
+                  >
+                    {item.name} ({item.pin})
+                  </button>
+                ))}
               </div>
-            ))}
+            </div>
+
           </div>
         </div>
-      </section>
+      )}
 
-      {/* BULK TEAM ORDER MODAL */}
+      {/* ─── BULK JERSEY MODAL ─── */}
       <BulkJerseyOrderModal
         isOpen={isBulkModalOpen}
         onClose={() => setIsBulkModalOpen(false)}
