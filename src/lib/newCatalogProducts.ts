@@ -1237,20 +1237,20 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   // =========================================================================
   {
     id: "rm-jer-001",
-    name: "Real Madrid Inspired Home White Match Football Jersey",
-    slug: "real-madrid-inspired-home-white-football-jersey",
+    name: "Real Madrid 2024/25 Home Classic All-White Football Jersey",
+    slug: "real-madrid-2024-25-home-classic-all-white-football-jersey",
     sku: "RM-JER-001",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_realmadrid_home.jpg",
+    image: "/products/rm_home_white_2024.jpg",
     images: [
-      "/products/jersey_realmadrid_home.jpg",
-      "/products/jersey_realmadrid_away.jpg"
+      "/products/rm_home_white_2024.jpg",
+      "/products/rm_away_navy_2023.jpg"
     ],
     gallery: [
-      "/products/jersey_realmadrid_home.jpg",
-      "/products/jersey_realmadrid_away.jpg"
+      "/products/rm_home_white_2024.jpg",
+      "/products/rm_away_navy_2023.jpg"
     ],
     mrp: 1499,
     originalPrice: 1499,
@@ -1260,26 +1260,28 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
     reviewsCount: 118,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Real Madrid Inspired Home White Match Football Jersey. Styled in timeless royal white accented with metallic gold shoulder stripes. Woven from breathable 160 GSM moisture-wicking honeycomb poly fabric with custom player name & number personalization available.",
-    shortDescription: "Classic royal white and gold trim dry-fit football jersey with laser sublimation print.",
+    description: "Real Madrid 2024/25 Home Classic All-White Football Jersey. Pure pristine royal white body with subtle houndstooth fabric watermark patterning and black three-stripe shoulder accents. Woven from breathable 160 GSM moisture-wicking honeycomb poly fabric with custom player name & number personalization available.",
+    shortDescription: "Official 2024/25 season royal white home match football jersey with subtle houndstooth texture.",
     highlights: [
       "100% Moisture-Wicking Honeycomb Polyester (160 GSM)",
-      "Classic Pristine White Body with Metallic Gold Trim",
+      "Pristine Royal White Body with Black Accent Stripes",
       "Optional Custom Player Name & Number Sublimation",
       "Anti-Bacterial Odor-Resistant Finish"
     ],
     specs: {
+      "Season / Year": "2024 / 2025 Home",
       "Material": "100% Breathable Micro Polyester",
       "Fabric Weight": "160 GSM",
       "Fit Type": "Athletic Regular Fit",
       "Care": "Machine Wash Cold, Do Not Iron on Print"
     },
     specifications: {
+      "Season": "2024/25 Home",
       "Material": "100% Micro Polyester",
       "Weight": "160 GSM",
       "Fit": "Regular Athletic Fit"
     },
-    colors: ["Pristine White / Gold Trim"],
+    colors: ["Pristine White / Black Stripes"],
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Football",
     customizable: true,
@@ -1289,20 +1291,20 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   },
   {
     id: "rm-jer-002",
-    name: "Real Madrid Inspired Away Navy Football Jersey",
-    slug: "real-madrid-inspired-away-navy-football-jersey",
+    name: "Real Madrid 2023/24 Away Deep Navy & Gold Football Jersey",
+    slug: "real-madrid-2023-24-away-deep-navy-gold-football-jersey",
     sku: "RM-JER-002",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_realmadrid_away.jpg",
+    image: "/products/rm_away_navy_2023.jpg",
     images: [
-      "/products/jersey_realmadrid_away.jpg",
-      "/products/jersey_realmadrid_home.jpg"
+      "/products/rm_away_navy_2023.jpg",
+      "/products/rm_home_white_2024.jpg"
     ],
     gallery: [
-      "/products/jersey_realmadrid_away.jpg",
-      "/products/jersey_realmadrid_home.jpg"
+      "/products/rm_away_navy_2023.jpg",
+      "/products/rm_home_white_2024.jpg"
     ],
     mrp: 1499,
     originalPrice: 1499,
@@ -1312,25 +1314,27 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
     reviewsCount: 84,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Real Madrid Inspired Away Navy Football Jersey. Features a rich navy base with subtle wave micro-patterning across the chest. Built for high-tempo match play and fan wear with quick-dry sweat dispersion technology.",
-    shortDescription: "Deep navy blue with subtle tonal geometric print and moisture-wicking honeycomb micro-poly fabric.",
+    description: "Real Madrid 2023/24 Away Deep Navy & Gold Football Jersey. Features the iconic deep navy blue base accented with metallic gold infinity wave micro-patterning across the chest and gold three stripes on shoulders. Built for high-tempo match play and fan wear with quick-dry sweat dispersion technology.",
+    shortDescription: "Deep navy blue with gold infinity wave tonal pattern and moisture-wicking honeycomb micro-poly fabric.",
     highlights: [
-      "Deep Navy Blue with Tonal Geometric Accents",
+      "Deep Navy Blue with Gold Infinity Wave Accents",
       "Quick-Dry Sweat Management Fabric",
       "Reinforced Flatlock Anti-Chafe Seams",
       "Free Custom Name & Number Option"
     ],
     specs: {
+      "Season / Year": "2023 / 2024 Away",
       "Material": "100% Interlock Micro Polyester",
       "Fabric Weight": "160 GSM",
       "Sleeves": "Short Raglan Athletic Sleeves",
       "Care": "Machine Wash Gentle"
     },
     specifications: {
+      "Season": "2023/24 Away",
       "Material": "100% Micro Polyester",
       "Weight": "160 GSM"
     },
-    colors: ["Deep Navy Blue / Gold Trim"],
+    colors: ["Deep Navy Blue / Metallic Gold Trim"],
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Football",
     customizable: true,
@@ -1340,20 +1344,20 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   },
   {
     id: "rm-jer-003",
-    name: "Real Madrid Inspired Third Edition Blackout Jersey",
-    slug: "real-madrid-inspired-third-edition-blackout-jersey",
+    name: "Real Madrid 2017/18 Third Black & Teal Carbon Football Jersey",
+    slug: "real-madrid-2017-18-third-black-teal-carbon-football-jersey",
     sku: "RM-JER-003",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_realmadrid_third.jpg",
+    image: "/products/rm_third_black_teal_2018.jpg",
     images: [
-      "/products/jersey_realmadrid_third.jpg",
-      "/products/jersey_realmadrid_home.jpg"
+      "/products/rm_third_black_teal_2018.jpg",
+      "/products/rm_home_white_2024.jpg"
     ],
     gallery: [
-      "/products/jersey_realmadrid_third.jpg",
-      "/products/jersey_realmadrid_home.jpg"
+      "/products/rm_third_black_teal_2018.jpg",
+      "/products/rm_home_white_2024.jpg"
     ],
     mrp: 1599,
     originalPrice: 1599,
@@ -1363,25 +1367,27 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
     reviewsCount: 96,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Real Madrid Inspired Third Edition Blackout Jersey. Modern dark aesthetic finished in charcoal and pitch black with carbon metallic crest accents. Ultra-soft touch polyester keeps players cool under intense lighting.",
-    shortDescription: "Sleek anthracite black with metallic carbon accents and athletic taper cut.",
+    description: "Real Madrid 2017/18 Third Black & Teal Carbon Football Jersey. Commemorating the legendary 13th European Cup UCL winning campaign in deep pitch carbon black finished with vibrant electric teal cyan shoulder stripes and digitized pixel graphic accents.",
+    shortDescription: "Sleek carbon black with vibrant electric teal cyan graphics and athletic taper cut.",
     highlights: [
-      "Sleek Pitch Black & Charcoal Stealth Palette",
-      "Carbon Metallic Sublimation Accents",
+      "Sleek Carbon Black & Vibrant Electric Teal Cyan Palette",
+      "Digitized Graphic Sublimation Accents",
       "Micro-Mesh Underarm Air Flow Panels",
       "Personalized Back Number Printing"
     ],
     specs: {
+      "Season / Year": "2017 / 2018 Third UCL Edition",
       "Material": "100% Dry-Fit Polyester",
       "Fabric Weight": "165 GSM",
       "Fit": "Semi-Tapered Performance Cut",
       "Care": "Cold Wash Only"
     },
     specifications: {
+      "Season": "2017/18 Third",
       "Material": "100% Dry-Fit Polyester",
       "Weight": "165 GSM"
     },
-    colors: ["Anthracite Black / Carbon Metallic"],
+    colors: ["Carbon Black / Electric Teal Cyan"],
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Football",
     customizable: true,
@@ -1391,20 +1397,20 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   },
   {
     id: "rm-jer-004",
-    name: "Real Madrid Inspired European Glory Tribute Football Jersey",
-    slug: "real-madrid-inspired-european-glory-tribute-football-jersey",
+    name: "Real Madrid 2016/17 Retro Royal Purple Champions League Final Jersey",
+    slug: "real-madrid-2016-17-retro-royal-purple-champions-league-final-jersey",
     sku: "RM-JER-004",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_realmadrid_tribute.jpg",
+    image: "/products/rm_retro_purple_2017.jpg",
     images: [
-      "/products/jersey_realmadrid_tribute.jpg",
-      "/products/jersey_realmadrid_home.jpg"
+      "/products/rm_retro_purple_2017.jpg",
+      "/products/rm_home_white_2024.jpg"
     ],
     gallery: [
-      "/products/jersey_realmadrid_tribute.jpg",
-      "/products/jersey_realmadrid_home.jpg"
+      "/products/rm_retro_purple_2017.jpg",
+      "/products/rm_home_white_2024.jpg"
     ],
     mrp: 1699,
     originalPrice: 1699,
@@ -1414,25 +1420,27 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
     reviewsCount: 104,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Real Madrid Inspired European Glory Tribute Football Jersey. Commemorative design celebrating legendary European victories with clean lavender and white diagonal elements. Premium interlock knit for superior durability.",
-    shortDescription: "Commemorative European glory white-and-purple sash design in premium 160 GSM interlock polyester.",
+    description: "Real Madrid 2016/17 Retro Royal Purple Champions League Final Jersey. The legendary purple kit worn during the historic Cardiff Champions League Final triumph. Rich vivid royal purple base with pure white contrast shoulder stripes and commemorative match badge details.",
+    shortDescription: "Iconic Cardiff 2017 UCL Final commemorative royal purple jersey with white shoulder stripes.",
     highlights: [
-      "Tribute European Sash Graphic Pattern",
-      "Premium 165 GSM Interlock Poly Construction",
-      "Laser-Etched Breathable Side Inserts",
+      "Iconic Cardiff UCL Final 2017 Commemorative Kit",
+      "Rich Royal Purple Body with Crisp White Stripes",
+      "Dense 165 GSM Interlock Poly Construction",
       "Custom Name & Number Ready"
     ],
     specs: {
+      "Season / Year": "2016 / 2017 Cardiff Final Retro",
       "Material": "Premium Interlock Micro-Poly",
       "Fabric Weight": "165 GSM",
       "Neckline": "Ribbed Contrast Crew Collar",
       "Care": "Machine Wash Cold"
     },
     specifications: {
+      "Season": "2016/17 Cardiff Retro",
       "Material": "Interlock Micro-Poly",
       "Weight": "165 GSM"
     },
-    colors: ["Classic White / Lavender Sash"],
+    colors: ["Royal Purple / Crisp White Stripes"],
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Football",
     customizable: true,
@@ -1442,50 +1450,52 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   },
   {
     id: "rm-jer-005",
-    name: "Real Madrid Inspired Pre-Match Training Football Jersey",
-    slug: "real-madrid-inspired-pre-match-training-football-jersey",
+    name: "Real Madrid 2024/25 Away Solar Orange Football Jersey",
+    slug: "real-madrid-2024-25-away-solar-orange-football-jersey",
     sku: "RM-JER-005",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_realmadrid_training.jpg",
+    image: "/products/rm_away_orange_2024.jpg",
     images: [
-      "/products/jersey_realmadrid_training.jpg",
-      "/products/jersey_realmadrid_away.jpg"
+      "/products/rm_away_orange_2024.jpg",
+      "/products/rm_home_white_2024.jpg"
     ],
     gallery: [
-      "/products/jersey_realmadrid_training.jpg",
-      "/products/jersey_realmadrid_away.jpg"
+      "/products/rm_away_orange_2024.jpg",
+      "/products/rm_home_white_2024.jpg"
     ],
-    mrp: 1299,
-    originalPrice: 1299,
-    price: 799,
-    rating: 4.7,
+    mrp: 1499,
+    originalPrice: 1499,
+    price: 899,
+    rating: 4.8,
     reviewCount: 52,
     reviewsCount: 52,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Real Madrid Inspired Pre-Match Training Football Jersey. Designed with an energetic solar orange and charcoal graphic motif. High stretch elasticity ensures non-restrictive upper body movement during warmup drills.",
-    shortDescription: "Vibrant orange and charcoal training jersey with laser-cut underarm ventilation holes.",
+    description: "Real Madrid 2024/25 Away Solar Orange Football Jersey. Designed in an energetic bright solar orange with metallic night navy blue collar and shoulder stripes, paying homage to the legendary 2013/14 La Décima away kit.",
+    shortDescription: "Vibrant solar orange and night navy 2024/25 away match jersey with quick-dry sweat dispersion.",
     highlights: [
-      "Dynamic Warmup Solar Orange & Charcoal Pattern",
+      "Vibrant Solar Orange Body with Night Navy Accents",
       "4-Way Stretch Interlock Polyester",
       "Underarm Laser Vent Air Holes",
       "Durable Fade-Proof Sublimation"
     ],
     specs: {
-      "Material": "92% Polyester, 8% Elastane",
-      "Fabric Weight": "150 GSM Ultra-Light",
-      "Fit": "Athletic Training Slim Fit",
+      "Season / Year": "2024 / 2025 Away",
+      "Material": "100% Breathable Micro Polyester",
+      "Fabric Weight": "160 GSM",
+      "Fit": "Athletic Regular Fit",
       "Care": "Machine Wash Cold"
     },
     specifications: {
-      "Material": "Poly-Elastane Stretch",
-      "Weight": "150 GSM"
+      "Season": "2024/25 Away",
+      "Material": "Micro Polyester",
+      "Weight": "160 GSM"
     },
-    colors: ["Solar Orange / Charcoal Gray"],
+    colors: ["Solar Orange / Night Navy Blue"],
     sizes: ["S", "M", "L", "XL", "XXL"],
-    sportsType: "Football & Training",
+    sportsType: "Football",
     customizable: true,
     enableJerseyCustomization: true,
     countryOfOrigin: "India",
@@ -1497,20 +1507,20 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   // =========================================================================
   {
     id: "fcb-jer-001",
-    name: "Barcelona Inspired Classic Blaugrana Home Football Jersey",
-    slug: "barcelona-inspired-classic-blaugrana-home-football-jersey",
+    name: "Barcelona 2024/25 125th Anniversary Half-and-Half Blaugrana Football Jersey",
+    slug: "barcelona-2024-25-125th-anniversary-half-and-half-blaugrana-football-jersey",
     sku: "FCB-JER-001",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_barcelona_home.jpg",
+    image: "/products/fcb_home_half_blaugrana_2024.jpg",
     images: [
-      "/products/jersey_barcelona_home.jpg",
-      "/products/jersey_barcelona_away.jpg"
+      "/products/fcb_home_half_blaugrana_2024.jpg",
+      "/products/fcb_home_stripes_2015.jpg"
     ],
     gallery: [
-      "/products/jersey_barcelona_home.jpg",
-      "/products/jersey_barcelona_away.jpg"
+      "/products/fcb_home_half_blaugrana_2024.jpg",
+      "/products/fcb_home_stripes_2015.jpg"
     ],
     mrp: 1499,
     originalPrice: 1499,
@@ -1520,26 +1530,28 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
     reviewsCount: 132,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Barcelona Inspired Classic Blaugrana Home Football Jersey. Features the iconic deep royal blue and garnet red vertical stripes. Constructed from high-filament moisture-wicking fabric for superior comfort on match days and casual wear.",
-    shortDescription: "Iconic deep royal blue and garnet red vertical stripes in high-performance dry-fit poly fabric.",
+    description: "Barcelona 2024/25 125th Anniversary Half-and-Half Blaugrana Football Jersey. Features the iconic split 50/50 royal blue and deep garnet red design celebrating 125 years of club heritage, with metallic gold center Spotify logo and navy collar detailing.",
+    shortDescription: "Official 125th anniversary 2024/25 half-and-half blue and red split heritage match jersey.",
     highlights: [
-      "Iconic Deep Blue & Garnet Red Vertical Stripes",
-      "100% Moisture-Wicking Dry-Fit Polyester",
+      "125th Anniversary 50/50 Royal Blue & Garnet Red Split",
+      "Metallic Gold Chest Accents and Navy Ribbed Collar",
       "Complimentary Custom Player Name & Number",
       "Breathable Mesh Underarm Insert Panels"
     ],
     specs: {
+      "Season / Year": "2024 / 2025 125th Anniversary Home",
       "Material": "100% High-Filament Polyester",
       "Fabric Weight": "160 GSM",
       "Fit": "Regular Athletic Fit",
       "Care": "Machine Wash Cold"
     },
     specifications: {
+      "Season": "2024/25 125th Anniv",
       "Material": "100% High-Filament Polyester",
       "Weight": "160 GSM",
       "Fit": "Regular Fit"
     },
-    colors: ["Classic Deep Blue & Garnet Red Stripes"],
+    colors: ["Half Royal Blue / Half Garnet Red (125th Anniv)"],
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Football",
     customizable: true,
@@ -1549,48 +1561,50 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   },
   {
     id: "fcb-jer-002",
-    name: "Barcelona Inspired Away Senyera Gold Football Jersey",
-    slug: "barcelona-inspired-away-senyera-gold-football-jersey",
+    name: "Barcelona 2014/15 Iconic Treble Classic Vertical Stripes Blaugrana Jersey",
+    slug: "barcelona-2014-15-iconic-treble-classic-vertical-stripes-blaugrana-jersey",
     sku: "FCB-JER-002",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_barcelona_away.jpg",
+    image: "/products/fcb_home_stripes_2015.jpg",
     images: [
-      "/products/jersey_barcelona_away.jpg",
-      "/products/jersey_barcelona_home.jpg"
+      "/products/fcb_home_stripes_2015.jpg",
+      "/products/fcb_home_half_blaugrana_2024.jpg"
     ],
     gallery: [
-      "/products/jersey_barcelona_away.jpg",
-      "/products/jersey_barcelona_home.jpg"
+      "/products/fcb_home_stripes_2015.jpg",
+      "/products/fcb_home_half_blaugrana_2024.jpg"
     ],
     mrp: 1499,
     originalPrice: 1499,
     price: 899,
-    rating: 4.8,
-    reviewCount: 78,
-    reviewsCount: 78,
+    rating: 4.9,
+    reviewCount: 98,
+    reviewsCount: 98,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Barcelona Inspired Away Senyera Gold Football Jersey. Styled in bright sunshine gold with four vibrant red diagonal stripes across the chest. Built for high breathability and match performance.",
-    shortDescription: "Vibrant sunshine yellow with traditional Catalan red stripe diagonal accents.",
+    description: "Barcelona 2014/15 Iconic Treble Classic Vertical Stripes Blaugrana Jersey. Commemorating the legendary MSN treble-winning season in bold vertical royal blue and deep red stripes, accented with the yellow and red Senyera flag collar insert.",
+    shortDescription: "Legendary 2014/15 Treble season classic vertical stripes Blaugrana matchday jersey.",
     highlights: [
-      "Bright Sunshine Gold with Red Diagonal Bars",
+      "Classic Bold Vertical Royal Blue & Deep Red Stripes",
+      "Catalan Senyera Flag Neckline V-Insert",
       "Lightweight Honeycomb Texture Polyester",
-      "Ribbed Collar & Raglan Sleeve Hem",
       "Free Back Name & Number Customization"
     ],
     specs: {
+      "Season / Year": "2014 / 2015 Treble Era Retro",
       "Material": "100% Breathable Honeycomb Poly",
-      "Fabric Weight": "155 GSM",
-      "Collar": "V-Neck Ribbed Collar",
+      "Fabric Weight": "160 GSM",
+      "Collar": "Senyera V-Insert Collar",
       "Care": "Machine Wash Inside Out"
     },
     specifications: {
+      "Season": "2014/15 Treble Retro",
       "Material": "Honeycomb Poly",
-      "Weight": "155 GSM"
+      "Weight": "160 GSM"
     },
-    colors: ["Sunshine Gold / Red Diagonal Stripes"],
+    colors: ["Classic Royal Blue & Deep Red Vertical Stripes"],
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Football",
     customizable: true,
@@ -1600,20 +1614,20 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   },
   {
     id: "fcb-jer-003",
-    name: "Barcelona Inspired Third Edition Aqua Teal Football Jersey",
-    slug: "barcelona-inspired-third-edition-aqua-teal-football-jersey",
+    name: "Barcelona 2024/25 125 Years Edition Pro Match Football Jersey",
+    slug: "barcelona-2024-25-125-years-edition-pro-match-football-jersey",
     sku: "FCB-JER-003",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_barcelona_third.jpg",
+    image: "/products/fcb_home_half_blaugrana_2024.jpg",
     images: [
-      "/products/jersey_barcelona_third.jpg",
-      "/products/jersey_barcelona_home.jpg"
+      "/products/fcb_home_half_blaugrana_2024.jpg",
+      "/products/fcb_home_stripes_2015.jpg"
     ],
     gallery: [
-      "/products/jersey_barcelona_third.jpg",
-      "/products/jersey_barcelona_home.jpg"
+      "/products/fcb_home_half_blaugrana_2024.jpg",
+      "/products/fcb_home_stripes_2015.jpg"
     ],
     mrp: 1599,
     originalPrice: 1599,
@@ -1623,25 +1637,27 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
     reviewsCount: 91,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Barcelona Inspired Third Edition Aqua Teal Football Jersey. Combining modern aqua teal with signature Blaugrana sleeve cuff accents. Soft jacquard weave structure provides quick evaporative cooling during matches.",
-    shortDescription: "Aqua teal and garnet trim matchday jersey with ventilated jacquard weave construction.",
+    description: "Barcelona 2024/25 125 Years Edition Pro Match Football Jersey. Tailored with high-performance evaporative jacquard mesh fabric featuring 125 anniversary gold center embroidery, deep garnet and royal blue split panels, and breathable underarm ventilation channels.",
+    shortDescription: "Pro edition 125th anniversary split Blaugrana jersey with high-performance jacquard mesh weave.",
     highlights: [
-      "Fresh Aqua Teal Palette with Blaugrana Accents",
+      "125th Anniversary Special Commemorative Gold Crest",
       "Breathable Jacquard Evaporative Weave",
       "Tagless Neck Label for Zero Irritation",
       "Custom Name and Number Ready"
     ],
     specs: {
+      "Season / Year": "2024 / 2025 Pro 125th Edition",
       "Material": "100% Jacquard Micro-Poly",
       "Fabric Weight": "160 GSM",
       "Fit": "Modern Athletic Cut",
       "Care": "Machine Wash Cold"
     },
     specifications: {
+      "Season": "2024/25 Pro Edition",
       "Material": "Jacquard Micro-Poly",
       "Weight": "160 GSM"
     },
-    colors: ["Aqua Teal / Blaugrana Trim"],
+    colors: ["Split Royal Blue & Garnet Red with Gold Accents"],
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Football",
     customizable: true,
@@ -1651,20 +1667,20 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   },
   {
     id: "fcb-jer-004",
-    name: "Barcelona Inspired Camp Nou Tribute Match Football Jersey",
-    slug: "barcelona-inspired-camp-nou-tribute-match-football-jersey",
+    name: "Barcelona Camp Nou Heritage Classic Match Football Jersey",
+    slug: "barcelona-camp-nou-heritage-classic-match-football-jersey",
     sku: "FCB-JER-004",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_barcelona_tribute.jpg",
+    image: "/products/fcb_home_stripes_2015.jpg",
     images: [
-      "/products/jersey_barcelona_tribute.jpg",
-      "/products/jersey_barcelona_home.jpg"
+      "/products/fcb_home_stripes_2015.jpg",
+      "/products/fcb_home_half_blaugrana_2024.jpg"
     ],
     gallery: [
-      "/products/jersey_barcelona_tribute.jpg",
-      "/products/jersey_barcelona_home.jpg"
+      "/products/fcb_home_stripes_2015.jpg",
+      "/products/fcb_home_half_blaugrana_2024.jpg"
     ],
     mrp: 1699,
     originalPrice: 1699,
@@ -1674,25 +1690,27 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
     reviewsCount: 115,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Barcelona Inspired Camp Nou Tribute Match Football Jersey. Half-and-half blue and red split heritage tribute jersey celebrating legendary Catalan club history. Finished with gold contrast crew collar and sleeve trims.",
-    shortDescription: "Half-and-half blue and red heritage commemorative tribute jersey with gold contrast crew collar.",
+    description: "Barcelona Camp Nou Heritage Classic Match Football Jersey. Commemorative classic vertical royal blue and deep garnet red stripes tribute jersey with gold contrast sleeve trims and high-durability interlock knit poly.",
+    shortDescription: "Camp Nou heritage classic vertical stripes tribute jersey with gold contrast sleeve trims.",
     highlights: [
-      "Heritage Half-and-Half Split Front Graphic",
+      "Heritage Bold Vertical Striped Graphic",
       "Gold Contrast Ribbed Collar & Cuffs",
       "Dense 165 GSM Anti-Pilling Knit Poly",
       "Laser Sublimation Customization Included"
     ],
     specs: {
+      "Season / Year": "Heritage Classic Edition",
       "Material": "100% Interlock Micro-Polyester",
       "Fabric Weight": "165 GSM",
       "Fit": "Athletic Regular",
       "Care": "Machine Wash Cold"
     },
     specifications: {
+      "Season": "Heritage Classic",
       "Material": "Interlock Micro-Poly",
       "Weight": "165 GSM"
     },
-    colors: ["Half Blue / Half Red Split with Gold Crew"],
+    colors: ["Classic Vertical Royal Blue & Garnet Red"],
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Football",
     customizable: true,
@@ -1702,20 +1720,20 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
   },
   {
     id: "fcb-jer-005",
-    name: "Barcelona Inspired Pre-Match Warmup Graphic Football Jersey",
-    slug: "barcelona-inspired-pre-match-warmup-graphic-football-jersey",
+    name: "Barcelona 2024/25 Pre-Match Warmup Graphic Football Jersey",
+    slug: "barcelona-2024-25-pre-match-warmup-graphic-football-jersey",
     sku: "FCB-JER-005",
     brand: "RP Custom Apparel",
     category: "jerseys",
     subcategory: "football-jerseys",
-    image: "/products/jersey_barcelona_warmup.jpg",
+    image: "/products/fcb_home_half_blaugrana_2024.jpg",
     images: [
-      "/products/jersey_barcelona_warmup.jpg",
-      "/products/jersey_barcelona_third.jpg"
+      "/products/fcb_home_half_blaugrana_2024.jpg",
+      "/products/fcb_home_stripes_2015.jpg"
     ],
     gallery: [
-      "/products/jersey_barcelona_warmup.jpg",
-      "/products/jersey_barcelona_third.jpg"
+      "/products/fcb_home_half_blaugrana_2024.jpg",
+      "/products/fcb_home_stripes_2015.jpg"
     ],
     mrp: 1299,
     originalPrice: 1299,
@@ -1725,25 +1743,27 @@ export const NEW_CATALOG_PRODUCTS: Product[] = [
     reviewsCount: 48,
     deliveryDays: "3 - 5 Days",
     stock: 0,
-    description: "Barcelona Inspired Pre-Match Warmup Graphic Football Jersey. Features an abstract geometric Blaugrana modern art design. Ultra-light, highly breathable fabric keeps body temperature regulated during intense training sessions.",
-    shortDescription: "Abstract modern art Blaugrana print with anti-cling stretch polyester weave.",
+    description: "Barcelona 2024/25 Pre-Match Warmup Graphic Football Jersey. Features the dynamic 125th anniversary Blaugrana artwork on ultra-light, highly breathable fabric designed to regulate body temperature during warmup training sessions.",
+    shortDescription: "Dynamic 125th anniversary Blaugrana warmup jersey with anti-cling stretch polyester weave.",
     highlights: [
-      "Modern Abstract Geometric Blaugrana Artwork",
+      "Dynamic 125th Anniversary Blaugrana Artwork",
       "Anti-Cling Sweat Dispersal Finish",
       "Ultra-Light 150 GSM Aerodynamic Weave",
       "Full Front & Back Sublimation"
     ],
     specs: {
+      "Season / Year": "2024 / 2025 Warmup",
       "Material": "95% Polyester, 5% Spandex",
       "Fabric Weight": "150 GSM",
       "Fit": "Athletic Training Fit",
       "Care": "Machine Wash Cold"
     },
     specifications: {
+      "Season": "2024/25 Warmup",
       "Material": "Poly-Spandex Blend",
       "Weight": "150 GSM"
     },
-    colors: ["Geometric Modern Art Blaugrana"],
+    colors: ["Blaugrana 125th Artwork"],
     sizes: ["S", "M", "L", "XL", "XXL"],
     sportsType: "Football & Training",
     customizable: true,

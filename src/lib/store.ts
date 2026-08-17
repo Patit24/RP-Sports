@@ -230,7 +230,7 @@ interface SportsStoreState {
 export const useStore = create<SportsStoreState>()(
   persist(
     (set, get) => ({
-      products: [],
+      products: mockProducts,
       cart: [],
       wishlist: [],
       compareList: [],
@@ -567,7 +567,20 @@ export const useStore = create<SportsStoreState>()(
       },
 
       setProducts: (products) => {
-        set({ products });
+        if (!products || products.length === 0) {
+          set({ products: mockProducts });
+        } else {
+          // Merge database products with any mock/catalog products not in DB, ensuring fresh catalog items
+          const dbMap = new Map(products.map((p) => [p.id, p]));
+          const merged = mockProducts.map((p) => dbMap.get(p.id) || p);
+          // Also include any new products added via admin directly in DB that aren't in mockProducts
+          products.forEach((p) => {
+            if (!merged.some((m) => m.id === p.id)) {
+              merged.push(p);
+            }
+          });
+          set({ products: merged });
+        }
       },
 
       setCategories: (categories) => {
@@ -638,17 +651,23 @@ export const useStore = create<SportsStoreState>()(
     }),
     {
       name: "rp-sports-store",
-      version: 8,
+      version: 10,
+      partialize: (state) => ({
+        cart: state.cart,
+        wishlist: state.wishlist,
+        compareList: state.compareList,
+        orders: state.orders,
+        currentUser: state.currentUser,
+      }),
       migrate: (persistedState: any, version: number) => {
-        if (version < 8) {
+        if (version < 10) {
           return {
             ...persistedState,
-            products: [],
-            categories: [],
-            testimonials: [],
-            orders: [],
-            cart: [],
-            wishlist: []
+            cart: persistedState?.cart || [],
+            wishlist: persistedState?.wishlist || [],
+            compareList: persistedState?.compareList || [],
+            orders: persistedState?.orders || [],
+            currentUser: persistedState?.currentUser || null,
           };
         }
         return persistedState;
