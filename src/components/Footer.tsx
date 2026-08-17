@@ -20,7 +20,7 @@ export default function Footer() {
             <Link href="/shop" className="btn-primary text-sm">
               Shop Now <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link href="/jersey-builder" className="border border-white/20 text-white font-display font-bold uppercase text-sm tracking-wider px-6 py-3.5 hover:border-primary hover:text-primary transition-colors">
+            <Link href="/shop?category=jerseys" className="border border-white/20 text-white font-display font-bold uppercase text-sm tracking-wider px-6 py-3.5 hover:border-primary hover:text-primary transition-colors">
               Custom Jerseys
             </Link>
           </div>

@@ -304,7 +304,7 @@ export default function Navbar() {
             </div>
 
             <div className="flex items-center gap-6">
-              <Link href="/jersey-builder" className="text-[#CC0000] hover:text-red-400 font-black tracking-widest flex items-center gap-1 transition-colors">
+              <Link href="/shop?category=jerseys" className="text-[#CC0000] hover:text-red-400 font-black tracking-widest flex items-center gap-1 transition-colors">
                 Custom Jerseys <span className="text-[9px] bg-[#CC0000] text-white px-1.5 py-0.5 rounded-sm font-bold uppercase ml-1">New</span>
               </Link>
               <Link href="/lookbook" className="hover:text-white transition-colors">Lookbook</Link>
@@ -434,7 +434,7 @@ export default function Navbar() {
                   <ArrowRight className="w-5 h-5 text-accent" />
                 </Link>
               ))}
-              <Link href="/jersey-builder" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold tracking-wide text-accent mt-4">Custom Jerseys</Link>
+              <Link href="/shop?category=jerseys" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold tracking-wide text-accent mt-4">Custom Jerseys</Link>
               
               <div className="mt-auto pt-8 flex flex-col gap-4">
                 {currentUser ? (

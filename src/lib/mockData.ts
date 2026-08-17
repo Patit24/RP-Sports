@@ -474,6 +474,97 @@ export const MOCK_PRODUCTS: Product[] = [
     countryOfOrigin: "India"
   },
   {
+    id: "rp-jsy-india",
+    name: "Team India Match Edition Pro Cricket Jersey 2026",
+    slug: "team-india-match-jersey-2026",
+    sku: "RP-JSY-IND26",
+    brand: "RP Sports",
+    category: "jerseys",
+    subcategory: "custom-jersey",
+    image: "/products/cricket_jersey_premium.jpg",
+    images: [
+      "/products/cricket_jersey_premium.jpg",
+      "/products/generated_jersey.jpg"
+    ],
+    gallery: [
+      "/products/cricket_jersey_premium.jpg",
+      "/products/generated_jersey.jpg"
+    ],
+    mrp: 1499,
+    originalPrice: 1499,
+    price: 899,
+    rating: 4.9,
+    reviewCount: 420,
+    reviewsCount: 420,
+    deliveryDays: "3 - 5 Days",
+    stock: 250,
+    description: "Official match edition India fan & player jersey. Ultra-lightweight moisture wicking breathable honeycomb fabric with custom player name & number printing.",
+    shortDescription: "Official Match Edition Team India jersey with free custom player name & number.",
+    highlights: ["Honeycomb Breathable Micro-Polyester", "Official Blue & Saffron Accents", "Laser Sublimation Custom Name & Number"],
+    specs: {
+      Material: "100% Micro Honeycomb Polyester",
+      Weight: "155 GSM",
+      Printing: "High Definition Laser Sublimation"
+    },
+    specifications: {
+      Material: "100% Micro Honeycomb Polyester",
+      Weight: "155 GSM"
+    },
+    colors: ["India Royal Blue / Saffron", "T20 Dark Blue"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
+    sportsType: "Cricket",
+    customizable: true,
+    enableJerseyCustomization: true,
+    badge: "Bestseller",
+    featured: true,
+    countryOfOrigin: "India"
+  },
+  {
+    id: "rp-jsy-kolkata",
+    name: "RP Kolkata Knight Match Edition Fan Jersey 2026",
+    slug: "rp-kolkata-knight-match-jersey",
+    sku: "RP-JSY-KKR26",
+    brand: "RP Custom Apparel",
+    category: "jerseys",
+    subcategory: "custom-jersey",
+    image: "/products/cricket_player_blank_jersey.jpg",
+    images: [
+      "/products/cricket_player_blank_jersey.jpg",
+      "/products/generated_jersey.jpg"
+    ],
+    gallery: [
+      "/products/cricket_player_blank_jersey.jpg",
+      "/products/generated_jersey.jpg"
+    ],
+    mrp: 1299,
+    originalPrice: 1299,
+    price: 799,
+    rating: 4.8,
+    reviewCount: 185,
+    reviewsCount: 185,
+    deliveryDays: "3 - 5 Days",
+    stock: 180,
+    description: "Purple & Gold match jersey inspired by the spirit of Kolkata cricket. Tailored for comfort and matchday intensity with personalized name and number printing.",
+    shortDescription: "Kolkata match jersey with personalized player name and number.",
+    highlights: ["Purple & Gold Athletic Pattern", "Anti-Bacterial Dry-Fit Fabric", "Complimentary Name & Number Sublimation"],
+    specs: {
+      Material: "Dry-Fit Polyester",
+      Weight: "160 GSM"
+    },
+    specifications: {
+      Material: "Dry-Fit Polyester",
+      Weight: "160 GSM"
+    },
+    colors: ["Purple / Gold"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
+    sportsType: "Cricket",
+    customizable: true,
+    enableJerseyCustomization: true,
+    badge: "Trending",
+    featured: true,
+    countryOfOrigin: "India"
+  },
+  {
     id: "rp-004",
     name: "RP Turbo Speed Pro Spike Cricket Shoes",
     slug: "rp-turbo-speed-pro-spikes",

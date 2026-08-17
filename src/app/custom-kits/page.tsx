@@ -17,20 +17,20 @@ export default function CustomKitsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20">
-          {/* Jersey Builder Link */}
-          <Link href="/jersey-builder" className="group block p-12 neumorphic rounded-[32px] relative overflow-hidden transition-all hover:scale-[1.02]">
+          {/* Custom Jerseys Link */}
+          <Link href="/shop?category=jerseys" className="group block p-12 neumorphic rounded-[32px] relative overflow-hidden transition-all hover:scale-[1.02]">
             <div className="absolute top-8 right-8 w-12 h-12 rounded-full neumorphic-inset flex items-center justify-center text-foreground group-hover:text-electric-blue transition-colors z-10">
               <ArrowUpRight className="w-5 h-5" />
             </div>
             
             <div className="relative z-10">
               <Palette className="w-10 h-10 text-electric-blue mb-8" />
-              <h2 className="text-3xl font-black uppercase tracking-tighter mb-4">3D Jersey Builder</h2>
+              <h2 className="text-3xl font-black uppercase tracking-tighter mb-4">Custom Match Jerseys</h2>
               <p className="text-warm-gray text-xs font-medium mb-8 max-w-sm">
-                Engineer your team's visual identity. Choose from premium breathable fabrics, add sponsor logos, and select player numbers in real-time 3D.
+                Pick an official match jersey and personalize it with your custom player name and number with live athletic preview and laser sublimation.
               </p>
               <div className="inline-flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-foreground">
-                Start Designing <ChevronRight className="w-3 h-3 text-electric-blue group-hover:translate-x-1 transition-transform" />
+                Shop Custom Jerseys <ChevronRight className="w-3 h-3 text-electric-blue group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           </Link>

@@ -389,20 +389,20 @@ export default function Home() {
           <img src="/products/cat_jerseys.jpg" alt="Custom Jerseys" className="absolute inset-0 w-full h-full object-cover" />
           <div className="relative z-20 p-10 md:p-16 lg:p-20 max-w-2xl">
             <span className="inline-flex items-center gap-2 text-primary font-display font-bold uppercase tracking-widest text-xs mb-6">
-              <span className="w-6 h-0.5 bg-primary"></span> Custom Kits
+              <span className="w-6 h-0.5 bg-primary"></span> Personalized Gear
             </span>
             <h2 className="font-display font-black text-white uppercase text-5xl md:text-7xl leading-none mb-6">
-              DESIGN YOUR TEAM JERSEY
+              CUSTOM MATCH JERSEYS
             </h2>
             <p className="text-white/75 text-base md:text-lg mb-10 leading-relaxed">
-              Sublimation printing, custom logos, player names & numbers. Minimum 10 jerseys. Delivered pan-India from our Dumdum workshop.
+              Personalize official match jerseys with your custom Player Name & Number. High-definition laser sublimation printing directly from our Kolkata workshop.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link href="/jersey-builder" className="btn-primary">
-                Start Designing <ArrowRight className="w-4 h-4" />
+              <Link href="/shop?category=jerseys" className="btn-primary">
+                Shop Custom Jerseys <ArrowRight className="w-4 h-4" />
               </Link>
               <Link href="/contact" className="btn-outline border-white/40 text-white hover:border-primary hover:bg-primary">
-                Call Us: +91 98765 43210
+                Bulk Team Orders
               </Link>
             </div>
           </div>
