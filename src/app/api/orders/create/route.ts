@@ -99,7 +99,7 @@ export async function POST(request: Request) {
 
         const productData = productDoc.data()!;
         const currentStock = productData.stock ?? 0;
-        const actualPrice = productData.price ?? 0;
+        const basePrice = Number(productData.price) || 0;
 
         // Secure Quantity & Price Inputs Checks
         if (!item.quantity || typeof item.quantity !== "number" || !Number.isInteger(item.quantity) || item.quantity <= 0) {
@@ -116,10 +116,10 @@ export async function POST(request: Request) {
         const newStock = currentStock - item.quantity;
         stockUpdates.push({ ref: productRef, newStock });
 
-        calculatedSubtotal += actualPrice * item.quantity;
-
-        // Strict Customization Validation
+        // Strict Customization Validation & Authoritative Print Fee Calculation
         let validatedCustomization: any = null;
+        let customizationFee = 0;
+
         if (item.customization) {
           const isCustomizable = Boolean(
             productData.enableJerseyCustomization ||
@@ -152,18 +152,24 @@ export async function POST(request: Request) {
             throw new Error("Jersey number must be a valid integer between 1 and 99.");
           }
 
+          customizationFee = productData.customizationFee !== undefined ? Number(productData.customizationFee) : 150;
+
           validatedCustomization = {
             type: "jersey_name_number",
             name: trimmedName,
             number: parsedNum,
+            fee: customizationFee,
           };
         }
+
+        const actualPrice = basePrice + customizationFee;
+        calculatedSubtotal += actualPrice * item.quantity;
 
         // Build item with verified price from DB
         const validatedProduct = {
           ...item.product,
           price: actualPrice,
-          originalPrice: productData.originalPrice || actualPrice,
+          originalPrice: (productData.originalPrice || basePrice) + customizationFee,
           stock: newStock,
         };
 

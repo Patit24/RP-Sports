@@ -206,6 +206,7 @@ export default function CartPage() {
                               </div>
                               <div className="text-[10px] text-slate-300 font-bold">
                                 JERSEY #{item.customization.number} {item.selectedSize ? `• SIZE: ${item.selectedSize}` : ""}
+                                {item.customization.fee !== undefined && item.customization.fee > 0 ? ` • +₹${item.customization.fee} Print Fee` : ""}
                               </div>
                             </div>
                           </div>

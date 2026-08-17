@@ -28,6 +28,7 @@ export interface JerseyCustomization {
   type: "jersey_name_number";
   name: string;
   number: number;
+  fee?: number;
 }
 
 export interface CustomJerseyDesign {

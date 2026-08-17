@@ -55,6 +55,7 @@ export default function AddProductPage() {
     featured: false,
     customizable: false,
     enableJerseyCustomization: false,
+    customizationFee: "150",
     colors: "",
     sizes: "",
   });
@@ -556,6 +557,7 @@ export default function AddProductPage() {
       featured: Boolean(formData.featured),
       customizable: Boolean(formData.customizable),
       enableJerseyCustomization: Boolean(formData.enableJerseyCustomization),
+      customizationFee: Number(formData.customizationFee) || 150,
       willowType: formData.willowType,
       willowGrade: formData.willowGrade,
       handleSize: formData.handleSize,
@@ -1001,6 +1003,28 @@ export default function AddProductPage() {
               <span>Enable Jersey Name & Number Customization</span>
             </label>
           </div>
+
+          {formData.enableJerseyCustomization && (
+            <div className="p-4 bg-red-50/60 rounded-2xl border border-red-200 space-y-2 mt-4">
+              <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-800">
+                Custom Printing Extra Fee (₹)
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min="0"
+                  name="customizationFee"
+                  value={formData.customizationFee}
+                  onChange={handleChange}
+                  className="w-40 h-10 px-3 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000]"
+                  placeholder="150"
+                />
+                <span className="text-xs text-gray-500 font-medium">
+                  Additional fee charged when customer selects custom name & number printing (e.g. ₹150). Set 0 for free custom printing.
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Section 4: Descriptions & Bullet Highlights */}

@@ -557,6 +557,7 @@ export default function CheckoutPage() {
                                 </div>
                                 <div className="text-slate-300 font-bold">
                                   JERSEY #{item.customization.number} {item.selectedSize ? `• SIZE: ${item.selectedSize}` : ""}
+                                  {item.customization.fee !== undefined && item.customization.fee > 0 ? ` • +₹${item.customization.fee} Print Fee` : ""}
                                 </div>
                               </div>
                             )}

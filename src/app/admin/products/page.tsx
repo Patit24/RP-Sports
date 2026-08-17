@@ -49,6 +49,7 @@ export default function ManageProductsPage() {
     featured: false,
     customizable: false,
     enableJerseyCustomization: false,
+    customizationFee: "150",
     image: "",
     shortDescription: "",
     description: "",
@@ -189,6 +190,7 @@ export default function ManageProductsPage() {
       featured: Boolean(product.featured),
       customizable: Boolean(product.customizable),
       enableJerseyCustomization: Boolean(product.enableJerseyCustomization || (product.category === "jerseys" && product.customizable)),
+      customizationFee: String(product.customizationFee ?? 150),
       image: product.image || (product.images?.[0] ?? ""),
       shortDescription: product.shortDescription || "",
       description: product.description || "",
@@ -376,6 +378,7 @@ export default function ManageProductsPage() {
         featured: formData.featured,
         customizable: formData.customizable,
         enableJerseyCustomization: formData.enableJerseyCustomization,
+        customizationFee: Number(formData.customizationFee) || 150,
         colors: colorsArr,
         sizes: sizesArr,
         specifications: specsMap,
@@ -815,6 +818,27 @@ export default function ManageProductsPage() {
                           <span>Enable Jersey Name & Number Customization</span>
                         </label>
                       </div>
+
+                      {formData.enableJerseyCustomization && (
+                        <div className="p-4 bg-red-50/60 rounded-xl border border-red-200 space-y-2">
+                          <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                            Custom Printing Extra Fee (₹)
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="number"
+                              min="0"
+                              value={formData.customizationFee}
+                              onChange={(e) => setFormData({ ...formData, customizationFee: e.target.value })}
+                              className="w-40 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-900 focus:outline-none focus:border-[#CC0000]"
+                              placeholder="150"
+                            />
+                            <span className="text-xs text-slate-500 font-medium">
+                              Added to base price when customer opts for custom name & number printing (e.g. ₹150). Set 0 for free printing.
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
