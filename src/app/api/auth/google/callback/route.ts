@@ -1,9 +1,24 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-// Get the base app URL — works at runtime on both Vercel and local
-function getAppUrl(request: Request): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+// Get the base app URL — works dynamically at runtime on Vercel production, preview and local
+function getAppUrl(request: Request, parsedOrigin?: string): string {
+  if (parsedOrigin && (parsedOrigin.startsWith("https://") || parsedOrigin.startsWith("http://localhost"))) {
+    return parsedOrigin.replace(/\/$/, "");
+  }
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
+  if (forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+  const host = request.headers.get("host");
+  if (host) {
+    const proto = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
+    return `${proto}://${host}`;
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  }
   const url = new URL(request.url);
   return `${url.protocol}//${url.host}`;
 }
@@ -61,7 +76,7 @@ export async function GET(request: Request) {
     }
 
     // Parse state JSON
-    let parsedState: { state: string; redirectTo: string } | null = null;
+    let parsedState: { state: string; redirectTo: string; origin?: string } | null = null;
     try {
       parsedState = JSON.parse(decodeURIComponent(returnedStateRaw));
     } catch {
@@ -73,8 +88,10 @@ export async function GET(request: Request) {
       }
     }
 
+    const resolvedAppUrl = getAppUrl(request, parsedState?.origin);
+
     if (!parsedState?.state) {
-      return NextResponse.redirect(`${appUrl}/signin?error=invalid_state`);
+      return NextResponse.redirect(`${resolvedAppUrl}/signin?error=invalid_state`);
     }
 
     // Validate CSRF state cookie
@@ -90,12 +107,12 @@ export async function GET(request: Request) {
       // [SECURITY H-2] Hard-reject if state cookie is absent — do NOT silently bypass CSRF protection.
       // Cookies can be blocked in some environments but security must take precedence.
       console.warn("[OAuth Callback] State cookie missing — possible CSRF attempt.");
-      return NextResponse.redirect(`${appUrl}/signin?error=state_mismatch`);
+      return NextResponse.redirect(`${resolvedAppUrl}/signin?error=state_mismatch`);
     }
 
     if (savedState !== parsedState.state) {
       console.warn("[OAuth Callback] State mismatch. saved:", savedState?.slice(0, 8), "returned:", parsedState.state?.slice(0, 8));
-      return NextResponse.redirect(`${appUrl}/signin?error=state_mismatch`);
+      return NextResponse.redirect(`${resolvedAppUrl}/signin?error=state_mismatch`);
     }
 
     const rawRedirect = parsedState.redirectTo || "/";
@@ -107,7 +124,7 @@ export async function GET(request: Request) {
     // Exchange authorization code for Google tokens
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
       console.error("[OAuth Callback] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
-      return NextResponse.redirect(`${appUrl}/signin?error=oauth_not_configured`);
+      return NextResponse.redirect(`${resolvedAppUrl}/signin?error=oauth_not_configured`);
     }
 
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
@@ -117,7 +134,7 @@ export async function GET(request: Request) {
         code,
         client_id: process.env.GOOGLE_CLIENT_ID,
         client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: `${appUrl}/api/auth/google/callback`,
+        redirect_uri: `${resolvedAppUrl}/api/auth/google/callback`,
         grant_type: "authorization_code",
       }),
     });
@@ -126,7 +143,7 @@ export async function GET(request: Request) {
 
     if (!tokenData.access_token) {
       console.error("[OAuth Callback] Token exchange failed:", JSON.stringify(tokenData));
-      return NextResponse.redirect(`${appUrl}/signin?error=token_exchange_failed`);
+      return NextResponse.redirect(`${resolvedAppUrl}/signin?error=token_exchange_failed`);
     }
 
     // Fetch Google user profile
@@ -138,7 +155,7 @@ export async function GET(request: Request) {
 
     if (!profile.id || !profile.email) {
       console.error("[OAuth Callback] Profile fetch failed:", JSON.stringify(profile));
-      return NextResponse.redirect(`${appUrl}/signin?error=profile_fetch_failed`);
+      return NextResponse.redirect(`${resolvedAppUrl}/signin?error=profile_fetch_failed`);
     }
 
     console.log("[OAuth Callback] Got Google profile for:", profile.email);
@@ -154,7 +171,7 @@ export async function GET(request: Request) {
       const email = encodeURIComponent(profile.email);
       const uid = encodeURIComponent(`google_${profile.id}`);
       return NextResponse.redirect(
-        `${appUrl}/auth/callback?fallback=1&email=${email}&name=${name}&uid=${uid}&redirect=${encodeURIComponent(redirectTo)}`
+        `${resolvedAppUrl}/auth/callback?fallback=1&email=${email}&name=${name}&uid=${uid}&redirect=${encodeURIComponent(redirectTo)}`
       );
     }
 
@@ -182,7 +199,7 @@ export async function GET(request: Request) {
 
     // Clear the state cookie and redirect to auth callback page
     const response = NextResponse.redirect(
-      `${appUrl}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
+      `${resolvedAppUrl}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
     );
     response.cookies.delete("google_oauth_state");
     
@@ -199,6 +216,7 @@ export async function GET(request: Request) {
 
   } catch (err: any) {
     console.error("[OAuth Callback] Unexpected error:", err?.message || err);
-    return NextResponse.redirect(`${appUrl}/signin?error=server_error`);
+    const fallbackUrl = getAppUrl(request);
+    return NextResponse.redirect(`${fallbackUrl}/signin?error=server_error`);
   }
 }
