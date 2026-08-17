@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { generateLogisticsMessage } from "@/lib/deliveryPartnerService";
 import { CheckCircle2, Package, Truck, ArrowRight, Printer, MapPin, Phone, ShieldCheck, Share2, Copy, Check, AlertCircle } from "lucide-react";
+import TaxInvoiceModal from "@/components/TaxInvoiceModal";
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
@@ -16,6 +17,7 @@ function OrderSuccessContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedPayload, setCopiedPayload] = useState(false);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
   useEffect(() => {
     if (!orderId) {
@@ -60,9 +62,7 @@ function OrderSuccessContent() {
   }, [orderId, orders]);
 
   const handlePrint = () => {
-    if (typeof window !== "undefined") {
-      window.print();
-    }
+    setIsInvoiceOpen(true);
   };
 
   const handleCopyLogisticsDispatch = () => {
@@ -327,6 +327,15 @@ Payment: ${order.paymentMethod} (Total: ₹${order.total.toLocaleString("en-IN")
           </div>
 
         </div>
+      )}
+
+      {/* GST TAX INVOICE MODAL */}
+      {order && (
+        <TaxInvoiceModal
+          order={order}
+          isOpen={isInvoiceOpen}
+          onClose={() => setIsInvoiceOpen(false)}
+        />
       )}
 
     </div>

@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useStore } from "@/lib/store";
+import { useStore, Order } from "@/lib/store";
 import { listenToUserOrders, listenToOrders } from "@/lib/firestoreService";
 import { 
   User, Package, Heart, MapPin, Gift, 
   ArrowUpRight, Clock, ShieldCheck, Download, LogOut, 
   Truck, Clipboard, CheckCircle, ExternalLink, Calendar,
-  CreditCard, Compass
+  CreditCard, Compass, Printer
 } from "lucide-react";
 import Link from "next/link";
+import TaxInvoiceModal from "@/components/TaxInvoiceModal";
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
@@ -56,9 +57,11 @@ export default function CustomerDashboardPage() {
   // Filter wishlisted products from our database
   const wishlistedItems = products.filter((p) => wishlist.includes(p.id));
 
-  // Simulated invoice download
-  const handleDownloadInvoice = (orderId: string) => {
-    showToast(`Generating invoice PDF for ${orderId}...`, "success");
+  // Tax invoice modal state
+  const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
+
+  const handleDownloadInvoice = (order: Order) => {
+    setSelectedInvoiceOrder(order);
   };
 
   const getStepIndex = (status: string) => {
@@ -264,10 +267,10 @@ export default function CustomerDashboardPage() {
                                 {order.status}
                               </span>
                               <button
-                                onClick={() => handleDownloadInvoice(order.id)}
+                                onClick={() => handleDownloadInvoice(order)}
                                 className="text-neutral-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
                               >
-                                <Download className="w-3.5 h-3.5" /> INVOICE
+                                <Printer className="w-3.5 h-3.5" /> TAX INVOICE
                               </button>
                             </div>
                           </div>
@@ -506,6 +509,15 @@ export default function CustomerDashboardPage() {
           </main>
         </div>
       </div>
+
+      {/* TAX INVOICE MODAL */}
+      {selectedInvoiceOrder && (
+        <TaxInvoiceModal
+          order={selectedInvoiceOrder}
+          isOpen={Boolean(selectedInvoiceOrder)}
+          onClose={() => setSelectedInvoiceOrder(null)}
+        />
+      )}
     </div>
   );
 }

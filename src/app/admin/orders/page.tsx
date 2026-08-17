@@ -6,8 +6,9 @@ import { useStore, Order } from "@/lib/store";
 import { listenToOrders } from "@/lib/firestoreService";
 import { 
   ShoppingBag, Search, Filter, Truck, CheckCircle2, Clock, 
-  XCircle, AlertCircle, Phone, MapPin, ExternalLink, RefreshCw, X, ShieldCheck, Eye, Copy, Check
+  XCircle, AlertCircle, Phone, MapPin, ExternalLink, RefreshCw, X, ShieldCheck, Eye, Copy, Check, Printer 
 } from "lucide-react";
+import TaxInvoiceModal from "@/components/TaxInvoiceModal";
 
 export default function AdminOrdersPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isPushingShiprocket, setIsPushingShiprocket] = useState(false);
   const [copiedAwb, setCopiedAwb] = useState(false);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
   useEffect(() => {
     if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
@@ -414,10 +416,39 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
+              {/* Action Buttons: Print Tax Invoice */}
+              <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => setIsInvoiceOpen(true)}
+                  className="px-4 py-2.5 bg-slate-900 hover:bg-black text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-sm flex items-center gap-2 transition-all cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-amber-400" />
+                  <span>Print GST Tax Invoice</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedOrder(null)}
+                  className="px-4 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+
             </div>
 
           </div>
         </div>
+      )}
+
+      {/* GST TAX INVOICE MODAL */}
+      {selectedOrder && (
+        <TaxInvoiceModal
+          order={selectedOrder}
+          isOpen={isInvoiceOpen}
+          onClose={() => setIsInvoiceOpen(false)}
+        />
       )}
 
     </div>
