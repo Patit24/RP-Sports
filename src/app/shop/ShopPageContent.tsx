@@ -14,8 +14,7 @@ import Link from "next/link";
 export default function ShopPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const products = useStore((state) => state.products);
-  const categories = useStore((state) => state.categories);
+  const { products, categories, addToCart, toggleWishlist, wishlist } = useStore();
 
   // States
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -381,66 +380,136 @@ export default function ShopPageContent() {
               <div className="space-y-4">
                 {filteredProducts.map((product) => {
                   const isDiscounted = product.mrp > product.price;
+                  const discountPercent = Math.round(((product.mrp - product.price) / product.mrp) * 100);
+                  const isWishlisted = wishlist.includes(product.id);
+
                   return (
                     <div 
                       key={product.id}
-                      className="group flex flex-col sm:flex-row gap-6 p-4 bg-white border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-lg transition-all duration-300 cursor-pointer relative"
+                      className="group flex flex-col sm:flex-row gap-6 p-4 sm:p-5 bg-white border border-slate-200/80 rounded-2xl hover:border-neutral-900/80 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-0.5 transition-all duration-500 cursor-pointer relative overflow-hidden"
                       onClick={() => router.push(`/product/${product.id}`)}
                     >
-                      <div className="w-full sm:w-48 aspect-square bg-slate-50 rounded-lg overflow-hidden shrink-0 relative flex items-center justify-center p-4">
+                      {/* Image Canvas */}
+                      <div className="w-full sm:w-52 aspect-square sm:aspect-auto bg-gradient-to-b from-neutral-50 via-neutral-100/50 to-neutral-50 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center p-4 border border-slate-100">
                         <img 
                           src={product.images[0]} 
                           alt={product.name} 
-                          className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-contain mix-blend-multiply group-hover:scale-108 transition-all duration-700 ease-out"
                         />
-                        {product.badge && (
-                          <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest bg-accent text-white px-2 py-1 rounded">
-                            {product.badge}
-                          </span>
-                        )}
+                        {/* Top Badge */}
+                        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 pointer-events-none">
+                          {product.stock === 0 ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-display font-black tracking-widest uppercase bg-neutral-950/90 text-rose-300 border border-rose-500/30 backdrop-blur-md">
+                              <span className="w-1 h-1 rounded-full bg-rose-500 animate-pulse" />
+                              OUT OF STOCK
+                            </span>
+                          ) : product.badge ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-display font-black uppercase tracking-widest bg-neutral-950 text-white shadow-sm">
+                              {product.badge}
+                            </span>
+                          ) : null}
+                          {isDiscounted && product.stock > 0 && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-600 text-white self-start">
+                              {discountPercent}% OFF
+                            </span>
+                          )}
+                        </div>
                       </div>
                       
-                      <div className="flex-1 flex flex-col justify-center py-2">
-                        <span className="text-[10px] font-bold text-accent uppercase tracking-widest mb-1 block">
-                          {product.brand} · {product.category}
-                        </span>
-                        <h3 className="font-bold text-xl text-primary leading-tight mb-2 group-hover:text-accent transition-colors">
+                      {/* Details */}
+                      <div className="flex-1 flex flex-col justify-center min-w-0 py-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest">
+                            {product.brand}
+                          </span>
+                          {product.subcategory && (
+                            <span className="text-[9px] font-mono uppercase tracking-wider text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded">
+                              {product.subcategory.replace(/-/g, " ")}
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 
+                          className="font-display font-bold text-lg sm:text-xl text-neutral-900 leading-snug mb-1.5 group-hover:text-[#CC0000] transition-colors duration-300"
+                          style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                        >
                           {product.name}
                         </h3>
-                        <p className="text-slate-500 text-sm line-clamp-2 max-w-2xl mb-4">
-                          {product.shortDescription}
+
+                        <p className="text-neutral-500 text-xs line-clamp-2 max-w-2xl mb-3 leading-relaxed">
+                          {product.shortDescription || product.description}
                         </p>
                         
-                        <div className="flex items-center gap-1 mb-4">
-                          <div className="flex text-yellow-400">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star key={i} className={`w-3.5 h-3.5 ${i < Math.floor(product.rating) ? "fill-current" : "text-slate-200 fill-current"}`} />
-                            ))}
+                        {/* Rating Pill */}
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-md text-[11px] font-bold text-amber-900 font-mono">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                            <span>{(product.rating || 4.8).toFixed(1)}</span>
                           </div>
-                          <span className="text-xs font-medium text-slate-500 ml-1">({product.reviewsCount})</span>
+                          <span className="text-xs font-medium text-neutral-400">
+                            ({product.reviewsCount || product.reviewCount || 0} reviews)
+                          </span>
                         </div>
                         
-                        <div className="mt-auto flex items-center justify-between">
+                        {/* Price & Action */}
+                        <div className="mt-auto flex items-center justify-between pt-3 border-t border-slate-100 gap-4">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-black text-primary">₹{product.price.toLocaleString('en-IN')}</span>
+                            <span 
+                              className="text-2xl font-display font-black text-neutral-950 tracking-tight"
+                              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                            >
+                              ₹{product.price.toLocaleString('en-IN')}
+                            </span>
                             {isDiscounted && (
-                              <span className="text-sm font-medium line-through text-slate-400">₹{product.mrp.toLocaleString('en-IN')}</span>
+                              <span className="text-xs font-mono font-medium line-through text-neutral-400">
+                                ₹{product.mrp.toLocaleString('en-IN')}
+                              </span>
                             )}
                           </div>
                           
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2.5">
                             <button
-                              onClick={(e) => { e.stopPropagation(); /* handle wishlist */ }}
-                              className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-colors"
+                              type="button"
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                toggleWishlist(product.id); 
+                              }}
+                              className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all duration-300 cursor-pointer ${
+                                isWishlisted 
+                                  ? "text-[#CC0000] bg-red-50 border-red-200" 
+                                  : "text-neutral-400 border-slate-200 hover:text-[#CC0000] hover:border-neutral-400 hover:bg-neutral-50"
+                              }`}
+                              title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                              aria-label="Wishlist"
                             >
-                              <Heart className="w-4 h-4" />
+                              <Heart className={`w-4 h-4 ${isWishlisted ? "fill-current" : ""}`} />
                             </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); /* handle cart */ }}
-                              className="bg-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-accent transition-colors flex items-center gap-2"
-                            >
-                              <ShoppingCart className="w-4 h-4" /> Add
-                            </button>
+
+                            {product.stock === 0 ? (
+                              <span 
+                                className="h-9.5 px-4 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-400 font-display font-black text-xs uppercase tracking-wider flex items-center justify-center cursor-not-allowed"
+                                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                              >
+                                Out of Stock
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  addToCart({
+                                    product,
+                                    quantity: 1,
+                                    selectedColor: product.colors?.[0],
+                                    selectedSize: product.sizes?.[0],
+                                  });
+                                }}
+                                className="h-9.5 px-5 rounded-xl bg-neutral-950 hover:bg-[#CC0000] text-white font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 active:scale-95 cursor-pointer shadow-sm hover:shadow-md hover:shadow-red-600/20"
+                                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                              >
+                                <ShoppingCart className="w-3.5 h-3.5" /> Add to Cart
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>

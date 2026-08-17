@@ -55,146 +55,166 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <div
       onClick={handleCardClick}
-      className="group flex flex-col bg-white rounded-lg border border-gray-200 hover:border-[#CC0000] overflow-hidden transition-all duration-300 hover:shadow-xl cursor-pointer relative"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className="group relative flex flex-col bg-white rounded-2xl border border-slate-200/80 hover:border-neutral-900/80 overflow-hidden transition-all duration-500 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.12)] hover:-translate-y-1 cursor-pointer"
     >
-      {/* Badges */}
+      {/* ── Top Badges & Status ── */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 pointer-events-none">
         {product.stock === 0 ? (
-          <span className="text-[10px] font-display font-black uppercase tracking-widest px-2.5 py-1 rounded shadow-md bg-[#111111] text-rose-400 border border-rose-500/30">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-display font-black tracking-widest uppercase bg-neutral-950/90 text-rose-300 border border-rose-500/30 backdrop-blur-md shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
             OUT OF STOCK
           </span>
         ) : product.badge ? (
           <span
-            className={`text-[10px] font-display font-bold uppercase tracking-widest px-2.5 py-1 rounded shadow-sm ${
+            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-display font-black uppercase tracking-widest shadow-sm ${
               product.badge === "Sale"
                 ? "bg-[#CC0000] text-white"
-                : product.badge === "New"
-                ? "bg-[#111111] text-white"
-                : "bg-amber-600 text-white"
+                : product.badge === "New" || product.badge === "New Arrival"
+                ? "bg-neutral-950 text-white"
+                : product.badge === "Bestseller" || product.badge === "Trending"
+                ? "bg-amber-500 text-neutral-950 font-black"
+                : "bg-neutral-900 text-white"
             }`}
           >
             {product.badge}
           </span>
         ) : null}
+
         {discount > 0 && product.stock > 0 && (
-          <span className="text-[10px] font-display font-bold bg-green-700 text-white px-2.5 py-1 rounded shadow-sm self-start">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-tight bg-emerald-600 text-white shadow-sm self-start">
             {discount}% OFF
           </span>
         )}
       </div>
 
-      {/* Top Action Buttons (Wishlist & Compare) */}
+      {/* ── Top Floating Action Buttons (Wishlist & Compare) ── */}
       <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
         <button
           type="button"
           onClick={handleWishlist}
-          className={`p-2 rounded-full border transition-all duration-300 cursor-pointer ${
+          className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${
             isWishlisted
-              ? "text-[#CC0000] bg-red-50 border-red-200"
-              : "text-gray-400 bg-white/90 backdrop-blur-sm border-gray-200 hover:text-[#CC0000] hover:bg-white"
+              ? "text-[#CC0000] bg-red-50 border-red-200 scale-105"
+              : "text-neutral-500 bg-white/90 backdrop-blur-md border-slate-200/80 hover:text-[#CC0000] hover:bg-white hover:border-neutral-400 hover:scale-110 active:scale-95"
           }`}
           title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          aria-label="Wishlist"
         >
-          <Heart className={`w-4 h-4 ${isWishlisted ? "fill-current" : ""}`} />
+          <Heart className={`w-3.5 h-3.5 ${isWishlisted ? "fill-current" : ""}`} />
         </button>
 
         <button
           type="button"
           onClick={handleCompare}
-          className={`p-2 rounded-full border transition-all duration-300 cursor-pointer ${
+          className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all duration-300 cursor-pointer shadow-sm ${
             isCompared
-              ? "text-blue-600 bg-blue-50 border-blue-200"
-              : "text-gray-400 bg-white/90 backdrop-blur-sm border-gray-200 hover:text-blue-600 hover:bg-white"
+              ? "text-blue-600 bg-blue-50 border-blue-200 scale-105"
+              : "text-neutral-500 bg-white/90 backdrop-blur-md border-slate-200/80 hover:text-blue-600 hover:bg-white hover:border-neutral-400 hover:scale-110 active:scale-95"
           }`}
           title={isCompared ? "Remove from compare" : "Add to compare"}
+          aria-label="Compare"
         >
-          <Scale className="w-4 h-4" />
+          <Scale className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Product Image */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden flex items-center justify-center bg-gray-50 p-4">
+      {/* ── Product Image Showcase Canvas ── */}
+      <div className="relative aspect-[4/5] w-full overflow-hidden flex items-center justify-center bg-gradient-to-b from-neutral-50/90 via-neutral-100/50 to-neutral-50/90 p-6 border-b border-slate-100">
         <img
           src={product.images[0]}
           alt={product.name}
-          className={`w-full h-full object-contain mix-blend-multiply transition-transform duration-700 ${
-            hovered && product.images[1] ? "scale-105 opacity-0" : "scale-100 opacity-100"
+          className={`w-full h-full object-contain mix-blend-multiply transition-all duration-700 ease-out ${
+            hovered && product.images[1] ? "scale-108 opacity-0" : "scale-100 group-hover:scale-108 opacity-100"
           }`}
         />
         {product.images[1] && (
           <img
             src={product.images[1]}
             alt={product.name}
-            className={`absolute inset-0 w-full h-full object-contain mix-blend-multiply p-4 transition-transform duration-700 ${
-              hovered ? "scale-100 opacity-100" : "scale-95 opacity-0"
+            className={`absolute inset-0 w-full h-full object-contain mix-blend-multiply p-6 transition-all duration-700 ease-out ${
+              hovered ? "scale-108 opacity-100" : "scale-95 opacity-0"
             }`}
           />
         )}
 
-        {/* Hover Quick View Overlay Button */}
-        <div className="absolute inset-x-0 bottom-3 px-4 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+        {/* Floating Quick View Bar on Hover */}
+        <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-3 group-hover:translate-y-0 z-10">
           <button
             type="button"
             onClick={handleQuickView}
-            className="w-full bg-[#111111]/90 hover:bg-[#CC0000] text-white font-display font-bold uppercase text-xs tracking-wider py-2.5 flex items-center justify-center gap-2 transition-all shadow-md"
+            className="w-full bg-neutral-950/90 hover:bg-[#CC0000] text-white font-display font-black uppercase text-[11px] tracking-widest py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-black/20 backdrop-blur-md cursor-pointer"
+            style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
           >
             <Eye className="w-3.5 h-3.5" /> Quick View
           </button>
         </div>
       </div>
 
-      {/* Product Details */}
-      <div className="p-4 flex flex-col flex-grow bg-white">
-        <span className="text-[10px] font-display font-bold text-[#CC0000] uppercase tracking-widest mb-1 block">
-          {product.brand}
-        </span>
-        <h3 className="font-semibold text-sm text-[#111111] leading-tight line-clamp-2 group-hover:text-[#CC0000] transition-colors mb-2">
+      {/* ── Product Information & Specs ── */}
+      <div className="p-4 sm:p-5 flex flex-col flex-grow bg-white">
+        {/* Brand & Subcategory Kicker */}
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest truncate">
+            {product.brand}
+          </span>
+          {product.subcategory && (
+            <span className="text-[9px] font-mono uppercase tracking-wider text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded shrink-0">
+              {product.subcategory.replace(/-/g, " ")}
+            </span>
+          )}
+        </div>
+
+        {/* Product Title */}
+        <h3 
+          className="font-display font-bold text-[15px] sm:text-base text-neutral-900 leading-snug line-clamp-2 group-hover:text-[#CC0000] transition-colors duration-300 mb-2"
+          style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+        >
           {product.name}
         </h3>
 
-        {/* Ratings */}
-        <div className="flex items-center gap-1 mb-3">
-          <div className="flex text-amber-400">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                className={`w-3.5 h-3.5 ${
-                  i < Math.floor(product.rating) ? "fill-current text-amber-400" : "text-gray-200 fill-current"
-                }`}
-              />
-            ))}
+        {/* Ratings Pill */}
+        <div className="flex items-center gap-2 mb-3.5">
+          <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-md text-[11px] font-bold text-amber-900 font-mono">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+            <span>{(product.rating || 4.8).toFixed(1)}</span>
           </div>
-          <span className="text-xs font-medium text-gray-500 ml-1">({product.reviewsCount})</span>
+          <span className="text-[11px] font-medium text-neutral-400">
+            ({product.reviewsCount || product.reviewCount || 0} reviews)
+          </span>
         </div>
 
-        {/* Price & Action */}
-        <div className="mt-auto flex items-end justify-between pt-2 border-t border-gray-100">
-          <div className="flex flex-col">
+        {/* ── Price & CTA Action Footer ── */}
+        <div className="mt-auto flex items-end justify-between pt-3 border-t border-slate-100 gap-2">
+          <div className="flex flex-col min-w-0">
             {product.mrp > product.price && (
-              <span className="text-xs font-medium line-through text-gray-400 mb-0.5">
+              <span className="text-[11px] font-mono font-medium line-through text-neutral-400 mb-0.5">
                 ₹{product.mrp.toLocaleString("en-IN")}
               </span>
             )}
-            <span className="text-lg font-display font-black text-[#CC0000]">
-              ₹{product.price.toLocaleString("en-IN")}
-            </span>
+            <div className="flex items-baseline gap-1">
+              <span 
+                className="text-lg sm:text-xl font-display font-black text-neutral-950 tracking-tight"
+                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+              >
+                ₹{product.price.toLocaleString("en-IN")}
+              </span>
+            </div>
           </div>
 
           {product.stock === 0 ? (
-            <span className="text-[11px] font-display font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1.5 rounded border border-rose-200">
+            <span className="h-9 px-3 rounded-xl bg-neutral-100 border border-neutral-200 text-neutral-400 font-display font-black text-[11px] uppercase tracking-wider flex items-center justify-center cursor-not-allowed shrink-0" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
               Out of Stock
             </span>
           ) : (
             <button
               type="button"
               onClick={handleAddToCart}
-              className="h-9 px-3 rounded bg-[#CC0000] hover:bg-[#990000] text-white font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-colors duration-300 cursor-pointer shadow-sm"
+              className="h-9.5 px-4 rounded-xl bg-neutral-950 hover:bg-[#CC0000] text-white font-display font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all duration-300 active:scale-95 cursor-pointer shadow-sm hover:shadow-md hover:shadow-red-600/20 shrink-0"
+              style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
               aria-label="Add to cart"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Add</span>
+              <span>Add</span>
             </button>
           )}
         </div>
