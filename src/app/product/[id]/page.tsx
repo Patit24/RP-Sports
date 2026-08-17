@@ -49,7 +49,7 @@ export default function ProductDetailPage() {
   const [peaceOpen, setPeaceOpen] = useState(true);
   const [highlightsOpen, setHighlightsOpen] = useState(true);
 
-  // Customer Current Location (Auto-detected via IP/GPS)
+  // Customer Current Location (Auto-detected via IP/GPS & Postal Directory)
   const {
     pincode: customerPincode,
     formattedAddress: customerAddress,
@@ -59,6 +59,9 @@ export default function ProductDetailPage() {
     detectGpsLocation,
     setPincodeManual,
   } = useCustomerLocation();
+
+  const [isChangingLocation, setIsChangingLocation] = useState(false);
+  const [manualPinInput, setManualPinInput] = useState("");
 
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const isJerseyOrApparel = Boolean(
@@ -312,7 +315,7 @@ export default function ProductDetailPage() {
                         </span>
                         {isGpsAccurate && (
                           <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">
-                            GPS Live
+                            GPS Verified
                           </span>
                         )}
                       </div>
@@ -322,16 +325,86 @@ export default function ProductDetailPage() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={detectGpsLocation}
-                    disabled={isLocLoading}
-                    className="shrink-0 text-[11px] font-bold text-[#CC0000] hover:text-[#990000] flex items-center gap-1 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer border border-red-200/60"
-                  >
-                    <Navigation className={`w-3 h-3 ${isLocLoading ? "animate-spin" : ""}`} />
-                    <span>{isLocLoading ? "Detecting..." : "Detect GPS"}</span>
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsChangingLocation(!isChangingLocation)}
+                      className="text-[11px] font-bold text-[#CC0000] hover:underline px-2 py-1 rounded bg-red-50 hover:bg-red-100 border border-red-200/50 cursor-pointer"
+                    >
+                      {isChangingLocation ? "Close" : "Change"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={detectGpsLocation}
+                      disabled={isLocLoading}
+                      title="Detect Exact GPS"
+                      className="text-[11px] font-bold text-slate-700 hover:text-black flex items-center gap-1 bg-white hover:bg-slate-100 px-2.5 py-1 rounded border border-slate-200 transition-colors cursor-pointer"
+                    >
+                      <Navigation className={`w-3 h-3 text-[#CC0000] ${isLocLoading ? "animate-spin" : ""}`} />
+                      <span className="hidden sm:inline">{isLocLoading ? "Detecting..." : "GPS"}</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Quick Location / Pincode Selector Drawer */}
+                {isChangingLocation && (
+                  <div className="bg-white p-3.5 rounded-xl border border-red-200/80 shadow-inner space-y-2.5 animate-fadeIn">
+                    <span className="text-[11px] font-bold text-slate-800 block uppercase tracking-wider">
+                      Enter your delivery pincode or select city:
+                    </span>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={manualPinInput}
+                        onChange={(e) => setManualPinInput(e.target.value.replace(/\D/g, ""))}
+                        placeholder="Enter 6-digit Pincode (e.g. 700028)..."
+                        className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-900 outline-none focus:border-[#CC0000] focus:bg-white font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (manualPinInput.length === 6) {
+                            setPincodeManual(manualPinInput);
+                            setIsChangingLocation(false);
+                            setManualPinInput("");
+                          }
+                        }}
+                        disabled={manualPinInput.length !== 6}
+                        className="px-3.5 py-1.5 bg-[#CC0000] hover:bg-[#AA0000] text-white text-xs font-bold uppercase rounded-lg disabled:opacity-50 cursor-pointer"
+                      >
+                        Apply
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {[
+                        { name: "Dum Dum", pin: "700028" },
+                        { name: "Salt Lake", pin: "700091" },
+                        { name: "New Town", pin: "700156" },
+                        { name: "Howrah", pin: "711101" },
+                        { name: "Barasat", pin: "700124" },
+                        { name: "Girish Park", pin: "700006" },
+                      ].map((item) => (
+                        <button
+                          key={item.pin}
+                          type="button"
+                          onClick={() => {
+                            setPincodeManual(item.pin);
+                            setIsChangingLocation(false);
+                          }}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                            customerPincode === item.pin
+                              ? "bg-red-50 text-[#CC0000] border-[#CC0000]"
+                              : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200"
+                          }`}
+                        >
+                          {item.name} ({item.pin})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 <div className="flex items-center gap-2 text-slate-800 text-xs font-bold bg-white px-3 py-2 rounded-lg border border-slate-150">
                   <Truck className="w-4 h-4 text-[#388e3c] shrink-0" />
