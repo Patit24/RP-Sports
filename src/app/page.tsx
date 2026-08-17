@@ -14,7 +14,6 @@ import ProductCard from "@/components/ProductCard";
 import DualFeatureBanners from "@/components/DualFeatureBanners";
 import ShoeCategoryShowcase from "@/components/ShoeCategoryShowcase";
 import CustomerTestimonialsVideo from "@/components/CustomerTestimonialsVideo";
-import BulkJerseyOrderModal from "@/components/BulkJerseyOrderModal";
 import { useCustomerLocation } from "@/lib/useCustomerLocation";
 
 // ── Flipkart Style Category Icon Navigation Data ──
@@ -28,7 +27,7 @@ const STORY_CATEGORIES = [
   { id: "sunglasses", name: "Sports Optics", icon: "🕶️", href: "/shop?category=cricket&subcategory=sunglasses" },
   { id: "shoes", name: "Footwear & Turf", icon: "👟", href: "/shop?category=football&subcategory=boots" },
   { id: "trophies", name: "Trophies & Awards", icon: "🏆", href: "/shop?category=trophies" },
-  { id: "wholesale", name: "Bulk Wholesale", icon: "👥", href: "#bulk-order", isModal: true },
+  { id: "wholesale", name: "Bulk Wholesale", icon: "👥", href: "/bulk-orders" },
 ];
 
 const TRUST_BADGES = [
@@ -41,7 +40,6 @@ const TRUST_BADGES = [
 export default function Home() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [manualPinInput, setManualPinInput] = useState("");
   
@@ -77,7 +75,7 @@ export default function Home() {
       title: "MATCH-READY CUSTOM\nTEAM JERSEYS.",
       sub: "Sublimated full-color team jerseys with player names, sponsor logos, and breathable moisture-wicking poly.",
       ctaPrimary: { label: "Order Team Kits", href: "/jersey-builder" },
-      ctaSecondary: { label: "Bulk WhatsApp Quote", href: "#", action: () => setIsBulkModalOpen(true) },
+      ctaSecondary: { label: "Bulk Wholesale Page", href: "/bulk-orders" },
       badge: "Min 10 Jerseys",
       badgeColor: "bg-emerald-600"
     },
@@ -181,15 +179,14 @@ export default function Home() {
               <span>Custom Kits</span>
             </Link>
 
-            <button
-              type="button"
-              onClick={() => setIsBulkModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-display font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+            <Link
+              href="/bulk-orders"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-display font-bold text-xs uppercase tracking-wider transition-colors"
               style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
             >
               <Users className="w-3.5 h-3.5 text-emerald-600" />
               <span>Bulk / Academy</span>
-            </button>
+            </Link>
 
             <Link
               href="/shop?category=cricket&subcategory=sunglasses"
@@ -229,46 +226,26 @@ export default function Home() {
       <section className="bg-white border-b border-slate-200/90 shadow-sm sticky top-20 z-30">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
           <div className="flex items-center justify-between gap-3 overflow-x-auto custom-scrollbar no-scrollbar">
-            {STORY_CATEGORIES.map((cat) => {
-              if (cat.isModal) {
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setIsBulkModalOpen(true)}
-                    className="flex flex-col items-center gap-1.5 group shrink-0 px-2.5 py-1 rounded-xl hover:bg-neutral-50 transition-colors cursor-pointer min-w-[72px]"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-neutral-100 group-hover:bg-[#CC0000] flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-105 shadow-sm group-hover:text-white border border-slate-200/80">
-                      {cat.icon}
-                    </div>
-                    <span className="text-[11px] font-bold text-neutral-700 group-hover:text-[#CC0000] text-center leading-tight whitespace-nowrap transition-colors">
-                      {cat.name}
-                    </span>
-                  </button>
-                );
-              }
-
-              return (
-                <Link
-                  key={cat.id}
-                  href={cat.href}
-                  className="flex flex-col items-center gap-1.5 group shrink-0 px-2.5 py-1 rounded-xl hover:bg-neutral-50 transition-colors min-w-[72px]"
-                >
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-105 shadow-sm border ${
-                    cat.isHighlight
-                      ? "bg-red-50 text-[#CC0000] border-red-200 group-hover:bg-[#CC0000] group-hover:text-white"
-                      : "bg-neutral-100 group-hover:bg-[#CC0000] text-neutral-800 group-hover:text-white border-slate-200/80"
-                  }`}>
-                    {cat.icon}
-                  </div>
-                  <span className={`text-[11px] font-bold text-center leading-tight whitespace-nowrap transition-colors ${
-                    cat.isHighlight ? "text-[#CC0000]" : "text-neutral-700 group-hover:text-[#CC0000]"
-                  }`}>
-                    {cat.name}
-                  </span>
-                </Link>
-              );
-            })}
+            {STORY_CATEGORIES.map((cat) => (
+              <Link
+                key={cat.id}
+                href={cat.href}
+                className="flex flex-col items-center gap-1.5 group shrink-0 px-2.5 py-1 rounded-xl hover:bg-neutral-50 transition-colors min-w-[72px]"
+              >
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-105 shadow-sm border ${
+                  cat.isHighlight
+                    ? "bg-red-50 text-[#CC0000] border-red-200 group-hover:bg-[#CC0000] group-hover:text-white"
+                    : "bg-neutral-100 group-hover:bg-[#CC0000] text-neutral-800 group-hover:text-white border-slate-200/80"
+                }`}>
+                  {cat.icon}
+                </div>
+                <span className={`text-[11px] font-bold text-center leading-tight whitespace-nowrap transition-colors ${
+                  cat.isHighlight ? "text-[#CC0000]" : "text-neutral-700 group-hover:text-[#CC0000]"
+                }`}>
+                  {cat.name}
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -369,24 +346,13 @@ export default function Home() {
                         {slide.ctaPrimary.label} <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
 
-                      {slide.ctaSecondary.action ? (
-                        <button
-                          type="button"
-                          onClick={slide.ctaSecondary.action}
-                          className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-display font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all cursor-pointer backdrop-blur-md"
-                          style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
-                        >
-                          {slide.ctaSecondary.label}
-                        </button>
-                      ) : (
-                        <Link
-                          href={slide.ctaSecondary.href}
-                          className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-display font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all backdrop-blur-md"
-                          style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
-                        >
-                          {slide.ctaSecondary.label}
-                        </Link>
-                      )}
+                      <Link
+                        href={slide.ctaSecondary.href}
+                        className="bg-white/10 hover:bg-white/20 text-white border border-white/20 font-display font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all backdrop-blur-md"
+                        style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                      >
+                        {slide.ctaSecondary.label}
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -663,15 +629,14 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap items-center gap-4">
-              <button
-                type="button"
-                onClick={() => setIsBulkModalOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-2 cursor-pointer hover:scale-105"
+              <Link
+                href="/bulk-orders"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-display font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-600/30 flex items-center gap-2 hover:scale-105"
                 style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
               >
                 <Users className="w-4 h-4" />
-                <span>Bulk WhatsApp Quotation</span>
-              </button>
+                <span>Bulk WhatsApp Quotation Page</span>
+              </Link>
 
               <Link
                 href="/jersey-builder"
@@ -814,12 +779,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* ─── BULK JERSEY MODAL ─── */}
-      <BulkJerseyOrderModal
-        isOpen={isBulkModalOpen}
-        onClose={() => setIsBulkModalOpen(false)}
-      />
 
     </div>
   );

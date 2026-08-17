@@ -14,7 +14,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CATEGORIES } from "@/lib/mockData";
 import ShiprocketPincodeWidget from "@/components/ShiprocketPincodeWidget";
 import ProductAccordionSection from "@/components/ProductAccordionSection";
-import BulkJerseyOrderModal from "@/components/BulkJerseyOrderModal";
 import { useCustomerLocation } from "@/lib/useCustomerLocation";
 
 
@@ -63,7 +62,6 @@ export default function ProductDetailPage() {
   const [isChangingLocation, setIsChangingLocation] = useState(false);
   const [manualPinInput, setManualPinInput] = useState("");
 
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const isJerseyOrApparel = Boolean(
     product.category === "jerseys" || 
     product.category === "apparel" || 
@@ -612,15 +610,14 @@ export default function ProductDetailPage() {
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setIsBulkModalOpen(true)}
-                      className="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-display font-bold uppercase text-xs tracking-wider rounded-xl transition-all shadow shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                    <Link
+                      href={`/bulk-orders?product=${product.id}`}
+                      className="shrink-0 w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-display font-bold uppercase text-xs tracking-wider rounded-xl transition-all shadow shadow-emerald-600/30 flex items-center justify-center gap-2"
                       style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
                     >
                       <Users className="w-4 h-4" />
-                      <span>Bulk / Team Order on WhatsApp</span>
-                    </button>
+                      <span>Bulk Team Order Enquiry</span>
+                    </Link>
                   </div>
                 </div>
               )}
@@ -692,13 +689,6 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* BULK JERSEY / TEAM ORDER MODAL */}
-      <BulkJerseyOrderModal
-        product={product}
-        isOpen={isBulkModalOpen}
-        onClose={() => setIsBulkModalOpen(false)}
-      />
 
     </div>
   );

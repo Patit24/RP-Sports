@@ -73,6 +73,8 @@ export default function Footer() {
           <ul className="space-y-3">
             {[
               { label: "Track Live Order", href: "/track-order" },
+              { label: "Bulk & Team Jersey Orders", href: "/bulk-orders" },
+              { label: "3D Jersey Builder", href: "/jersey-builder" },
               { label: "Compare Bats", href: "/compare" },
               { label: "Cricket Journal & Blog", href: "/blog" },
               { label: "Frequently Asked Questions", href: "/faq" },
