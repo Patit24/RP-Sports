@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 import { auth } from "@/lib/firebase";
 import { 
   ShoppingBag, Heart, Search, Menu, X, User, 
-  LogOut, Plus, Minus, ChevronDown, ArrowRight, Scale 
+  LogOut, Plus, Minus, ChevronDown, ArrowRight 
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { listenToProducts, listenToCategories, listenToTestimonials } from "@/lib/firestoreService";
@@ -16,7 +16,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { 
-    cart, wishlist, compareList, currentUser, login, logout, showToast, 
+    cart, wishlist, currentUser, login, logout, showToast, 
     updateCartQuantity, removeFromCart, setProducts, setCategories, setTestimonials 
   } = useStore();
   
@@ -29,7 +29,6 @@ export default function Navbar() {
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const wishlistCount = wishlist.length;
-  const compareCount = compareList.length;
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,17 +159,6 @@ export default function Navbar() {
             {/* Nav Icons Right */}
             <div className="flex items-center gap-4 sm:gap-6">
               
-              {/* Compare Icon */}
-              <Link href="/compare" className="hidden lg:flex flex-col items-center text-white/80 hover:text-white transition-colors relative cursor-pointer group">
-                <div className="relative">
-                  <Scale className="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" />
-                  {compareCount > 0 && (
-                    <span className="absolute -top-1 -right-2 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full shadow-sm">{compareCount}</span>
-                  )}
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest">Compare</span>
-              </Link>
-
               {/* User Dropdown */}
               <div className="relative hidden md:block" onMouseEnter={() => setUserDropdownOpen(true)} onMouseLeave={() => setUserDropdownOpen(false)}>
                 <div className="flex flex-col items-center cursor-pointer text-white/80 hover:text-white transition-colors group h-full justify-center">
