@@ -17,11 +17,40 @@ interface CustomSpecRow {
 
 export default function AddProductPage() {
   const router = useRouter();
-  const { addProduct, currentUser, categories } = useStore();
+  const { addProduct, currentUser, categories, setCategories, showToast } = useStore();
   const activeCategories = categories && categories.length > 0 ? categories : CATEGORIES;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Dynamic Brands State
+  const [brandsList, setBrandsList] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("rp_custom_brands");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return Array.from(new Set([...BRANDS, ...parsed]));
+          }
+        }
+      } catch (e) {
+        console.warn("Could not load custom brands:", e);
+      }
+    }
+    return BRANDS;
+  });
+
+  // Modal Dialog States for on-the-fly creation
+  const [isBrandModalOpen, setIsBrandModalOpen] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategorySubcategories, setNewCategorySubcategories] = useState("");
+
+  const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
 
   // Subcategory Template Types
   const [productType, setProductType] = useState<"bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies">("bats");
@@ -31,7 +60,7 @@ export default function AddProductPage() {
     brand: "RP Sports",
     category: "cricket",
     subcategory: "bats",
-    sportsType: "",
+    sportsType: "Cricket",
     willowType: "",
     willowGrade: "",
     handleSize: "",
@@ -91,225 +120,119 @@ export default function AddProductPage() {
     return "bats";
   };
 
-  // Auto-fill category-specific specifications when user switches product category/type
-  const handleProductTypeChange = (type: "bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies") => {
-    setProductType(type);
-
-    if (type === "shoes") {
-      setFormData(prev => ({
-        ...prev,
-        name: "RP Turbo Speed Pro Spike Cricket Shoes",
-        category: "footwear",
-        subcategory: "spikes",
-        sportsType: "Cricket & Turf Sports",
-        brand: "RP Sports",
-        mrp: "4499",
-        price: "3299",
-        willowType: "TPU Plate with 11 Steel Spikes",
-        willowGrade: "Synthetic Leather & Breathable Mesh",
-        handleSize: "Low Cut Padded Ankle Shield",
-        weight: "750 grams",
-        dimensions: "32cm x 20cm x 12cm",
-        colors: "White / Crimson Red, White / Cobalt Blue",
-        sizes: "UK 7, UK 8, UK 9, UK 10, UK 11",
-        shortDescription: "Metal spike footwear with TPU soleplate for maximum grip on turf pitches.",
-        description: "Metal spike footwear with TPU soleplate for maximum grip on grass and turf pitches. Reinforced ankle collar and dual-density EVA cushioning.",
-        highlightsInput: "11 Replaceable Steel Spikes\nDual Density EVA Midsole\nReinforced Ankle Collar Support\nTPU High-Traction Outsole"
-      }));
-      setCustomSpecs([
-        { key: "Outsole", value: "Full TPU Plate with 11 Steel Spikes" },
-        { key: "Upper Material", value: "Synthetic Leather & Mesh" },
-        { key: "Cushioning", value: "High-Bounce EVA Midsole" },
-        { key: "Ankle Support", value: "Padded Ankle Shield" }
-      ]);
-      setUploadedImages([
-        "/shoe_spikes_1786053000000_1786056040962.jpg",
-        "/shoe_turf_1786053000000_1786056064769.jpg"
-      ]);
-    } else if (type === "bats") {
-      setFormData(prev => ({
-        ...prev,
-        name: "RP Legend Pro English Willow Cricket Bat",
-        category: "cricket",
-        subcategory: "bats",
-        sportsType: "Cricket",
-        brand: "RP Sports",
-        mrp: "16999",
-        price: "12999",
-        willowType: "Grade 1 English Willow",
-        willowGrade: "Grade 1",
-        handleSize: "Short Handle (SH)",
-        weight: "1160 - 1200 grams",
-        dimensions: "85cm x 11cm x 6cm",
-        colors: "Natural English Finish",
-        sizes: "Short Handle (SH), Harrow, Size 6",
-        shortDescription: "Grade 1 English Willow with 8-12 straight grains and 42mm edges.",
-        description: "Elite international-grade Grade 1 English Willow featuring straight 8-12 clean grains. Ultra-balanced pickup with lightweight feel and supreme ping off the blade.",
-        highlightsInput: "Grade 1 English Willow\n8-12 Straight Clean Grains\n42mm Edges for Maximum Power\nFeatherlight Pickup"
-      }));
-      setCustomSpecs([
-        { key: "Willow Type", value: "Grade 1 English Willow" },
-        { key: "Grains", value: "8 - 12 Straight Grains" },
-        { key: "Edge Profile", value: "42mm Thick Edges" },
-        { key: "Handle", value: "Oval Semi-Rigid Cane Handle" }
-      ]);
-      setUploadedImages([
-        "/cricket_bat_lineup.jpg",
-        "/cricket_bat_studio.jpg",
-        "/cricket_action_batsman.jpg"
-      ]);
-    } else if (type === "jerseys") {
-      setFormData(prev => ({
-        ...prev,
-        name: "RP Pro Sublimated Match Jersey 2026",
-        category: "apparel",
-        subcategory: "jerseys",
-        sportsType: "Multi-Sport",
-        brand: "RP Custom Apparel",
-        mrp: "1299",
-        price: "899",
-        willowType: "Micro-Polyester Dri-Fit Mesh",
-        willowGrade: "Athletic Slim Fit",
-        handleSize: "Polo Collar / Half Sleeve",
-        weight: "200 grams",
-        dimensions: "Standard Athletic Fit",
-        colors: "Navy Blue / Neon Gold, Crimson Red / Black",
-        sizes: "S, M, L, XL, XXL",
-        customizable: true,
-        shortDescription: "Dry-Fit honeycomb breathable polyester match jersey with custom name & number.",
-        description: "Dry-Fit honeycomb breathable polyester match jersey with full custom name, number, and team logo sublimation. Anti-sweat UV shield fabric.",
-        highlightsInput: "100% Micro-Polyester Mesh\nCustom Sublimation Printing\nAnti-Sweat Moisture Wicking\nUV Protection Shield"
-      }));
-      setCustomSpecs([
-        { key: "Fabric", value: "Micro-Polyester Dri-Fit Mesh" },
-        { key: "Fit Type", value: "Athletic Slim Fit" },
-        { key: "Neck Style", value: "Polo Collar / V-Neck" },
-        { key: "Sleeve Type", value: "Half Sleeve" },
-        { key: "Sublimation", value: "Full HD Sublimation Print" }
-      ]);
-      setUploadedImages([
-        "/cricket_jersey_premium.jpg",
-        "/cricket_player_blank_jersey.jpg"
-      ]);
-    } else if (type === "trackpants") {
-      setFormData(prev => ({
-        ...prev,
-        name: "RP Performance Stretch Training Track Pants",
-        category: "apparel",
-        subcategory: "trackpants",
-        sportsType: "Training & Fitness",
-        brand: "RP Custom Apparel",
-        mrp: "1899",
-        price: "1299",
-        willowType: "92% Polyester, 8% Elastane 4-Way Stretch",
-        willowGrade: "2 Deep YKK Zipper Pockets",
-        handleSize: "Elastic Waistband + Drawstring",
-        weight: "320 grams",
-        dimensions: "Standard Ankle Length",
-        colors: "Black / Neon Red, Navy Blue / White",
-        sizes: "M, L, XL, XXL",
-        shortDescription: "4-way stretch polyester training pants with zippered side pockets.",
-        description: "Engineered for intense warmups and team travel. Features 4-way stretch breathable fabric, elastic waistband with internal drawcord, and secure YKK zippered side pockets.",
-        highlightsInput: "4-Way Stretch Flex Fabric\nDual YKK Zipper Pockets\nElastic Waistband with Drawcord\nBreathable Quick-Dry Finish"
-      }));
-      setCustomSpecs([
-        { key: "Fabric Material", value: "92% Polyester, 8% Elastane Stretch" },
-        { key: "Pockets", value: "2 Deep Zipper Pockets" },
-        { key: "Waistband", value: "Elasticized with Internal Drawstring" },
-        { key: "Ankle Cuff", value: "Zippered Ankle Openings" }
-      ]);
-    } else if (type === "sunglasses") {
-      setFormData(prev => ({
-        ...prev,
-        name: "RP Pro Shield UV400 Polarized Sports Sunglasses",
-        category: "apparel",
-        subcategory: "accessories",
-        sportsType: "Cricket / Outdoor Sports",
-        brand: "RP Sports",
-        mrp: "2499",
-        price: "1699",
-        willowType: "Polarized REVO Mirror UV400",
-        willowGrade: "TR90 Flexible Polymer Frame",
-        handleSize: "Anti-Slip Hydrophilic Rubber",
-        weight: "38 grams",
-        dimensions: "14.5cm x 5.5cm Frame",
-        colors: "REVO Red Mirror / Black Frame, Polarized Smoke / White Frame",
-        sizes: "One Size Fits All",
-        shortDescription: "Polarized UV400 shatterproof sports sunglasses for fielders and batsmen.",
-        description: "Designed for high-contrast visibility on bright sunny match days. Ultralight TR90 flexible polymer frame with scratch-resistant REVO mirror polarized lenses.",
-        highlightsInput: "UV400 100% Protection Lenses\nTR90 Shatterproof Polymer Frame\nAnti-Slip Rubber Nose Pads\nIncludes Hard EVA Carrying Case"
-      }));
-      setCustomSpecs([
-        { key: "Lens Tech", value: "Polarized REVO Mirror Coating" },
-        { key: "UV Protection", value: "UV400 Protection (UVA & UVB)" },
-        { key: "Frame Material", value: "TR90 Flexible Polymer" },
-        { key: "Nose Pad", value: "Adjustable Hydrophilic Rubber" }
-      ]);
-      setUploadedImages([
-        "/feature_cricket_sunglasses_1786053000000_1786056350483.jpg"
-      ]);
-    } else if (type === "caps") {
-      setFormData(prev => ({
-        ...prev,
-        name: "RP Team Pro Moisture-Wicking Match Cap",
-        category: "apparel",
-        subcategory: "caps",
-        sportsType: "Cricket & Field Sports",
-        brand: "RP Sports",
-        mrp: "799",
-        price: "499",
-        willowType: "Curved Pre-Formed Visor",
-        willowGrade: "Moisture-Wicking Terry Sweatband",
-        handleSize: "Velcro Strap with Rubber Tab",
-        weight: "85 grams",
-        dimensions: "Adjustable Standard",
-        colors: "Navy Blue, Maroon Red, Pure White",
-        sizes: "Adjustable Strap",
-        shortDescription: "Curved brim match cap with moisture-wicking sweatband and laser ventilation.",
-        description: "Keep cool on the field during day matches. Made from lightweight quick-dry fabric with embroidered eyelets for maximum ventilation and an adjustable Velcro back strap.",
-        highlightsInput: "Curved Pre-Shaped Visor Brim\nInternal Toweling Sweatband\nLaser-Cut Breathable Eyelets\nAdjustable Back Strap"
-      }));
-      setCustomSpecs([
-        { key: "Brim Type", value: "Curved Pre-Formed Visor" },
-        { key: "Sweatband", value: "Moisture-Wicking Terry Cloth" },
-        { key: "Strap", value: "Velcro Back Strap with Rubber Pull Tab" },
-        { key: "Ventilation", value: "6 Embroidered Air Holes" }
-      ]);
-      setUploadedImages([
-        "/feature_banner_caps_1786053000000_1786055769515.jpg"
-      ]);
-    } else if (type === "trophies") {
-      setFormData(prev => ({
-        ...prev,
-        name: "RP Gold Championship Victory Trophy",
-        category: "custom-trophies",
-        subcategory: "trophies",
-        sportsType: "Multi-Sport",
-        brand: "RP Trophies",
-        mrp: "1999",
-        price: "1499",
-        willowType: "24K Gold Electroplated Brass",
-        willowGrade: "Solid Dark Walnut Wood Base",
-        handleSize: "Laser Etched Brass Plaque",
-        weight: "1.80 kg",
-        dimensions: "18 x 18 x 45 cm",
-        colors: "Gold Plated Brass & Dark Walnut Base",
-        sizes: "18 Inches (Standard), 24 Inches (Grand)",
-        customizable: true,
-        shortDescription: "Gold electroplated trophy with solid wooden base & free engraved brass plate.",
-        description: "Heavyweight metallic gold-finish tournament trophy with solid wooden base. Free custom brass plate laser engraving included.",
-        highlightsInput: "18-Inch Height Gold Metal Finish\nSolid Walnut Wood Base\nFree Laser Engraved Brass Plate\nCustom Tournament Engraving"
-      }));
-      setCustomSpecs([
-        { key: "Material", value: "24K Gold Electroplated Metal Alloy" },
-        { key: "Pedestal Base", value: "Solid Dark Walnut Wood" },
-        { key: "Engraving Plate", value: "Laser Etched Brass Plaque" },
-        { key: "Height", value: "18 Inches" }
-      ]);
-      setUploadedImages([
-        "/generated_trophy_1783192099951.jpg"
-      ]);
+  // Handler: Create Brand on the fly
+  const handleCreateBrand = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanBrand = newBrandName.trim();
+    if (!cleanBrand) {
+      showToast("Please enter a valid brand name", "error");
+      return;
     }
+
+    if (!brandsList.includes(cleanBrand)) {
+      const updated = [...brandsList, cleanBrand];
+      setBrandsList(updated);
+      try {
+        localStorage.setItem("rp_custom_brands", JSON.stringify(updated));
+      } catch (err) {
+        console.warn("localStorage note:", err);
+      }
+    }
+
+    setFormData(prev => ({ ...prev, brand: cleanBrand }));
+    setNewBrandName("");
+    setIsBrandModalOpen(false);
+    showToast(`Brand "${cleanBrand}" created & selected!`, "success");
+  };
+
+  // Handler: Create Category on the fly
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanCatName = newCategoryName.trim();
+    if (!cleanCatName) {
+      showToast("Please enter a category name", "error");
+      return;
+    }
+
+    const slug = cleanCatName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const subs = newCategorySubcategories
+      .split(",")
+      .map(s => s.trim().toLowerCase())
+      .filter(Boolean);
+
+    const newCategory: any = {
+      id: slug,
+      name: cleanCatName,
+      image: "/category_cricket_1783225297200.jpg",
+      subcategories: subs.length > 0 ? subs : ["general"],
+      featured: true,
+      description: `Premium ${cleanCatName} collection at RP Sports Kolkata.`
+    };
+
+    try {
+      const { saveCategory } = await import("@/lib/firestoreService");
+      await saveCategory(newCategory);
+    } catch (err) {
+      console.warn("Firestore saveCategory note:", err);
+    }
+
+    const updatedCategories = [...activeCategories.filter(c => c.id !== slug), newCategory];
+    setCategories(updatedCategories);
+
+    setFormData(prev => ({
+      ...prev,
+      category: slug,
+      subcategory: newCategory.subcategories[0] || "",
+      sportsType: cleanCatName
+    }));
+
+    const detected = detectProductType(slug, newCategory.subcategories[0] || "");
+    setProductType(detected);
+
+    setNewCategoryName("");
+    setNewCategorySubcategories("");
+    setIsCategoryModalOpen(false);
+    showToast(`Category "${cleanCatName}" created & selected!`, "success");
+  };
+
+  // Handler: Create Subcategory on the fly
+  const handleCreateSubcategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanSub = newSubcategoryName.trim().toLowerCase();
+    if (!cleanSub) {
+      showToast("Please enter a subcategory name", "error");
+      return;
+    }
+
+    const currentCat = activeCategories.find(c => c.id === formData.category);
+    if (!currentCat) {
+      showToast("Please select a main category first", "error");
+      return;
+    }
+
+    const currentSubs = currentCat.subcategories || [];
+    if (!currentSubs.includes(cleanSub)) {
+      const updatedSubs = [...currentSubs, cleanSub];
+      const updatedCat = { ...currentCat, subcategories: updatedSubs };
+
+      try {
+        const { saveCategory } = await import("@/lib/firestoreService");
+        await saveCategory(updatedCat);
+      } catch (err) {
+        console.warn("Firestore saveCategory note:", err);
+      }
+
+      const updatedCategories = activeCategories.map(c => c.id === currentCat.id ? updatedCat : c);
+      setCategories(updatedCategories);
+    }
+
+    setFormData(prev => ({ ...prev, subcategory: cleanSub }));
+    const detected = detectProductType(formData.category, cleanSub);
+    setProductType(detected);
+
+    setNewSubcategoryName("");
+    setIsSubcategoryModalOpen(false);
+    showToast(`Subcategory "${cleanSub}" added & selected!`, "success");
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -584,45 +507,8 @@ export default function AddProductPage() {
           Add & Upload Product to Catalog
         </h1>
         <p className="text-gray-500 text-sm font-medium">
-          Choose an equipment category preset below or select from dropdowns to auto-configure Footwear, Spikes, Match Jerseys, Track Pants, Sunglasses, Caps, Trophies & Bats.
+          Fill in product details, upload high-resolution equipment photography, and set technical specifications for the storefront.
         </p>
-      </div>
-
-      {/* Category Type Preset Selector Tabs */}
-      <div className="mb-8 bg-white p-5 rounded-2xl border-2 border-red-100 shadow-md">
-        <label className="block text-xs font-display font-bold uppercase tracking-wider text-[#CC0000] mb-3 flex items-center gap-1.5">
-          <Flame className="w-4 h-4 text-[#CC0000]" />
-          Load Sample Mock Template (Optional):
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
-          {[
-            { id: "shoes", label: "Footwear & Spikes", icon: "👟" },
-            { id: "bats", label: "Cricket Bats", icon: "🏏" },
-            { id: "jerseys", label: "Match Jerseys", icon: "👕" },
-            { id: "trackpants", label: "Track Pants", icon: "👖" },
-            { id: "sunglasses", label: "Sunglasses", icon: "🕶️" },
-            { id: "caps", label: "Caps & Visors", icon: "🧢" },
-            { id: "trophies", label: "Trophies", icon: "🏆" },
-          ].map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                if (window.confirm(`Load sample mock template details for ${item.label}? This will replace your current inputs.`)) {
-                  handleProductTypeChange(item.id as any);
-                }
-              }}
-              className={`p-3 rounded-xl border-2 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
-                productType === item.id
-                  ? "bg-[#CC0000] border-[#CC0000] text-white shadow-lg shadow-[#CC0000]/30 scale-105"
-                  : "bg-gray-50 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-100"
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span className="truncate text-center">{item.label}</span>
-            </button>
-          ))}
-        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
@@ -646,59 +532,107 @@ export default function AddProductPage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Product Title"
+                placeholder="e.g. RP Pro Carbon Match Jersey 2026"
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] focus:outline-none focus:border-[#CC0000]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Brand Name
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700">
+                  Brand Name
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsBrandModalOpen(true)}
+                  className="text-xs font-bold text-[#CC0000] hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> <span>+ Create Brand</span>
+                </button>
+              </div>
               <select
                 name="brand"
                 value={formData.brand}
-                onChange={handleChange}
-                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000]"
+                onChange={(e) => {
+                  if (e.target.value === "__add_new__") {
+                    setIsBrandModalOpen(true);
+                  } else {
+                    handleChange(e);
+                  }
+                }}
+                className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000] cursor-pointer"
               >
-                {BRANDS.map((b: string) => (
+                {brandsList.map((b: string) => (
                   <option key={b} value={b}>{b}</option>
                 ))}
+                <option value="__add_new__" className="font-bold text-[#CC0000]">+ Create New Brand...</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div>
-              <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Main Store Category
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700">
+                  Main Category
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(true)}
+                  className="text-[11px] font-bold text-[#CC0000] hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" /> <span>+ New Category</span>
+                </button>
+              </div>
               <select
                 name="category"
                 value={formData.category}
-                onChange={handleChange}
+                onChange={(e) => {
+                  if (e.target.value === "__add_new__") {
+                    setIsCategoryModalOpen(true);
+                  } else {
+                    handleChange(e);
+                  }
+                }}
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000] cursor-pointer"
               >
                 {activeCategories.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
+                <option value="__add_new__" className="font-bold text-[#CC0000]">+ Create New Category...</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Subcategory Tag
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-display font-bold uppercase tracking-wider text-gray-700">
+                  Subcategory Tag
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsSubcategoryModalOpen(true)}
+                  className="text-[11px] font-bold text-[#CC0000] hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" /> <span>+ New Subcategory</span>
+                </button>
+              </div>
               <select
                 name="subcategory"
                 value={formData.subcategory}
-                onChange={handleChange}
+                onChange={(e) => {
+                  if (e.target.value === "__add_new__") {
+                    setIsSubcategoryModalOpen(true);
+                  } else {
+                    handleChange(e);
+                  }
+                }}
                 className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-[#111111] bg-white focus:outline-none focus:border-[#CC0000] cursor-pointer"
               >
                 {activeCategories.find(c => c.id === formData.category)?.subcategories?.map((sub) => (
                   <option key={sub} value={sub}>{sub.charAt(0).toUpperCase() + sub.slice(1)}</option>
-                )) || <option value="">No subcategories</option>}
+                ))}
+                <option value="__add_new__" className="font-bold text-[#CC0000]">+ Create New Subcategory...</option>
               </select>
             </div>
 
@@ -1282,6 +1216,206 @@ export default function AddProductPage() {
         </div>
 
       </form>
+
+      {/* ── CREATE BRAND MODAL ── */}
+      {isBrandModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-[#CC0000] flex items-center justify-center font-bold">
+                  <Tag className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-lg uppercase tracking-wide text-gray-900" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                    Create New Brand
+                  </h3>
+                  <p className="text-xs text-gray-500">Add an equipment or apparel brand to the store</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsBrandModalOpen(false); setNewBrandName(""); }}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateBrand} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Brand Name *
+                </label>
+                <input
+                  type="text"
+                  value={newBrandName}
+                  onChange={(e) => setNewBrandName(e.target.value)}
+                  placeholder="e.g. Puma, Yonex, Kookaburra, Nike, Asics"
+                  className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-[#CC0000]"
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsBrandModalOpen(false); setNewBrandName(""); }}
+                  className="px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-600 hover:bg-gray-50 uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#CC0000] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-red-600/30 flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Add & Select Brand
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── CREATE CATEGORY MODAL ── */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-[#CC0000] flex items-center justify-center font-bold">
+                  <Package className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-lg uppercase tracking-wide text-gray-900" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                    Create New Category
+                  </h3>
+                  <p className="text-xs text-gray-500">Add a new sports category to catalog</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsCategoryModalOpen(false); setNewCategoryName(""); setNewCategorySubcategories(""); }}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCategory} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Category Name *
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="e.g. Badminton, Tennis, Fitness & Gym, Swimming"
+                  className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-[#CC0000]"
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Initial Subcategories (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={newCategorySubcategories}
+                  onChange={(e) => setNewCategorySubcategories(e.target.value)}
+                  placeholder="e.g. Rackets, Shuttlecocks, Shoes, Grips, Strings, Bags"
+                  className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:border-[#CC0000]"
+                />
+                <span className="text-[11px] text-gray-400 mt-1 block">Separate subcategories with commas</span>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsCategoryModalOpen(false); setNewCategoryName(""); setNewCategorySubcategories(""); }}
+                  className="px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-600 hover:bg-gray-50 uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#CC0000] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-red-600/30 flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Create Category
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── CREATE SUBCATEGORY MODAL ── */}
+      {isSubcategoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-200 animate-scaleUp">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-50 text-[#CC0000] flex items-center justify-center font-bold">
+                  <Tag className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-lg uppercase tracking-wide text-gray-900" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                    Add Subcategory Tag
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Adding to Category: <strong className="text-[#CC0000] uppercase">{activeCategories.find(c => c.id === formData.category)?.name || formData.category}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsSubcategoryModalOpen(false); setNewSubcategoryName(""); }}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateSubcategory} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
+                  Subcategory Name *
+                </label>
+                <input
+                  type="text"
+                  value={newSubcategoryName}
+                  onChange={(e) => setNewSubcategoryName(e.target.value)}
+                  placeholder="e.g. Wristbands, Grips, Stringing, Spikes, Ankle Weights"
+                  className="w-full h-11 px-4 border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-[#CC0000]"
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsSubcategoryModalOpen(false); setNewSubcategoryName(""); }}
+                  className="px-4 py-2.5 rounded-xl border border-gray-300 text-xs font-bold text-gray-600 hover:bg-gray-50 uppercase tracking-wider"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-[#CC0000] hover:bg-red-700 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-red-600/30 flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Add Subcategory
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
