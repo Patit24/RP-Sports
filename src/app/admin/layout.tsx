@@ -15,8 +15,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { currentUser, login, logout, showToast } = useStore();
 
   const [isMounted, setIsMounted] = useState(false);
-  const [adminEmail, setAdminEmail] = useState("admin@rpsports.com");
-  const [adminPassword, setAdminPassword] = useState("adminpassword");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -177,28 +177,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
           </form>
 
-          {/* Quick Access Dev Presets for Instant Verification */}
-          <div className="mt-8 pt-6 border-t border-white/10 space-y-2">
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block text-center mb-3">
-              Fast Authorization Access (One-Click)
-            </span>
-            <button
-              type="button"
-              onClick={() => handleQuickAdminLogin("admin@rpsports.com", "RP Store Manager", "admin")}
-              className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-200 transition-colors flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <UserCheck className="w-4 h-4 text-emerald-400" /> Access as Store Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickAdminLogin("super_admin@rpsports.com", "Master Chief (Admin)", "super_admin")}
-              className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-200 transition-colors flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <UserCheck className="w-4 h-4 text-[#CC0000]" /> Access as Super Admin (Master Chief)
-            </button>
-          </div>
-
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center pt-6 border-t border-white/10">
             <Link href="/" className="text-xs text-gray-400 hover:text-white font-medium hover:underline">
               ← Return to Store Frontpage
             </Link>

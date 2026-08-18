@@ -11,8 +11,8 @@ export default function AdminLoginPage() {
   const { login, showToast } = useStore();
 
   const [form, setForm] = useState({
-    email: "admin@rpsports.com",
-    password: "adminpassword",
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -36,17 +36,11 @@ export default function AdminLoginPage() {
       return;
     }
 
-    const isSuper = form.email.includes("super") || form.email.includes("admin");
-    const name = isSuper ? "Master Chief (Admin)" : "RP Store Manager";
+    const isSuper = form.email.toLowerCase().includes("super") || form.email.toLowerCase().includes("admin");
+    const name = isSuper ? "Admin Chief" : "RP Store Manager";
     const role = isSuper ? "super_admin" : "admin";
 
     login(form.email, name, role, ["all_permissions"]);
-    showToast(`Authenticated as ${name}`, "success");
-    router.push("/admin");
-  };
-
-  const handleQuickLogin = (email: string, name: string, role: "admin" | "super_admin") => {
-    login(email, name, role, ["all_permissions"]);
     showToast(`Authenticated as ${name}`, "success");
     router.push("/admin");
   };
@@ -139,30 +133,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        {/* Quick Profile Selector Buttons */}
-        <div className="mt-8 pt-6 border-t border-white/10">
-          <span className="block text-[11px] font-bold uppercase tracking-wider text-gray-500 text-center mb-3">
-            Quick Admin Identity Access:
-          </span>
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("admin@rpsports.com", "Master Chief (Admin)", "super_admin")}
-              className="py-2.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-bold text-white uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-[#CC0000]" /> Super Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("catalog@rpsports.com", "Catalog Manager", "admin")}
-              className="py-2.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[11px] font-bold text-white uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-blue-400" /> Catalog Manager
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center pt-6 border-t border-white/10">
           <Link href="/" className="text-xs text-gray-400 hover:text-white font-medium hover:underline">
             ← Return to Store Frontpage
           </Link>
