@@ -23,10 +23,6 @@ export default function AddProductPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
-    return null;
-  }
-
   // Subcategory Template Types
   const [productType, setProductType] = useState<"bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies">("bats");
 
@@ -62,10 +58,12 @@ export default function AddProductPage() {
 
   // Uploaded Photos (Data URLs from Desktop or Live Camera Capture)
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-
   const [customSpecs, setCustomSpecs] = useState<CustomSpecRow[]>([]);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!currentUser || (currentUser.role !== "admin" && currentUser.role !== "super_admin")) {
+    return null;
+  }
 
   // Helper to detect Product Type based on Category or Subcategory
   const detectProductType = (cat: string, subcat: string): "bats" | "jerseys" | "shoes" | "trackpants" | "sunglasses" | "caps" | "trophies" => {

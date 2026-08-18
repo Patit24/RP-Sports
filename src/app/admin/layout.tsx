@@ -20,10 +20,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileDrawerOpen(false);
+  }, [pathname]);
 
   // Handle Inline Admin Login
   const handleInlineLogin = async (e: React.FormEvent) => {
@@ -202,13 +208,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
     );
   }
-
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-
-  // Close mobile drawer on route change
-  useEffect(() => {
-    setMobileDrawerOpen(false);
-  }, [pathname]);
 
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
