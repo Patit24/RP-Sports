@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { 
   PlusCircle, Package, LayoutDashboard, Settings, ShoppingBag, 
-  Truck, Users, LogOut, ShieldCheck, Flame, Lock, ArrowRight, UserCheck, AlertCircle, KeyRound, Mail, Eye, EyeOff, Tag, Shirt
+  Truck, Users, LogOut, ShieldCheck, Flame, Lock, ArrowRight, UserCheck, AlertCircle, KeyRound, Mail, Eye, EyeOff, Tag, Shirt, X
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -225,11 +225,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const CurrentIcon = currentNav.icon;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row pt-16 md:pt-20">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
       
       {/* Mobile Top Admin Header Bar */}
-      <header className="md:hidden bg-[#111111] text-white border-b border-white/10 px-4 py-3 sticky top-16 z-30 flex items-center justify-between shadow-md">
-        <div className="flex items-center gap-2.5">
+      <header className="md:hidden bg-[#111111] text-white border-b border-white/10 px-4 py-3 sticky top-0 z-40 flex items-center justify-between shadow-md">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
@@ -237,7 +237,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             aria-label="Toggle Admin Navigation Menu"
           >
             {mobileDrawerOpen ? (
-              <LogOut className="w-5 h-5 rotate-180 text-[#CC0000]" />
+              <X className="w-5 h-5 text-white" />
             ) : (
               <div className="flex flex-col gap-1 w-4">
                 <span className="h-0.5 w-full bg-white rounded-full"></span>
@@ -249,9 +249,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           
           <div>
             <div className="flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-[#CC0000]" />
-              <span className="font-display font-black text-sm uppercase tracking-wider text-white" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-                RP Admin Center
+              <span className="font-display font-black text-base uppercase tracking-wider text-white" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                RP<span className="text-[#CC0000]">SPORTS</span>
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-wider bg-[#CC0000] text-white px-1.5 py-0.5 rounded shadow-sm">
+                ADMIN
               </span>
             </div>
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1">
@@ -262,8 +264,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="flex items-center gap-2">
           <Link
+            href="/"
+            className="text-[11px] font-bold text-gray-300 hover:text-white px-2.5 py-1.5 bg-white/10 hover:bg-white/15 rounded-lg border border-white/10 transition-colors"
+            title="View Live Store"
+          >
+            Store ↗
+          </Link>
+          <Link
             href="/admin/add-product"
-            className="bg-[#CC0000] text-white text-[11px] font-display font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-red-600/30"
+            className="bg-[#CC0000] hover:bg-red-700 active:scale-95 text-white text-[11px] font-display font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-red-600/30 transition-all"
             style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
           >
             <PlusCircle className="w-3.5 h-3.5" /> <span>Add</span>
@@ -377,21 +386,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Desktop Sidebar Navigation */}
-      <aside className="hidden md:flex w-64 bg-[#111111] text-white border-r border-slate-800 flex-col shrink-0 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto">
+      <aside className="hidden md:flex w-64 bg-[#111111] text-white border-r border-slate-800 flex-col shrink-0 sticky top-0 h-screen overflow-y-auto">
         
         {/* Admin Header */}
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center gap-2 mb-1">
-            <Flame className="w-5 h-5 text-[#CC0000]" />
-            <h2 className="text-xl font-display font-black uppercase text-white tracking-wider" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
-              RP Admin Center
+            <h2 className="text-2xl font-display font-black uppercase text-white tracking-wider flex items-center" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+              RP<span className="text-[#CC0000]">SPORTS</span>
             </h2>
+            <span className="text-[10px] font-black uppercase tracking-wider bg-[#CC0000] text-white px-2 py-0.5 rounded shadow-sm">
+              ADMIN
+            </span>
           </div>
+          <p className="text-[11px] text-gray-400 font-medium">Store Operations & Equipment Suite</p>
           {currentUser && (
-            <div className="flex items-center gap-1.5 mt-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
-              <ShieldCheck className="w-4 h-4 text-[#CC0000]" />
-              <span className="text-xs font-bold text-gray-300 truncate">
-                {currentUser.name} ({currentUser.role})
+            <div className="flex items-center gap-2 mt-3 bg-white/5 border border-white/10 px-3 py-2 rounded-xl">
+              <div className="w-6 h-6 rounded-full bg-[#CC0000]/20 text-[#CC0000] flex items-center justify-center font-bold text-xs">
+                {currentUser.name.charAt(0)}
+              </div>
+              <span className="text-xs font-bold text-gray-200 truncate">
+                {currentUser.name}
               </span>
             </div>
           )}
