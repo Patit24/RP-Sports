@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { Scale, X, ArrowRight, Trash2 } from "lucide-react";
 
 export default function CompareBar() {
+  const pathname = usePathname();
   const { compareList, products, toggleCompare, clearCompare } = useStore();
 
-  if (compareList.length === 0) return null;
+  if (pathname?.startsWith("/admin") || compareList.length === 0) return null;
 
   const comparedProducts = products.filter((p) => compareList.includes(p.id));
 

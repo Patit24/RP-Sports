@@ -109,6 +109,10 @@ export default function Navbar() {
         { id: "footwear", name: "Footwear", sub: ["Spikes", "Turf Shoes", "Running Shoes"] },
       ];
 
+  // Completely hide storefront announcement banner, navbar, and cart drawer on Admin Panel
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>

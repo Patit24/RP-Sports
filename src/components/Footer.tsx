@@ -1,9 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight, MapPin, Phone, Mail, Clock, Share2, PlayCircle } from "lucide-react";
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Hide storefront footer inside Admin Panel
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <footer className="bg-[#111111] text-white border-t-4 border-primary relative overflow-hidden pb-24 md:pb-0">
 
