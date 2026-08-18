@@ -203,6 +203,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileDrawerOpen(false);
+  }, [pathname]);
+
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/products", label: "Products Catalog", icon: Package },
@@ -215,14 +222,166 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/settings", label: "Store Settings", icon: Settings },
   ];
 
+  const currentNav = navItems.find((item) => item.href === pathname) || { label: "Admin Center", icon: ShieldCheck };
+  const CurrentIcon = currentNav.icon;
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row pt-20">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row pt-16 md:pt-20">
       
-      {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-[#111111] text-white border-r border-slate-800 flex flex-col shrink-0">
+      {/* Mobile Top Admin Header Bar */}
+      <header className="md:hidden bg-[#111111] text-white border-b border-white/10 px-4 py-3 sticky top-16 z-30 flex items-center justify-between shadow-md">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
+            className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center transition-all cursor-pointer"
+            aria-label="Toggle Admin Navigation Menu"
+          >
+            {mobileDrawerOpen ? (
+              <LogOut className="w-5 h-5 rotate-180 text-[#CC0000]" />
+            ) : (
+              <div className="flex flex-col gap-1 w-4">
+                <span className="h-0.5 w-full bg-white rounded-full"></span>
+                <span className="h-0.5 w-3/4 bg-[#CC0000] rounded-full"></span>
+                <span className="h-0.5 w-full bg-white rounded-full"></span>
+              </div>
+            )}
+          </button>
+          
+          <div>
+            <div className="flex items-center gap-1.5">
+              <Flame className="w-4 h-4 text-[#CC0000]" />
+              <span className="font-display font-black text-sm uppercase tracking-wider text-white" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                RP Admin Center
+              </span>
+            </div>
+            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1">
+              <CurrentIcon className="w-3 h-3 text-[#CC0000]" /> {currentNav.label}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/add-product"
+            className="bg-[#CC0000] text-white text-[11px] font-display font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-md shadow-red-600/30"
+            style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+          >
+            <PlusCircle className="w-3.5 h-3.5" /> <span>Add</span>
+          </Link>
+        </div>
+      </header>
+
+      {/* Mobile Slide-Out Drawer Navigation Backdrop & Sheet */}
+      {mobileDrawerOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          {/* Dark Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileDrawerOpen(false)}
+          />
+
+          {/* Drawer Panel */}
+          <div className="fixed inset-y-0 left-0 max-w-[280px] w-full bg-[#111111] text-white border-r border-white/10 z-50 flex flex-col p-5 shadow-2xl animate-in slide-in-from-left duration-200">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Flame className="w-5 h-5 text-[#CC0000]" />
+                <span className="font-display font-black text-lg uppercase tracking-wider" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
+                  RP Admin
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileDrawerOpen(false)}
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white flex items-center justify-center cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Admin Profile Info */}
+            {currentUser && (
+              <div className="p-3 mb-4 bg-white/5 border border-white/10 rounded-xl">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-[#CC0000]/20 text-[#CC0000] flex items-center justify-center font-bold text-xs">
+                    {currentUser.name.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
+                    <p className="text-[10px] text-gray-400 uppercase font-semibold">{currentUser.role}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Nav Links */}
+            <nav className="flex-1 space-y-1.5 overflow-y-auto custom-scrollbar pr-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+
+                if (item.highlight) {
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileDrawerOpen(false)}
+                      className="flex items-center gap-3 px-3.5 py-2.5 text-xs font-display font-bold uppercase tracking-wider bg-[#CC0000] text-white rounded-xl shadow-md shadow-red-600/30"
+                      style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileDrawerOpen(false)}
+                    className={`flex items-center gap-3 px-3.5 py-2.5 text-xs font-display font-bold uppercase tracking-wider rounded-xl transition-colors ${
+                      isActive
+                        ? "bg-white/15 text-white font-black"
+                        : "text-gray-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                    style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? "text-[#CC0000]" : "text-gray-500"}`} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Drawer Footer Actions */}
+            <div className="pt-4 border-t border-white/10 space-y-2">
+              <Link
+                href="/"
+                onClick={() => setMobileDrawerOpen(false)}
+                className="flex items-center justify-center gap-2 py-2 px-3 bg-white/5 hover:bg-white/10 rounded-xl text-xs text-gray-300 font-bold uppercase tracking-wider"
+                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+              >
+                ← View Live Store
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer"
+                style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
+              >
+                <LogOut className="w-4 h-4" /> Sign Out Admin
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Sidebar Navigation */}
+      <aside className="hidden md:flex w-64 bg-[#111111] text-white border-r border-slate-800 flex-col shrink-0 sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto">
         
         {/* Admin Header */}
-        <div className="p-6 border-b border-white/10 hidden md:block">
+        <div className="p-6 border-b border-white/10">
           <div className="flex items-center gap-2 mb-1">
             <Flame className="w-5 h-5 text-[#CC0000]" />
             <h2 className="text-xl font-display font-black uppercase text-white tracking-wider" style={{ fontFamily: 'Barlow Condensed, sans-serif' }}>
@@ -240,7 +399,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 p-4 flex flex-row md:flex-col gap-2 overflow-x-auto custom-scrollbar">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -279,7 +438,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Admin Sign Out */}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 text-xs font-display font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-colors whitespace-nowrap md:mt-auto cursor-pointer"
+            className="w-full flex items-center gap-3 px-4 py-3 text-xs font-display font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-xl transition-colors whitespace-nowrap mt-4 cursor-pointer"
             style={{ fontFamily: 'Barlow Condensed, sans-serif' }}
           >
             <LogOut className="w-4 h-4" />
@@ -289,9 +448,63 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Main Content Viewport */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+      <main className="flex-1 p-3 sm:p-5 md:p-8 w-full max-w-full overflow-x-hidden pb-24 md:pb-8">
         {children}
       </main>
+
+      {/* Mobile Bottom Quick Navigation Dock */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 bg-[#111111]/95 backdrop-blur-lg border-t border-white/10 z-30 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+        <Link
+          href="/admin"
+          className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors ${
+            pathname === "/admin" ? "text-[#CC0000]" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          <LayoutDashboard className="w-5 h-5" />
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">Home</span>
+        </Link>
+
+        <Link
+          href="/admin/products"
+          className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors ${
+            pathname === "/admin/products" ? "text-[#CC0000]" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          <Package className="w-5 h-5" />
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">Products</span>
+        </Link>
+
+        {/* Center Prominent Add Button */}
+        <Link
+          href="/admin/add-product"
+          className="flex flex-col items-center -mt-4 bg-[#CC0000] hover:bg-red-700 text-white w-12 h-12 rounded-full items-center justify-center shadow-lg shadow-red-600/40 border-2 border-[#111111] transition-transform active:scale-95"
+        >
+          <PlusCircle className="w-6 h-6" />
+        </Link>
+
+        <Link
+          href="/admin/orders"
+          className={`flex flex-col items-center py-1 px-2.5 rounded-lg transition-colors ${
+            pathname === "/admin/orders" ? "text-[#CC0000]" : "text-gray-400 hover:text-white"
+          }`}
+        >
+          <ShoppingBag className="w-5 h-5" />
+          <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">Orders</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setMobileDrawerOpen(true)}
+          className="flex flex-col items-center py-1 px-2.5 rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer"
+        >
+          <div className="flex flex-col gap-1 w-4 my-1">
+            <span className="h-0.5 w-full bg-current rounded-full"></span>
+            <span className="h-0.5 w-full bg-current rounded-full"></span>
+            <span className="h-0.5 w-full bg-current rounded-full"></span>
+          </div>
+          <span className="text-[9px] font-bold uppercase tracking-wider">More</span>
+        </button>
+      </div>
 
     </div>
   );

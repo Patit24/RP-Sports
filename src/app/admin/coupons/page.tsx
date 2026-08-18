@@ -418,10 +418,115 @@ export default function AdminCouponsPage() {
               </button>
             ))}
           </div>
+        </div>        {/* Mobile Coupon Cards List (Visible on mobile screens) */}
+        <div className="block md:hidden divide-y divide-slate-100">
+          {loading ? (
+            <div className="text-center p-10 text-slate-400">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#CC0000]" />
+              <p className="font-bold text-xs">Loading coupons...</p>
+            </div>
+          ) : filteredCoupons.length === 0 ? (
+            <div className="text-center p-8 text-slate-500 font-bold text-sm">
+              No coupons found. Tap "+ Create Coupon" to add one.
+            </div>
+          ) : (
+            filteredCoupons.map((c) => {
+              const isExpired = c.expiryDate ? new Date(c.expiryDate) < now : false;
+
+              return (
+                <div key={c.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-sm bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md text-slate-900 tracking-wider">
+                          {c.code}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCode(c.code)}
+                          className="text-slate-400 hover:text-[#CC0000] p-1 transition-colors cursor-pointer"
+                        >
+                          {copiedCode === c.code ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 line-clamp-1">{c.description}</p>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="font-black text-base text-[#CC0000]">
+                        {c.discountType === "fixed" ? `₹${c.discountValue}` : `${c.discountValue}%`} OFF
+                      </span>
+                      {c.maximumDiscount && c.discountType === "percentage" && (
+                        <span className="block text-[10px] text-slate-400 font-bold">Max ₹{c.maximumDiscount}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div>
+                      <span className="block text-[10px] text-slate-400 uppercase font-bold">Scope</span>
+                      <span className="font-bold text-slate-700 text-[11px] truncate block">
+                        {c.appliesTo === "specific" ? `${c.productIds?.length || 0} Items` : "All Store"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-slate-400 uppercase font-bold">Redeemed</span>
+                      <span className="font-mono font-bold text-slate-700 text-[11px]">
+                        {c.usageCount || 0}{c.usageLimit ? `/${c.usageLimit}` : ""}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-slate-400 uppercase font-bold">Min Order</span>
+                      <span className="font-bold text-slate-700 text-[11px]">
+                        {c.minimumOrderValue ? `₹${c.minimumOrderValue}` : "None"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(c)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                        !c.active
+                          ? "bg-slate-100 text-slate-500 border border-slate-200"
+                          : isExpired
+                          ? "bg-amber-50 text-amber-700 border border-amber-200"
+                          : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      }`}
+                    >
+                      {!c.active ? "Disabled" : isExpired ? "Expired" : "Active"}
+                    </button>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(c)}
+                        className="py-1.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCoupon(c)}
+                        className="py-1.5 px-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
-        {/* Table Content */}
-        <div className="overflow-x-auto">
+        {/* Desktop Table View (Visible on tablet & desktop screens) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-100/70 text-slate-700 text-xs font-bold uppercase tracking-wider">
@@ -572,7 +677,6 @@ export default function AdminCouponsPage() {
                           </button>
                         </div>
                       </td>
-
                     </tr>
                   );
                 })

@@ -166,9 +166,86 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      {/* Orders Table */}
+      {/* Orders Content View */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        
+        {/* Mobile Orders Card View (Visible on mobile screens) */}
+        <div className="block md:hidden divide-y divide-gray-100">
+          {filteredOrders.length === 0 ? (
+            <div className="text-center p-8 text-gray-500 font-bold text-sm">
+              No orders found matching search criteria.
+            </div>
+          ) : (
+            filteredOrders.map((ord) => (
+              <div key={ord.id} className="p-4 flex flex-col gap-3 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="font-mono font-black text-sm text-[#111111]">{ord.id}</span>
+                    <span className="block text-[11px] text-gray-400 font-mono">
+                      {new Date(ord.createdAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="font-black text-base text-[#CC0000]">₹{ord.total.toLocaleString("en-IN")}</span>
+                    <span className={`block text-[10px] font-bold uppercase tracking-wider ${
+                      ord.paymentStatus === "Success" ? "text-emerald-600" : "text-amber-600"
+                    }`}>
+                      {ord.paymentMethod} • {ord.paymentStatus}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100 flex items-center justify-between text-xs">
+                  <div>
+                    <strong className="block text-[#111111] font-bold">{ord.shippingAddress.fullName}</strong>
+                    <span className="text-gray-500 font-mono text-[11px]">{ord.shippingAddress.phone}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="block font-bold text-gray-700 text-[11px]">
+                      {ord.deliveryPartnerInfo?.carrier || "Delhivery"}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {ord.deliveryPartnerInfo?.awbNumber || ord.trackingNumber || "Assigned"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <div className="flex-1">
+                    <select
+                      value={ord.status}
+                      onChange={(e) => handleStatusChange(ord.id, e.target.value as Order["status"])}
+                      className={`w-full px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border bg-white focus:outline-none cursor-pointer ${
+                        ord.status === "Delivered" ? "border-emerald-300 text-emerald-700 bg-emerald-50" :
+                        ord.status === "Shipped" || ord.status === "Out for Delivery" ? "border-blue-300 text-blue-700 bg-blue-50" :
+                        ord.status === "Cancelled" ? "border-red-300 text-red-700 bg-red-50" :
+                        "border-amber-300 text-amber-700 bg-amber-50"
+                      }`}
+                    >
+                      <option value="Confirmed">Confirmed</option>
+                      <option value="Packed">Packed</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Out for Delivery">Out for Delivery</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={() => setSelectedOrder(ord)}
+                    className="px-3.5 py-2 bg-[#111111] text-white hover:bg-[#CC0000] text-xs font-bold uppercase tracking-wider rounded-xl transition-colors inline-flex items-center gap-1.5 shrink-0 shadow-sm"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> Details
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Orders Table (Visible on tablet & desktop screens) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50 text-gray-700 font-bold uppercase tracking-wider">
