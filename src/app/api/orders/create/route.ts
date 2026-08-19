@@ -32,24 +32,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: "Please enter a valid 10-digit delivery phone number." }, { status: 400 });
     }
 
-    // Try to extract authenticated user email if token is present
-    let userEmail = "guest@rpsports.in";
-    const authHeader = request.headers.get("Authorization");
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      try {
-        const token = authHeader.split("Bearer ")[1];
-        const decoded = await verifyFirebaseIdToken(token);
-        if (decoded && decoded.email) {
-          userEmail = decoded.email;
+    // Extract authenticated user email from body or token
+    let userEmail = (body.userEmail || shippingAddress.email || "").toLowerCase().trim();
+    
+    if (!userEmail) {
+      const authHeader = request.headers.get("Authorization");
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        try {
+          const token = authHeader.split("Bearer ")[1];
+          const decoded = await verifyFirebaseIdToken(token);
+          if (decoded && decoded.email) {
+            userEmail = decoded.email.toLowerCase().trim();
+          }
+        } catch (err: any) {
+          console.warn("Server order creation token check skipped/failed:", err.message);
         }
-      } catch (err: any) {
-        console.warn("Server order creation token check skipped/failed:", err.message);
       }
     }
 
-    // If no authenticated token, fallback to address phone or default
-    if (userEmail === "guest@rpsports.in" && shippingAddress.phone) {
-      userEmail = shippingAddress.phone;
+    // Fallback if still empty
+    if (!userEmail) {
+      userEmail = shippingAddress.phone || "guest@rpsports.in";
     }
 
     const projectId = process.env.FIREBASE_PROJECT_ID;

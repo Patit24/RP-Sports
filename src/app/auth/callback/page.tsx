@@ -48,7 +48,7 @@ function AuthCallbackInner() {
     // Fallback mode — Firebase Admin not configured yet, use profile info directly
     if (fallback === "1" && fallbackEmail && fallbackName && fallbackUid) {
       setLoadingStep("account");
-      const email = decodeURIComponent(fallbackEmail);
+      const email = decodeURIComponent(fallbackEmail).toLowerCase().trim();
       const name = decodeURIComponent(fallbackName);
       const uid = decodeURIComponent(fallbackUid);
 
@@ -60,23 +60,36 @@ function AuthCallbackInner() {
                norm === "patitroy29@gmail.com";
       };
 
-      getUser(uid).then((profile) => {
+      getUser(uid).then(async (profile) => {
         const role = profile?.role || (isAdminEmail(email) ? (email.includes("superadmin") ? "super_admin" : "admin") : "customer");
-        saveUser(uid, { uid, email, name, role }).catch(console.error);
+        const userProfile = { uid, email, name, role, rewardPoints: profile?.rewardPoints ?? 100, addresses: profile?.addresses || [] };
+        
+        await saveUser(uid, userProfile).catch(console.error);
+        if (email && email !== uid) {
+          await saveUser(email, userProfile).catch(console.error);
+        }
+
         setLoadingStep("checkout");
         login(email, name, role, [], uid);
         useStore.setState({
           currentUser: { uid, email, name, role, addresses: profile?.addresses || [], rewardPoints: profile?.rewardPoints ?? 100 },
+          orders: [],
         });
         showToast(`Welcome, ${name}!`, "success");
         router.push(redirectTo);
-      }).catch((err) => {
+      }).catch(async (err) => {
         console.error("Fallback getUser failed:", err);
-        saveUser(uid, { uid, email, name, role: "customer" }).catch(console.error);
+        const userProfile = { uid, email, name, role: "customer" as const, rewardPoints: 100, addresses: [] };
+        await saveUser(uid, userProfile).catch(console.error);
+        if (email && email !== uid) {
+          await saveUser(email, userProfile).catch(console.error);
+        }
+
         setLoadingStep("checkout");
         login(email, name, "customer", [], uid);
         useStore.setState({
           currentUser: { uid, email, name, role: "customer", addresses: [], rewardPoints: 100 },
+          orders: [],
         });
         showToast(`Welcome, ${name}!`, "success");
         router.push(redirectTo);
@@ -120,32 +133,33 @@ function AuthCallbackInner() {
           setLoadingStep("account");
           const user = result.user;
           const name = user.displayName || user.email?.split("@")[0] || "RP Athlete";
-          const email = user.email || `${user.uid}@google.com`;
+          const email = (user.email || `${user.uid}@google.com`).toLowerCase().trim();
 
           // Check if user already exists in DB to preserve their role
           const profile = await getUser(user.uid);
           const role = profile?.role || (isAdminEmail(email) ? (email.includes("superadmin") ? "super_admin" : "admin") : "customer");
 
-          // Save user profile to Firestore
-          await saveUser(user.uid, {
+          const userProfile = {
             uid: user.uid,
             email,
             name,
             role,
-          });
+            addresses: profile?.addresses || [],
+            rewardPoints: profile?.rewardPoints ?? 100,
+          };
+
+          // Save user profile to Firestore under both UID and email
+          await saveUser(user.uid, userProfile).catch(console.error);
+          if (email && email !== user.uid) {
+            await saveUser(email, userProfile).catch(console.error);
+          }
 
           setLoadingStep("checkout");
-          // Update Zustand store
+          // Update Zustand store and reset orders
           login(email, name, role, [], user.uid);
           useStore.setState({
-            currentUser: {
-              uid: user.uid,
-              email,
-              name,
-              role,
-              addresses: profile?.addresses || [],
-              rewardPoints: profile?.rewardPoints ?? 100,
-            },
+            currentUser: userProfile,
+            orders: [],
           });
 
           showToast(`Welcome, ${name}!`, "success");

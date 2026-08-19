@@ -19,20 +19,37 @@ export default function CustomerDashboardPage() {
   const [activeTab, setActiveTab] = useState<"orders" | "wishlist" | "addresses" | "profile">("orders");
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
 
+  const isAdmin = currentUser?.role === "admin" || currentUser?.role === "super_admin";
+  const userEmail = (currentUser?.email || "").toLowerCase().trim();
+
+  // Strict email filtering so users never see cross-account orders
+  const userOrders = isAdmin
+    ? orders
+    : orders.filter((o) => {
+        const oEmail = (o.userEmail || o.shippingAddress?.email || "").toLowerCase().trim();
+        return oEmail === userEmail;
+      });
+
   // Real-time listener for orders: Admin sees all, regular user sees their own
   useEffect(() => {
     if (!currentUser || !currentUser.email) return;
 
+    // Reset local orders on mount or user switch to avoid flashing stale account data
+    if (!isAdmin) {
+      setOrders([]);
+    }
+
+    const normalizedEmail = currentUser.email.toLowerCase().trim();
     let unsubscribe: () => void;
 
-    if (currentUser.role === "admin" || currentUser.role === "super_admin") {
+    if (isAdmin) {
       // Admin sees all orders to easily test/view tracking of any customer order
       unsubscribe = listenToOrders((dbOrders) => {
         setOrders(dbOrders);
       });
     } else {
       // Regular customer sees only their own orders in real-time
-      unsubscribe = listenToUserOrders(currentUser.email, (dbOrders) => {
+      unsubscribe = listenToUserOrders(normalizedEmail, (dbOrders) => {
         setOrders(dbOrders);
       });
     }
@@ -40,7 +57,7 @@ export default function CustomerDashboardPage() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [currentUser, setOrders]);
+  }, [currentUser?.email, currentUser?.role, isAdmin, setOrders]);
 
   const handleLogout = () => {
     logout();
@@ -93,8 +110,6 @@ export default function CustomerDashboardPage() {
       </div>
     );
   }
-
-  const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white pt-20 md:pt-28 pb-28 md:pb-12">
@@ -160,7 +175,7 @@ export default function CustomerDashboardPage() {
                   : "text-neutral-400 hover:text-white hover:bg-neutral-800/40"
               }`}
             >
-              <Package className="w-4 h-4" /> My Orders ({orders.length})
+              <Package className="w-4 h-4" /> My Orders ({userOrders.length})
             </button>
             <button
               onClick={() => setActiveTab("wishlist")}
@@ -214,11 +229,11 @@ export default function CustomerDashboardPage() {
                     ORDER TRACKING HISTORY
                   </h3>
                   <span className="text-[10px] text-neutral-400 font-mono">
-                    Total: {orders.length} orders
+                    Total: {userOrders.length} orders
                   </span>
                 </div>
 
-                {orders.length === 0 ? (
+                {userOrders.length === 0 ? (
                   <div className="p-16 bg-neutral-900/40 border border-neutral-800 border-dashed rounded-3xl text-center flex flex-col items-center justify-center">
                     <Clock className="w-12 h-12 text-neutral-600 mb-4" />
                     <h4 className="font-bold text-white uppercase tracking-widest text-sm">No orders recorded yet</h4>
@@ -234,7 +249,7 @@ export default function CustomerDashboardPage() {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {orders.map((order) => {
+                    {userOrders.map((order) => {
                       const stepIdx = getStepIndex(order.status);
                       const isCancelled = order.status === "Cancelled";
 

@@ -216,9 +216,11 @@ export default function CheckoutPage() {
         headers,
         body: JSON.stringify({
           items: cart,
+          userEmail: (currentUser?.email || "").toLowerCase().trim(),
           shippingAddress: {
             fullName,
             phone,
+            email: (currentUser?.email || "").toLowerCase().trim(),
             addressLine,
             city,
             state: stateName,

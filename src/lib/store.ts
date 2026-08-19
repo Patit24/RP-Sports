@@ -75,6 +75,7 @@ export interface Order {
   shippingAddress: {
     fullName: string;
     phone: string;
+    email?: string;
     addressLine: string;
     city: string;
     state: string;
@@ -295,11 +296,12 @@ export const useStore = create<SportsStoreState>()(
       },
 
       login: (email, name, role = "customer", permissions = [], uid) => {
-        const userDocId = uid || email.toLowerCase().replace(/[.#$[\]]/g, "_");
+        const normalizedEmail = email.toLowerCase().trim();
+        const userDocId = uid || normalizedEmail.replace(/[.#$[\]]/g, "_");
         const userData: User = {
           uid: userDocId,
           name,
-          email,
+          email: normalizedEmail,
           role,
           permissions,
           addresses: [
@@ -314,17 +316,21 @@ export const useStore = create<SportsStoreState>()(
           ],
           rewardPoints: 120,
         };
-        set({ currentUser: userData });
+        // Reset orders so that no previous account's orders are shown
+        set({ currentUser: userData, orders: [] });
         get().showToast(`Welcome back, ${name}!`, "success");
-        // Sync user profile to Firestore (non-blocking)
+        // Sync user profile to Firestore (both under uid and email)
         saveUser(userDocId, userData).catch(console.error);
+        if (normalizedEmail && normalizedEmail !== userDocId) {
+          saveUser(normalizedEmail, userData).catch(console.error);
+        }
       },
 
       logout: () => {
         if (typeof window !== "undefined") {
           signOut(auth).catch(console.error);
         }
-        set({ currentUser: null, cart: [] });
+        set({ currentUser: null, cart: [], orders: [] });
         get().showToast("Signed out successfully", "info");
       },
 
@@ -476,10 +482,15 @@ export const useStore = create<SportsStoreState>()(
           dispatchMessage: `Delivery partner '${carrierName}' notified for order pickup. AWB: ${awbNumber}`,
         };
 
+        const userEmail = (get().currentUser?.email || address.phone || "guest@rpsports.in").toLowerCase().trim();
+
         const newOrder: Order = {
           id: orderId,
           items: [...cart],
-          shippingAddress: address,
+          shippingAddress: {
+            ...address,
+          },
+          userEmail,
           paymentMethod,
           paymentStatus,
           status: "Confirmed",
@@ -507,8 +518,6 @@ export const useStore = create<SportsStoreState>()(
           }
           return prod;
         });
-
-        const userEmail = get().currentUser?.email || address.phone || "guest@rpsports.in";
 
         set({
           orders: [newOrder, ...get().orders],
@@ -651,26 +660,22 @@ export const useStore = create<SportsStoreState>()(
     }),
     {
       name: "rp-sports-store",
-      version: 10,
+      version: 11,
       partialize: (state) => ({
         cart: state.cart,
         wishlist: state.wishlist,
         compareList: state.compareList,
-        orders: state.orders,
         currentUser: state.currentUser,
       }),
       migrate: (persistedState: any, version: number) => {
-        if (version < 10) {
-          return {
-            ...persistedState,
-            cart: persistedState?.cart || [],
-            wishlist: persistedState?.wishlist || [],
-            compareList: persistedState?.compareList || [],
-            orders: persistedState?.orders || [],
-            currentUser: persistedState?.currentUser || null,
-          };
-        }
-        return persistedState;
+        return {
+          ...persistedState,
+          cart: persistedState?.cart || [],
+          wishlist: persistedState?.wishlist || [],
+          compareList: persistedState?.compareList || [],
+          currentUser: persistedState?.currentUser || null,
+          orders: [], // Always start with empty orders array and fetch live from Firestore for active user
+        };
       },
     }
   )

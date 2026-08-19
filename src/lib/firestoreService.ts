@@ -39,21 +39,63 @@ import type { Product } from "./mockData";
 /** Save / update a user profile in Firestore */
 export async function saveUser(userId: string, data: Partial<User>): Promise<void> {
   try {
-    const ref = doc(db, "users", userId);
-    await setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+    const payload = {
+      ...data,
+      updatedAt: serverTimestamp(),
+    };
+
+    // 1. Save under the provided userId / uid
+    const primaryRef = doc(db, "users", userId);
+    await setDoc(primaryRef, payload, { merge: true });
+
+    // 2. If email is provided, also save/mirror under users/{email} so admin/console search by email always finds the user
+    if (data.email) {
+      const normalizedEmail = data.email.toLowerCase().trim();
+      if (normalizedEmail && normalizedEmail !== userId) {
+        const emailRef = doc(db, "users", normalizedEmail);
+        await setDoc(emailRef, payload, { merge: true });
+      }
+    }
   } catch (err: any) {
-    console.warn("Firestore saveUser permission or network warning:", err.message);
+    console.warn("Firestore saveUser notice:", err.message);
   }
 }
 
-/** Fetch a user profile by ID */
+/** Fetch a user profile by ID or Email */
 export async function getUser(userId: string): Promise<User | null> {
   try {
-    const ref = doc(db, "users", userId);
+    if (!userId) return null;
+    const cleanId = userId.trim();
+
+    // 1. Try direct lookup by document ID
+    const ref = doc(db, "users", cleanId);
     const snap = await getDoc(ref);
-    return snap.exists() ? (snap.data() as User) : null;
+    if (snap.exists()) {
+      return snap.data() as User;
+    }
+
+    // 2. If not found and ID has @ or upper chars, try lowercase email doc
+    const normalized = cleanId.toLowerCase();
+    if (normalized !== cleanId) {
+      const emailRef = doc(db, "users", normalized);
+      const emailSnap = await getDoc(emailRef);
+      if (emailSnap.exists()) {
+        return emailSnap.data() as User;
+      }
+    }
+
+    // 3. Fallback: Query by email field
+    if (cleanId.includes("@")) {
+      const q = query(collection(db, "users"), where("email", "==", normalized), limit(1));
+      const qSnap = await getDocs(q);
+      if (!qSnap.empty) {
+        return qSnap.docs[0].data() as User;
+      }
+    }
+
+    return null;
   } catch (err: any) {
-    console.warn("Firestore getUser permission warning:", err.message);
+    console.warn("Firestore getUser notice:", err.message);
     return null;
   }
 }
@@ -65,14 +107,15 @@ export async function getUser(userId: string): Promise<User | null> {
 /** Save a new order to Firestore and return the Firestore document ID */
 export async function saveOrder(order: Order, userEmail?: string): Promise<string> {
   try {
+    const email = (userEmail || order.userEmail || order.shippingAddress?.email || "guest").toLowerCase().trim();
     const ref = await addDoc(collection(db, "orders"), {
       ...order,
-      userEmail: userEmail || "guest",
+      userEmail: email,
       createdAt: serverTimestamp(),
     });
     return ref.id;
   } catch (err: any) {
-    console.warn("Firestore saveOrder permission warning:", err.message);
+    console.warn("Firestore saveOrder notice:", err.message);
     return `local-order-${Date.now()}`;
   }
 }
@@ -86,16 +129,18 @@ function normalizeDate(val: any): string {
   return String(val);
 }
 
-/** Fetch all orders for a user (by email) */
+/** Fetch all orders for a user (by email) without requiring composite index */
 export async function getOrdersByUser(userEmail: string): Promise<Order[]> {
   try {
+    const normalized = (userEmail || "").toLowerCase().trim();
+    if (!normalized) return [];
+
     const q = query(
       collection(db, "orders"),
-      where("userEmail", "==", userEmail),
-      orderBy("createdAt", "desc")
+      where("userEmail", "==", normalized)
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
+    const orders = snap.docs.map((d) => {
       const data = d.data();
       return {
         ...data,
@@ -103,8 +148,17 @@ export async function getOrdersByUser(userEmail: string): Promise<Order[]> {
         firestoreId: d.id,
       } as unknown as Order;
     });
+
+    // In-memory sort by createdAt descending
+    orders.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+    });
+
+    return orders;
   } catch (err: any) {
-    console.warn("Firestore getOrdersByUser permission warning:", err.message);
+    console.warn("Firestore getOrdersByUser notice:", err.message);
     return [];
   }
 }
@@ -514,17 +568,24 @@ export async function getStoreSettings(): Promise<StoreSettings | null> {
   }
 }
 
-/** Listen to all orders for a specific user (real-time) */
+/** Listen to all orders for a specific user (real-time) without composite index requirement */
 export function listenToUserOrders(
   userEmail: string,
   callback: (orders: Order[]) => void
 ): Unsubscribe {
   try {
+    const normalized = (userEmail || "").toLowerCase().trim();
+    if (!normalized) {
+      callback([]);
+      return () => {};
+    }
+
+    // Query WITHOUT orderBy to avoid requiring a composite index in Firestore
     const q = query(
       collection(db, "orders"),
-      where("userEmail", "==", userEmail),
-      orderBy("createdAt", "desc")
+      where("userEmail", "==", normalized)
     );
+
     return onSnapshot(
       q,
       (snap) => {
@@ -536,14 +597,25 @@ export function listenToUserOrders(
             firestoreId: d.id,
           } as unknown as Order;
         });
+
+        // In-memory sort by createdAt descending
+        orders.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+        });
+
         callback(orders);
       },
       (error) => {
-        console.warn("Firestore listenToUserOrders warning:", error.message);
+        console.warn("Firestore listenToUserOrders notice:", error.message);
+        // Fallback: try one-time fetch
+        getOrdersByUser(normalized).then(callback).catch(() => callback([]));
       }
     );
   } catch (err: any) {
     console.warn("Firestore listenToUserOrders failed setup:", err.message);
+    getOrdersByUser(userEmail).then(callback).catch(() => callback([]));
     return () => {};
   }
 }

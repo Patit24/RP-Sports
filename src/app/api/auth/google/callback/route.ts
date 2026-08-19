@@ -176,6 +176,7 @@ export async function GET(request: Request) {
     }
 
     const firebaseUid = `google_${profile.id}`;
+    const normalizedEmail = (profile.email || "").toLowerCase().trim();
 
     // Ensure user exists in Firebase Auth
     try {
@@ -183,16 +184,36 @@ export async function GET(request: Request) {
     } catch {
       await adminAuth.createUser({
         uid: firebaseUid,
-        email: profile.email,
-        displayName: profile.name || profile.email.split("@")[0],
+        email: normalizedEmail,
+        displayName: profile.name || normalizedEmail.split("@")[0],
         photoURL: profile.picture || undefined,
         emailVerified: true,
       });
     }
 
+    // Direct Firestore user sync server-side so it is immediately visible in Firestore database
+    try {
+      const { getFirestore, FieldValue } = await import("firebase-admin/firestore");
+      const adminDb = getFirestore();
+      const userPayload = {
+        uid: firebaseUid,
+        email: normalizedEmail,
+        name: profile.name || normalizedEmail.split("@")[0],
+        photoURL: profile.picture || "",
+        role: "customer",
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+      await adminDb.collection("users").doc(firebaseUid).set(userPayload, { merge: true });
+      if (normalizedEmail) {
+        await adminDb.collection("users").doc(normalizedEmail).set(userPayload, { merge: true });
+      }
+    } catch (dbErr: any) {
+      console.warn("[OAuth Callback] Direct Firestore user write notice:", dbErr?.message || dbErr);
+    }
+
     const customToken = await adminAuth.createCustomToken(firebaseUid, {
-      email: profile.email,
-      name: profile.name || profile.email.split("@")[0],
+      email: normalizedEmail,
+      name: profile.name || normalizedEmail.split("@")[0],
       picture: profile.picture || "",
       provider: "google",
     });

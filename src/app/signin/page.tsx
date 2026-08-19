@@ -48,30 +48,34 @@ function SignInPageInner() {
       if (user && user.email) {
         setLoading(true);
         try {
-          const profile = await getUser(user.uid);
-          const name = profile?.name || user.displayName || user.email.split("@")[0] || "RP Athlete";
+          const normalizedEmail = user.email.toLowerCase().trim();
+          const profile = await getUser(user.uid) || await getUser(normalizedEmail);
+          const name = profile?.name || user.displayName || normalizedEmail.split("@")[0] || "RP Athlete";
           const rewardPoints = profile?.rewardPoints ?? 100;
           const addresses = profile?.addresses ?? [];
-          const role = profile?.role || (user.email === "admin@rpsports.com" ? "admin" : "customer");
+          const role = profile?.role || (normalizedEmail === "admin@rpsports.com" ? "admin" : "customer");
 
-          login(user.email, name, role, [], user.uid);
+          login(normalizedEmail, name, role, [], user.uid);
           useStore.setState({
             currentUser: {
               uid: user.uid,
-              email: user.email!,
+              email: normalizedEmail,
               name,
               role,
               addresses,
               rewardPoints,
-            }
+            },
+            orders: [],
           });
 
           showToast(`Welcome back, ${name}!`, "success");
           router.push("/");
         } catch (err: any) {
           console.error("Error loading user profile:", err);
-          const name = user.displayName || user.email.split("@")[0] || "RP Athlete";
-          login(user.email, name, "customer", [], user.uid);
+          const normalizedEmail = user.email.toLowerCase().trim();
+          const name = user.displayName || normalizedEmail.split("@")[0] || "RP Athlete";
+          login(normalizedEmail, name, "customer", [], user.uid);
+          useStore.setState({ orders: [] });
           router.push("/");
         } finally {
           setLoading(false);
